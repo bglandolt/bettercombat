@@ -1,0 +1,110 @@
+---- Minecraft Crash Report ----
+// Oops.
+
+Time: 4/4/23 5:32 PM
+Description: Ticking entity
+
+java.lang.NullPointerException: Ticking entity
+	at bettercombat.mod.client.handler.EventHandlersClient.checkItemstackChangedMainhand(EventHandlersClient.java:578)
+	at bettercombat.mod.client.handler.EventHandlersClient.livingUpdate(EventHandlersClient.java:149)
+	at net.minecraftforge.fml.common.eventhandler.ASMEventHandler_28_EventHandlersClient_livingUpdate_LivingUpdateEvent.invoke(.dynamic)
+	at net.minecraftforge.fml.common.eventhandler.ASMEventHandler.invoke(ASMEventHandler.java:90)
+	at net.minecraftforge.fml.common.eventhandler.EventBus.post(EventBus.java:182)
+	at net.minecraftforge.common.ForgeHooks.onLivingUpdate(ForgeHooks.java:581)
+	at net.minecraft.entity.EntityLivingBase.onUpdate(EntityLivingBase.java:2095)
+	at net.minecraft.entity.EntityLiving.onUpdate(EntityLiving.java:295)
+	at net.minecraft.entity.passive.AbstractHorse.onUpdate(AbstractHorse.java:682)
+	at net.minecraft.entity.passive.EntityHorse.onUpdate(EntityHorse.java:209)
+	at net.minecraft.world.World.updateEntityWithOptionalForce(World.java:1996)
+	at net.minecraft.world.WorldServer.updateEntityWithOptionalForce(WorldServer.java:832)
+	at net.minecraft.world.World.updateEntity(World.java:1958)
+	at net.minecraft.world.World.updateEntities(World.java:1762)
+	at net.minecraft.world.WorldServer.updateEntities(WorldServer.java:613)
+	at net.minecraft.server.MinecraftServer.updateTimeLightAndEntities(MinecraftServer.java:767)
+	at net.minecraft.server.MinecraftServer.tick(MinecraftServer.java:668)
+	at net.minecraft.server.integrated.IntegratedServer.tick(IntegratedServer.java:185)
+	at net.minecraft.server.MinecraftServer.run(MinecraftServer.java:526)
+	at java.lang.Thread.run(Thread.java:750)
+
+
+A detailed walkthrough of the error, its code path and all known details is as follows:
+---------------------------------------------------------------------------------------
+
+-- Head --
+Thread: Server thread
+Stacktrace:
+	at bettercombat.mod.client.handler.EventHandlersClient.checkItemstackChangedMainhand(EventHandlersClient.java:578)
+	at bettercombat.mod.client.handler.EventHandlersClient.livingUpdate(EventHandlersClient.java:149)
+	at net.minecraftforge.fml.common.eventhandler.ASMEventHandler_28_EventHandlersClient_livingUpdate_LivingUpdateEvent.invoke(.dynamic)
+	at net.minecraftforge.fml.common.eventhandler.ASMEventHandler.invoke(ASMEventHandler.java:90)
+	at net.minecraftforge.fml.common.eventhandler.EventBus.post(EventBus.java:182)
+	at net.minecraftforge.common.ForgeHooks.onLivingUpdate(ForgeHooks.java:581)
+	at net.minecraft.entity.EntityLivingBase.onUpdate(EntityLivingBase.java:2095)
+	at net.minecraft.entity.EntityLiving.onUpdate(EntityLiving.java:295)
+	at net.minecraft.entity.passive.AbstractHorse.onUpdate(AbstractHorse.java:682)
+	at net.minecraft.entity.passive.EntityHorse.onUpdate(EntityHorse.java:209)
+	at net.minecraft.world.World.updateEntityWithOptionalForce(World.java:1996)
+	at net.minecraft.world.WorldServer.updateEntityWithOptionalForce(WorldServer.java:832)
+	at net.minecraft.world.World.updateEntity(World.java:1958)
+
+-- Entity being ticked --
+Details:
+	Entity Type: minecraft:horse (net.minecraft.entity.passive.EntityHorse)
+	Entity ID: 17
+	Entity Name: Horse
+	Entity's Exact location: 93.16, 94.00, 618.86
+	Entity's Block location: World: (93,94,618), Chunk: (at 13,5,10 in 5,38; contains blocks 80,0,608 to 95,255,623), Region: (0,1; contains chunks 0,32 to 31,63, blocks 0,0,512 to 511,255,1023)
+	Entity's Momentum: 0.00, -0.08, 0.00
+	Entity's Passengers: []
+	Entity's Vehicle: ~~ERROR~~ NullPointerException: null
+Stacktrace:
+	at net.minecraft.world.World.updateEntities(World.java:1762)
+	at net.minecraft.world.WorldServer.updateEntities(WorldServer.java:613)
+
+-- Affected level --
+Details:
+	Level name: Copy of New World
+	All players: 0 total; []
+	Chunk stats: ServerChunkCache: 625 Drop: 0
+	Level seed: -1539316382956379521
+	Level generator: ID 01 - flat, ver 0. Features enabled: true
+	Level generator options: 3;minecraft:bedrock,92*minecraft:dirt,minecraft:grass;1;village
+	Level spawn location: World: (221,4,577), Chunk: (at 13,0,1 in 13,36; contains blocks 208,0,576 to 223,255,591), Region: (0,1; contains chunks 0,32 to 31,63, blocks 0,0,512 to 511,255,1023)
+	Level time: 109268 game time, 7724 day time
+	Level dimension: 0
+	Level storage version: 0x04ABD - Anvil
+	Level weather: Rain time: 13790 (now: false), thunder time: 22261 (now: false)
+	Level game mode: Game mode: creative (ID 1). Hardcore: false. Cheats: true
+Stacktrace:
+	at net.minecraft.server.MinecraftServer.updateTimeLightAndEntities(MinecraftServer.java:767)
+	at net.minecraft.server.MinecraftServer.tick(MinecraftServer.java:668)
+	at net.minecraft.server.integrated.IntegratedServer.tick(IntegratedServer.java:185)
+	at net.minecraft.server.MinecraftServer.run(MinecraftServer.java:526)
+	at java.lang.Thread.run(Thread.java:750)
+
+-- System Details --
+Details:
+	Minecraft Version: 1.12.2
+	Operating System: Mac OS X (x86_64) version 12.5.1
+	Java Version: 1.8.0_351, Oracle Corporation
+	Java VM Version: Java HotSpot(TM) 64-Bit Server VM (mixed mode), Oracle Corporation
+	Memory: 478638704 bytes (456 MB) / 1027604480 bytes (980 MB) up to 3817865216 bytes (3641 MB)
+	JVM Flags: 0 total; 
+	IntCache: cache: 0, tcache: 0, allocated: 0, tallocated: 0
+	FML: MCP 9.42 Powered by Forge 14.23.5.2860 5 mods loaded, 5 mods active
+	States: 'U' = Unloaded 'L' = Loaded 'C' = Constructed 'H' = Pre-initialized 'I' = Initialized 'J' = Post-initialized 'A' = Available 'D' = Disabled 'E' = Errored
+
+	| State  | ID           | Version      | Source                                                             | Signature |
+	|:------ |:------------ |:------------ |:------------------------------------------------------------------ |:--------- |
+	| LCHIJA | minecraft    | 1.12.2       | minecraft.jar                                                      | None      |
+	| LCHIJA | mcp          | 9.42         | minecraft.jar                                                      | None      |
+	| LCHIJA | FML          | 8.0.99.99    | forge-1.12.2-14.23.5.2860_mapped_snapshot_20171003-1.12-recomp.jar | None      |
+	| LCHIJA | forge        | 14.23.5.2860 | forge-1.12.2-14.23.5.2860_mapped_snapshot_20171003-1.12-recomp.jar | None      |
+	| LCHIJA | bettercombat | 1.5.6        | main                                                               | None      |
+
+	Loaded coremods (and transformers): 
+	GL info: ~~ERROR~~ RuntimeException: No OpenGL context found in the current thread.
+	Profiler Position: N/A (disabled)
+	Player Count: 0 / 8; []
+	Type: Integrated Server (map_client.txt)
+	Is Modded: Definitely; Client brand changed to 'fml,forge'

@@ -1,0 +1,132 @@
+---- Minecraft Crash Report ----
+// Why is it breaking :(
+
+Time: 4/7/23 12:56 PM
+Description: Ticking entity
+
+java.lang.NullPointerException: Ticking entity
+	at net.minecraft.client.entity.EntityPlayerSP.onLivingUpdate(EntityPlayerSP.java:859)
+	at net.minecraft.entity.EntityLivingBase.onUpdate(EntityLivingBase.java:2179)
+	at net.minecraft.entity.player.EntityPlayer.onUpdate(EntityPlayer.java:234)
+	at net.minecraft.client.entity.EntityPlayerSP.onUpdate(EntityPlayerSP.java:181)
+	at net.minecraft.world.World.updateEntityWithOptionalForce(World.java:1996)
+	at net.minecraft.world.World.updateEntity(World.java:1958)
+	at net.minecraft.world.World.updateEntities(World.java:1762)
+	at net.minecraft.client.Minecraft.runTick(Minecraft.java:1847)
+	at net.minecraft.client.Minecraft.runGameLoop(Minecraft.java:1098)
+	at net.minecraft.client.Minecraft.run(Minecraft.java:398)
+	at net.minecraft.client.main.Main.main(Main.java:118)
+	at sun.reflect.NativeMethodAccessorImpl.invoke0(Native Method)
+	at sun.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:62)
+	at sun.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43)
+	at java.lang.reflect.Method.invoke(Method.java:498)
+	at net.minecraft.launchwrapper.Launch.launch(Launch.java:135)
+	at net.minecraft.launchwrapper.Launch.main(Launch.java:28)
+	at sun.reflect.NativeMethodAccessorImpl.invoke0(Native Method)
+	at sun.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:62)
+	at sun.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43)
+	at java.lang.reflect.Method.invoke(Method.java:498)
+	at net.minecraftforge.legacydev.Main.start(Main.java:86)
+	at net.minecraftforge.legacydev.MainClient.main(MainClient.java:29)
+
+
+A detailed walkthrough of the error, its code path and all known details is as follows:
+---------------------------------------------------------------------------------------
+
+-- Head --
+Thread: Client thread
+Stacktrace:
+	at net.minecraft.client.entity.EntityPlayerSP.onLivingUpdate(EntityPlayerSP.java:859)
+	at net.minecraft.entity.EntityLivingBase.onUpdate(EntityLivingBase.java:2179)
+	at net.minecraft.entity.player.EntityPlayer.onUpdate(EntityPlayer.java:234)
+	at net.minecraft.client.entity.EntityPlayerSP.onUpdate(EntityPlayerSP.java:181)
+	at net.minecraft.world.World.updateEntityWithOptionalForce(World.java:1996)
+	at net.minecraft.world.World.updateEntity(World.java:1958)
+
+-- Entity being ticked --
+Details:
+	Entity Type: null (net.minecraft.client.entity.EntityPlayerSP)
+	Entity ID: 3341
+	Entity Name: Player572
+	Entity's Exact location: 234.01, 94.00, 509.37
+	Entity's Block location: World: (234,94,509), Chunk: (at 10,5,13 in 14,31; contains blocks 224,0,496 to 239,255,511), Region: (0,0; contains chunks 0,0 to 31,31, blocks 0,0,0 to 511,255,511)
+	Entity's Momentum: 0.00, 0.00, 0.00
+	Entity's Passengers: []
+	Entity's Vehicle: ~~ERROR~~ NullPointerException: null
+Stacktrace:
+	at net.minecraft.world.World.updateEntities(World.java:1762)
+
+-- Affected level --
+Details:
+	Level name: MpServer
+	All players: 1 total; [EntityPlayerSP['Player572'/3341, l='MpServer', x=234.01, y=94.00, z=509.37]]
+	Chunk stats: MultiplayerChunkCache: 595, 595
+	Level seed: 0
+	Level generator: ID 01 - flat, ver 0. Features enabled: false
+	Level generator options: 
+	Level spawn location: World: (221,4,577), Chunk: (at 13,0,1 in 13,36; contains blocks 208,0,576 to 223,255,591), Region: (0,1; contains chunks 0,32 to 31,63, blocks 0,0,512 to 511,255,1023)
+	Level time: 110615 game time, 5759 day time
+	Level dimension: 0
+	Level storage version: 0x00000 - Unknown?
+	Level weather: Rain time: 0 (now: false), thunder time: 0 (now: false)
+	Level game mode: Game mode: creative (ID 1). Hardcore: false. Cheats: false
+	Forced entities: 18 total; [EntityCow['Cow'/3170, l='MpServer', x=290.56, y=94.00, z=533.80], EntityCow['Cow'/3171, l='MpServer', x=300.21, y=94.00, z=565.32], EntitySheep['Sheep'/3140, l='MpServer', x=188.83, y=94.00, z=490.24], EntitySheep['Sheep'/3141, l='MpServer', x=186.65, y=94.00, z=480.22], EntitySheep['Sheep'/3142, l='MpServer', x=185.27, y=94.00, z=512.16], EntityHorse['Horse'/3145, l='MpServer', x=195.14, y=94.00, z=533.86], EntityItem['item.item.sulphur'/3150, l='MpServer', x=232.07, y=94.00, z=509.27], EntityChicken['Chicken'/3153, l='MpServer', x=242.77, y=94.00, z=529.18], EntitySheep['Sheep'/3154, l='MpServer', x=249.32, y=94.00, z=550.77], EntityItem['item.item.arrow'/3156, l='MpServer', x=266.82, y=94.00, z=477.21], EntityItem['item.item.rottenFlesh'/3157, l='MpServer', x=263.95, y=94.00, z=480.82], EntityItem['item.item.arrow'/3158, l='MpServer', x=256.66, y=94.00, z=485.22], EntityItem['item.item.bone'/3159, l='MpServer', x=257.85, y=94.00, z=483.86], EntityItem['item.item.egg'/3160, l='MpServer', x=262.07, y=94.00, z=511.98], EntityCow['Cow'/3161, l='MpServer', x=260.91, y=94.00, z=569.09], EntityCow['Cow'/3163, l='MpServer', x=286.85, y=94.00, z=559.38], EntityItem['item.item.arrow'/3164, l='MpServer', x=285.05, y=94.00, z=563.17], EntityItem['item.item.bone'/3165, l='MpServer', x=285.66, y=94.00, z=563.31]]
+	Retry entities: 0 total; []
+	Server brand: fml,forge
+	Server type: Integrated singleplayer server
+Stacktrace:
+	at net.minecraft.client.multiplayer.WorldClient.addWorldInfoToCrashReport(WorldClient.java:420)
+	at net.minecraft.client.Minecraft.addGraphicsAndWorldToCrashReport(Minecraft.java:2741)
+	at net.minecraft.client.Minecraft.run(Minecraft.java:419)
+	at net.minecraft.client.main.Main.main(Main.java:118)
+	at sun.reflect.NativeMethodAccessorImpl.invoke0(Native Method)
+	at sun.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:62)
+	at sun.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43)
+	at java.lang.reflect.Method.invoke(Method.java:498)
+	at net.minecraft.launchwrapper.Launch.launch(Launch.java:135)
+	at net.minecraft.launchwrapper.Launch.main(Launch.java:28)
+	at sun.reflect.NativeMethodAccessorImpl.invoke0(Native Method)
+	at sun.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:62)
+	at sun.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43)
+	at java.lang.reflect.Method.invoke(Method.java:498)
+	at net.minecraftforge.legacydev.Main.start(Main.java:86)
+	at net.minecraftforge.legacydev.MainClient.main(MainClient.java:29)
+
+-- System Details --
+Details:
+	Minecraft Version: 1.12.2
+	Operating System: Mac OS X (x86_64) version 12.5.1
+	Java Version: 1.8.0_351, Oracle Corporation
+	Java VM Version: Java HotSpot(TM) 64-Bit Server VM (mixed mode), Oracle Corporation
+	Memory: 791114448 bytes (754 MB) / 1308622848 bytes (1248 MB) up to 3817865216 bytes (3641 MB)
+	JVM Flags: 0 total; 
+	IntCache: cache: 0, tcache: 0, allocated: 0, tallocated: 0
+	FML: MCP 9.42 Powered by Forge 14.23.5.2860 5 mods loaded, 5 mods active
+	States: 'U' = Unloaded 'L' = Loaded 'C' = Constructed 'H' = Pre-initialized 'I' = Initialized 'J' = Post-initialized 'A' = Available 'D' = Disabled 'E' = Errored
+
+	| State  | ID           | Version      | Source                                                             | Signature |
+	|:------ |:------------ |:------------ |:------------------------------------------------------------------ |:--------- |
+	| LCHIJA | minecraft    | 1.12.2       | minecraft.jar                                                      | None      |
+	| LCHIJA | mcp          | 9.42         | minecraft.jar                                                      | None      |
+	| LCHIJA | FML          | 8.0.99.99    | forge-1.12.2-14.23.5.2860_mapped_snapshot_20171003-1.12-recomp.jar | None      |
+	| LCHIJA | forge        | 14.23.5.2860 | forge-1.12.2-14.23.5.2860_mapped_snapshot_20171003-1.12-recomp.jar | None      |
+	| LCHIJA | bettercombat | 1.5.6        | main                                                               | None      |
+
+	Loaded coremods (and transformers): 
+	GL info: ' Vendor: 'Intel Inc.' Version: '2.1 INTEL-18.8.4' Renderer: 'Intel Iris Pro OpenGL Engine'
+	Launched Version: 1.12.2-latest
+	LWJGL: 2.9.2
+	OpenGL: Intel Iris Pro OpenGL Engine GL version 2.1 INTEL-18.8.4, Intel Inc.
+	GL Caps: Using GL 1.3 multitexturing.
+Using GL 1.3 texture combiners.
+Using framebuffer objects because ARB_framebuffer_object is supported and separate blending is supported.
+Shaders are available because OpenGL 2.1 is supported.
+VBOs are available because OpenGL 1.5 is supported.
+
+	Using VBOs: Yes
+	Is Modded: Definitely; Client brand changed to 'fml,forge'
+	Type: Client (map_client.txt)
+	Resource Packs: 
+	Current Language: English (US)
+	Profiler Position: N/A (disabled)
+	CPU: 8x Intel(R) Core(TM) i7-4770HQ CPU @ 2.20GHz
