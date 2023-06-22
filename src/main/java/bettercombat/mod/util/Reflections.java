@@ -80,7 +80,7 @@ public class Reflections
 		}
 		catch (Exception ex)
 		{
-			throw new RuntimeException(ex);
+			throw new RuntimeException("unpressKey exception: " + ex);
 		}
 	}
 	
@@ -100,7 +100,7 @@ public class Reflections
 		}
 		catch (NoSuchMethodException ex)
 		{
-			throw new RuntimeException(ex);
+			throw new RuntimeException("canBlockDamageSource exception: " + ex);
 		}
 		catch (IllegalAccessException | IllegalArgumentException | InvocationTargetException ex)
 		{
@@ -127,7 +127,7 @@ public class Reflections
 		}
 		catch (NoSuchMethodException ex)
 		{
-			throw new RuntimeException(ex);
+			throw new RuntimeException("damageShield exception: " + ex);
 		}
 		catch (IllegalAccessException | IllegalArgumentException | InvocationTargetException ex)
 		{
@@ -153,7 +153,7 @@ public class Reflections
 		}
 		catch (NoSuchMethodException ex)
 		{
-			throw new RuntimeException(ex);
+			throw new RuntimeException("damageEntity exception: " + ex);
 		}
 		catch (IllegalAccessException | IllegalArgumentException | InvocationTargetException ex)
 		{
@@ -178,7 +178,7 @@ public class Reflections
 		}
 		catch (Exception ex)
 		{
-			throw new RuntimeException(ex);
+			throw new RuntimeException("setTicksSinceLastSwing exception: " + ex);
 		}
 
 	}
@@ -217,7 +217,7 @@ public class Reflections
 		}
 		catch (NoSuchMethodException ex)
 		{
-			throw new RuntimeException(ex);
+			throw new RuntimeException("markVelocityChanged exception: " + ex);
 		}
 		catch (IllegalAccessException | IllegalArgumentException | InvocationTargetException ex)
 		{
@@ -243,7 +243,7 @@ public class Reflections
 		}
 		catch (NoSuchMethodException ex)
 		{
-			throw new RuntimeException(ex);
+			throw new RuntimeException("getDeathSound exception: " + ex);
 		}
 		catch (IllegalAccessException | IllegalArgumentException | InvocationTargetException ex)
 		{
@@ -270,7 +270,7 @@ public class Reflections
 		}
 		catch (NoSuchMethodException ex)
 		{
-			throw new RuntimeException(ex);
+			throw new RuntimeException("getSoundVolume exception: " + ex);
 		}
 		catch (IllegalAccessException | IllegalArgumentException | InvocationTargetException ex)
 		{
@@ -297,7 +297,7 @@ public class Reflections
 		}
 		catch (NoSuchMethodException ex)
 		{
-			throw new RuntimeException(ex);
+			throw new RuntimeException("getSoundPitch exception: " + ex);
 		}
 		catch (IllegalAccessException | IllegalArgumentException | InvocationTargetException ex)
 		{
@@ -324,7 +324,7 @@ public class Reflections
 		}
 		catch (NoSuchMethodException ex)
 		{
-			throw new RuntimeException(ex);
+			throw new RuntimeException("playHurtSound exception: " + ex);
 		}
 		catch (IllegalAccessException | IllegalArgumentException | InvocationTargetException ex)
 		{

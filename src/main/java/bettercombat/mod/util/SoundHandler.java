@@ -6,6 +6,7 @@ import bettercombat.mod.client.BetterCombatHand;
 import bettercombat.mod.util.ConfigurationHandler.Animation;
 import bettercombat.mod.util.ConfigurationHandler.SoundType;
 import bettercombat.mod.util.ConfigurationHandler.WeaponProperty;
+import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityLivingBase;
 import net.minecraft.init.SoundEvents;
 import net.minecraft.item.ItemShield;
@@ -2010,12 +2011,12 @@ public class SoundHandler
 		playSound(elb, IMPACT_STAB_0, volume, pitch);	
 	}
 	
-	public static void playSound( EntityLivingBase elb, SoundEvent soundEvent, float volume, float pitch )
+	public static void playSound( Entity player, SoundEvent soundEvent, float volume, float pitch )
 	{
 		try
 		{
-			elb.playSound(soundEvent, volume, pitch);
-			elb.world.playSound(null, elb.posX, elb.posY, elb.posZ, soundEvent, elb.getSoundCategory(), volume, pitch);
+			player.playSound(soundEvent, volume, pitch);
+			player.world.playSound(null, player.posX, player.posY, player.posZ, soundEvent, player.getSoundCategory(), volume, pitch);
 		}
 		catch ( Exception e )
 		{

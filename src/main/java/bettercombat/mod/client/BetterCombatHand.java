@@ -234,7 +234,7 @@ public class BetterCombatHand
 	{
 		this.mining = false;
 
-		this.swingTimer = MathHelper.clamp(i, ConfigurationHandler.minimumAttackSpeedTicks, 15)-2;
+		this.swingTimer = MathHelper.clamp(i, ConfigurationHandler.minimumAttackSpeedTicks, 14)-2;
 		this.swingTimerCap = this.swingTimer;
 		this.swingTimerIncrement = 1.0F/this.swingTimer;
 				
@@ -246,7 +246,7 @@ public class BetterCombatHand
 	{
 		this.mining = false;
 
-		this.swingTimer = MathHelper.clamp(i, ConfigurationHandler.minimumAttackSpeedTicks, 14)-1;
+		this.swingTimer = MathHelper.clamp(i, ConfigurationHandler.minimumAttackSpeedTicks, 13)-1;
 		this.swingTimerCap = this.swingTimer;
 		this.swingTimerIncrement = 1.0F/this.swingTimer;
 				
@@ -258,7 +258,7 @@ public class BetterCombatHand
 	{
 		this.mining = false;
 		
-		this.swingTimer = MathHelper.clamp(i, ConfigurationHandler.minimumAttackSpeedTicks, 15)-2;
+		this.swingTimer = MathHelper.clamp(i, ConfigurationHandler.minimumAttackSpeedTicks, 14)-2;
 		this.swingTimerCap = this.swingTimer;
 		this.swingTimerIncrement = 1.0F/this.swingTimer;
 				
@@ -270,7 +270,7 @@ public class BetterCombatHand
 	{
 		this.mining = false;
 		
-		this.swingTimer = MathHelper.clamp(i, ConfigurationHandler.minimumAttackSpeedTicks, 15)-2;
+		this.swingTimer = MathHelper.clamp(i, ConfigurationHandler.minimumAttackSpeedTicks, 14)-2;
 		this.swingTimerCap = this.swingTimer;
 		this.swingTimerIncrement = 1.0F/this.swingTimer;
 				

@@ -7,8 +7,14 @@ description.precision=Increases critical strike chance
 bettercombat.effect.brutality=Brutality
 description.brutality=Increases critical strike damage
 
-enchantment.gourmand=Gourmand
-enchantment.gourmand.name=Gourmand
+bettercombat.effect.bleeding=Bleeding
+description.bleeding=Deals damage overtime
+
+death.attack.bleeding=%1$s bled to death
+death.attack.bleeding.player=%1$s was exsanguinated by %2$s
+
+enchantment.gourmand=Curse of Gluttony
+enchantment.gourmand.name=Curse of Gluttony
 enchantment.gourmand.desc=Damage taken is instead dealt to your hunger and saturation.
 
 enchantment.lightning=§bLightning§r
@@ -50,6 +56,7 @@ bettercombat.info.bash.knockback.text= Bash Knockback
 bettercombat.info.bash.cooldown.text= Bash Cooldown 
 
 bettercombat.info.potionEffect.chance.text= Chance on hit:
+bettercombat.info.potionEffect.crit.text=On critical strike:
 bettercombat.info.potionEffect.positive.text=§a
 bettercombat.info.potionEffect.negative.text=§c
 bettercombat.info.potionEffect.for.text= for 

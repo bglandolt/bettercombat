@@ -1,10 +1,16 @@
 package bettercombat.mod.network;
 
 import io.netty.buffer.ByteBuf;
+import net.minecraft.block.Block;
+import net.minecraft.block.BlockAir;
+import net.minecraft.block.BlockLog;
 import net.minecraft.entity.player.EntityPlayerMP;
+import net.minecraft.util.EnumActionResult;
 import net.minecraft.util.EnumFacing;
 import net.minecraft.util.EnumHand;
+import net.minecraft.util.EnumParticleTypes;
 import net.minecraft.util.math.BlockPos;
+import net.minecraft.world.WorldServer;
 import net.minecraftforge.fml.common.FMLCommonHandler;
 import net.minecraftforge.fml.common.network.ByteBufUtils;
 import net.minecraftforge.fml.common.network.simpleimpl.IMessage;
@@ -110,10 +116,36 @@ public class PacketOnItemUse implements IMessage
 		private static void handle( PacketOnItemUse message, MessageContext ctx )
 		{
 			EntityPlayerMP player = ctx.getServerHandler().player;
-			player.getHeldItemMainhand().getItem().onItemUse(player, player.world, new BlockPos(message.x,message.y,message.z), EnumHand.MAIN_HAND, EnumFacing.getFront(message.sideHit), 0.0F, 0.0F, 0.0F);
+			BlockPos blockPos = new BlockPos(message.x,message.y,message.z);
+			
+			EnumActionResult result = player.getHeldItemMainhand().getItem().onItemUse(player, player.world, blockPos, EnumHand.MAIN_HAND, EnumFacing.getFront(message.sideHit), 0.0F, 0.0F, 0.0F);
 		
-//            player.getEntityWorld().setBlockState(new BlockPos(message.x,message.y,message.z), Blocks.GRASS_PATH.getDefaultState(), 11);
-
+			if ( result.equals(EnumActionResult.SUCCESS) )
+			{
+				Block block = player.world.getBlockState(blockPos).getBlock();
+				
+				if ( block == null || block instanceof BlockAir )
+				{
+					return;
+				}
+				
+				if ( block instanceof BlockLog )
+				{
+					if ( player.world instanceof WorldServer )
+			        {
+			            ((WorldServer)player.world).spawnParticle(EnumParticleTypes.BLOCK_DUST, message.x, message.y, message.z, 32, 1.0D, 1.0D, 1.0D, 0.02D, Block.getStateId(block.getDefaultState()));
+			        }
+				}
+				else
+				{
+			        if ( player.world instanceof WorldServer )
+			        {
+			            ((WorldServer)player.world).spawnParticle(EnumParticleTypes.BLOCK_DUST, message.x+0.3D, message.y+1.0D, message.z+0.3D, 16, 0.4D, 0.1D, 0.4D, 0.015D, Block.getStateId(block.getDefaultState()));
+			        }
+				}
+			}
+			
+			// player.getEntityWorld().setBlockState(new BlockPos(message.x,message.y,message.z), Blocks.GRASS_PATH.getDefaultState(), 11);
 			
 //			ItemStack itemstack = player.getHeldItem(hand);
 //

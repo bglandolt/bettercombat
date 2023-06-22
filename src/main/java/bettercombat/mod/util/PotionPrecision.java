@@ -29,7 +29,7 @@ public class PotionPrecision extends Potion
 		GlStateManager.enableBlend();
 		Gui.drawModalRectWithCustomSizedTexture(x + 6, y + 7, 0, 0, 18, 18, 18, 18);
 	}
-
+	
 	@SuppressWarnings( "deprecation" )
 	@Override
 	@SideOnly( Side.CLIENT )

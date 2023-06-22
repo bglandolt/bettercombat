@@ -1,6 +1,7 @@
 package bettercombat.mod.handler;
 
 import java.lang.reflect.Field;
+import java.util.List;
 
 import javax.annotation.Nullable;
 
@@ -8,10 +9,11 @@ import bettercombat.mod.client.ClientProxy;
 import bettercombat.mod.enchantment.BetterCombatEnchantments;
 import bettercombat.mod.enchantment.EnchantmentLightning;
 import bettercombat.mod.enchantment.EnchantmentWebbing;
-import bettercombat.mod.util.BetterCombatAttributes;
 import bettercombat.mod.util.BetterCombatPotions;
 import bettercombat.mod.util.ConfigurationHandler;
 import bettercombat.mod.util.ConfigurationHandler.CustomBow;
+import bettercombat.mod.util.PotionAetherealized;
+import bettercombat.mod.util.Reference;
 import bettercombat.mod.util.SoundHandler;
 import net.minecraft.block.material.Material;
 import net.minecraft.block.state.IBlockState;
@@ -22,8 +24,11 @@ import net.minecraft.entity.EntityCreature;
 import net.minecraft.entity.EntityLivingBase;
 import net.minecraft.entity.SharedMonsterAttributes;
 import net.minecraft.entity.ai.EntityAITasks.EntityAITaskEntry;
+import net.minecraft.entity.ai.attributes.IAttribute;
+import net.minecraft.entity.ai.attributes.RangedAttribute;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.entity.projectile.EntityArrow;
+import net.minecraft.entity.projectile.EntityPotion;
 import net.minecraft.entity.projectile.EntityTippedArrow;
 import net.minecraft.init.MobEffects;
 import net.minecraft.init.PotionTypes;
@@ -31,15 +36,19 @@ import net.minecraft.item.Item;
 import net.minecraft.item.ItemBow;
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NBTTagList;
+import net.minecraft.potion.Potion;
 import net.minecraft.potion.PotionEffect;
 import net.minecraft.potion.PotionType;
+import net.minecraft.potion.PotionUtils;
 import net.minecraft.util.DamageSource;
 import net.minecraft.util.EnumHand;
 import net.minecraft.util.EnumParticleTypes;
+import net.minecraft.util.math.AxisAlignedBB;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Vec3d;
 import net.minecraft.world.World;
 import net.minecraft.world.WorldServer;
+import net.minecraftforge.client.event.EntityViewRenderEvent;
 import net.minecraftforge.common.ForgeHooks;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.event.entity.EntityJoinWorldEvent;
@@ -52,6 +61,7 @@ import net.minecraftforge.event.entity.living.LivingHurtEvent;
 import net.minecraftforge.event.entity.living.LivingKnockBackEvent;
 import net.minecraftforge.event.entity.living.PotionEvent.PotionAddedEvent;
 import net.minecraftforge.event.entity.player.AttackEntityEvent;
+import net.minecraftforge.event.entity.player.PlayerEvent;
 import net.minecraftforge.fml.common.ObfuscationReflectionHelper;
 import net.minecraftforge.fml.common.eventhandler.Cancelable;
 import net.minecraftforge.fml.common.eventhandler.Event.HasResult;
@@ -61,11 +71,14 @@ import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
 
 public class EventHandlers
 {
+	public static final IAttribute CRIT_CHANCE = (new RangedAttribute(null, Reference.MOD_ID + ".critChance", ConfigurationHandler.baseCritPercentChance, 0.0D, 1.0D)).setDescription("Critical strike chance").setShouldWatch(true);
+	public static final IAttribute CRIT_DAMAGE = (new RangedAttribute(null, Reference.MOD_ID + ".critDamage", ConfigurationHandler.baseCritPercentDamage, 0.0D, Double.MAX_VALUE)).setDescription("Critical strike damage").setShouldWatch(true);
+
 	public EventHandlers()
 	{
 
 	}
-
+    
 	@SubscribeEvent(priority = EventPriority.HIGHEST, receiveCanceled = true)
 	public void cancelAttackEntityEvent(AttackEntityEvent event)
 	{
@@ -139,45 +152,48 @@ public class EventHandlers
 			
 			player.getEntityAttribute(SharedMonsterAttributes.ATTACK_DAMAGE).setBaseValue(ConfigurationHandler.baseAttackDamage);
 			player.getEntityAttribute(SharedMonsterAttributes.ATTACK_SPEED).setBaseValue(ConfigurationHandler.baseAttackSpeed);
-
-			try
-			{
-				player.getAttributeMap().registerAttribute(BetterCombatAttributes.CRIT_CHANCE).setBaseValue(ConfigurationHandler.baseCritPercentChance);
-				player.getAttributeMap().registerAttribute(BetterCombatAttributes.CRIT_DAMAGE).setBaseValue(ConfigurationHandler.baseCritPercentDamage);
-			}
-			catch ( Exception e )
-			{
-				
-			}
 			
+			this.registerCritAttributes(player);
+
 			if ( player.world.isRemote )
 			{
 				ClientProxy.EHC_INSTANCE.checkItemstacksChanged(true);
 			}
 		}
-
+	}
+	
+	@SubscribeEvent
+	public void onPlayerClone( PlayerEvent.Clone event )
+	{
+		this.registerCritAttributes(event.getEntityPlayer());
 	}
 
-//	@SubscribeEvent
-//	public static void onEntityConstructing( final EntityEvent.EntityConstructing event )
-//	{
-//		if ( event.getEntity() instanceof EntityPlayer )
-//		{
-//			EntityPlayer player = (EntityPlayer) event.getEntity();
-//			
-//			try
-//			{
-//				player.getAttributeMap().registerAttribute(BetterCombatAttributes.CRIT_CHANCE).setBaseValue(ConfigurationHandler.baseCritPercentChance);
-//				player.getAttributeMap().registerAttribute(BetterCombatAttributes.CRIT_DAMAGE).setBaseValue(ConfigurationHandler.baseCritPercentDamage);
-//			}
-//			catch ( Exception e )
-//			{
-//				
-//			}
-//		}
-//	}
-
-	@SubscribeEvent(priority = EventPriority.LOW, receiveCanceled = true)
+	@SubscribeEvent
+	public void onEntityConstructing( final PlayerEvent.EntityConstructing event )
+	{
+		if ( event.getEntity() instanceof EntityPlayer )
+		{
+			EntityPlayer player = (EntityPlayer) event.getEntity();
+			this.registerCritAttributes(player);
+		}
+	}
+	
+	/* For whatever reason I cannot get this to work correctly on player respawn/ join world/ whatever so
+	 * I am just going to add it to all these events and wrap this bitch in a try catch and say fuck it */
+	public void registerCritAttributes( EntityPlayer player )
+	{
+		try
+		{
+			player.getAttributeMap().registerAttribute(CRIT_CHANCE);
+		  	player.getAttributeMap().registerAttribute(CRIT_DAMAGE);
+		}
+		catch ( Exception e )
+		{
+			
+		}
+	}
+	
+	@SubscribeEvent(priority = EventPriority.LOW, receiveCanceled = true) // EntityLivingBase
 	public void knockBack( LivingKnockBackEvent event )
 	{
 		if ( ConfigurationHandler.betterKnockback )
@@ -269,8 +285,36 @@ public class EventHandlers
 					}
 				}
 			}
+
+//			if ( ConfigurationHandler.stackableBleeds && event.getPotionEffect().getPotion().equals(BetterCombatPotions.BLEEDING) && creature.isPotionActive(BetterCombatPotions.BLEEDING) )
+//			{
+//				// event.getPotionEffect().getPotion().equals(BetterCombatPotions.BLEEDING)
+//				// creature.isPotionActive(BetterCombatPotions.BLEEDING
+//
+//				PotionEffect p0 = event.getPotionEffect();
+//				PotionEffect p1 = creature.getActivePotionEffect(BetterCombatPotions.BLEEDING);
+//				
+//				p0.combine(p1);
+//				
+//		        if ( p0.getAmplifier() > p1.getAmplifier() )
+//		        {
+//		            p0.amplifier = p1.amplifier;
+//		        }
+//		        else if (other.amplifier == this.amplifier && this.duration < other.duration)
+//		        {
+//		            this.duration = other.duration;
+//		        }
+//		        else if (!other.isAmbient && this.isAmbient)
+//		        {
+//		            this.isAmbient = other.isAmbient;
+//		        }
+//
+//		        this.showParticles = other.showParticles;
+//		    }
 		}
 	}
+	
+	
 
 // ROTM
 //	@SubscribeEvent( priority = EventPriority.LOW )
@@ -329,7 +373,7 @@ public class EventHandlers
 //	}
 	
 	/* HEAL EVENT */
-	@SubscribeEvent(priority=EventPriority.HIGHEST, receiveCanceled = true)
+	@SubscribeEvent(priority=EventPriority.HIGH, receiveCanceled=true)
 	public void onHeal(LivingHealEvent event)
 	{
 		if ( event.getEntityLiving() != null )
@@ -340,7 +384,7 @@ public class EventHandlers
 		        
 		        if ( level > 0 )
 		        {
-		        	event.setAmount(event.getAmount()*(1+level*ConfigurationHandler.revitalizePercentPerLevel));
+		        	event.setAmount(event.getAmount()*(1.0F+ConfigurationHandler.revitalizePercentPerLevel*level));
 		        }
 			}
 		}
@@ -378,7 +422,7 @@ public class EventHandlers
 				event.getEntityLiving().hurtResistantTime = 0;
 				event.getEntityLiving().attackEntityFrom(DamageSource.causeIndirectMagicDamage(event.getEntityLiving().getRevengeTarget(),event.getEntityLiving().getRevengeTarget()),magicDamage);
 				event.getEntityLiving().hurtResistantTime = 0;
-				playAetherealizedEffect(event.getEntityLiving(), potionEffect.getAmplifier());
+				PotionAetherealized.playAetherealizedEffect(event.getEntityLiving(), potionEffect.getAmplifier());
 			}
 		}
 
@@ -395,7 +439,7 @@ public class EventHandlers
 
 			  	if ( level > 0 )
 			  	{
-				  	event.setAmount(event.getAmount()*(1+level*ConfigurationHandler.sorceryPercentPerLevel));
+				  	event.setAmount(event.getAmount()*(1.0F+ConfigurationHandler.sorceryPercentPerLevel*level));
 			  	}
 		  	}
 		}
@@ -480,7 +524,7 @@ public class EventHandlers
 	}
 	
 	@SubscribeEvent(priority = EventPriority.LOWEST, receiveCanceled = true)
-	public void livingAttackEvent(LivingAttackEvent event)
+	public void livingAttackEvent( LivingAttackEvent event )
 	{
 		if ( event.getEntityLiving() == null || event.getSource() == null )
 		{
@@ -488,7 +532,14 @@ public class EventHandlers
 		}
 		
 		if ( event.getAmount() > 0.0F && this.canBlockDamageSource(event.getSource(), event.getEntityLiving()) )
-        {			
+        {
+			// TODO parrying
+//			if ( event.getEntityLiving() instanceof EntityPlayer )
+//			{
+//				EntityPlayer player = (EntityPlayer)event.getEntityLiving();
+//				player.getActiveHand()
+//			}
+			
 			float f = event.getEntityLiving().getMaxHealth() * 0.25F;
 			
 			if ( f > 0.0F && event.getAmount() / f > event.getEntityLiving().world.rand.nextFloat() )
@@ -971,8 +1022,7 @@ public class EventHandlers
 	public void arrowImpact(ProjectileImpactEvent event)
 	{
 		/* NO FIRE WHEN BLOCKING PROJECTILES */
-		if (ConfigurationHandler.blockFireProjectiles && event.getEntity() != null && event.getEntity().isBurning()
-		&& event.getRayTraceResult().entityHit instanceof EntityLivingBase)
+		if (ConfigurationHandler.blockFireProjectiles && event.getEntity() != null && event.getEntity().isBurning() && event.getRayTraceResult().entityHit instanceof EntityLivingBase)
 		{
 			EntityLivingBase victim = (EntityLivingBase) (event.getRayTraceResult().entityHit);
 
@@ -1038,7 +1088,7 @@ public class EventHandlers
 						{
 							// Integer i = Integer.valueOf(t.substring(8));
 							arrow.setKnockbackStrength(0);
-							EnchantmentWebbing.doWebbing(arrow.shootingEntity, victim);
+							EnchantmentWebbing.doWebbing(arrow, arrow.shootingEntity, victim);
 							arrow.setDead();
 						}
 						catch (Exception error)
@@ -1293,14 +1343,13 @@ public class EventHandlers
 						}
 						else
 						{
-							if (arrow.getIsCritical())
-							{
-								player.world.playSound(null, player.posX, player.posY, player.posZ,
-								SoundHandler.IMPACT_RANGED_0, player.getSoundCategory(), 0.5F * ConfigurationHandler.bowThudSoundVolume, 0.9F + player.world.rand.nextFloat() * 0.2F);
-							}
-
-							player.world.playSound(null, player.posX, player.posY, player.posZ,
-							SoundHandler.IMPACT_RANGED_0, player.getSoundCategory(), 0.5F * ConfigurationHandler.bowStrikeSoundVolume, 0.9F + player.world.rand.nextFloat() * 0.2F);
+//							if (arrow.getIsCritical())
+//							{
+//								player.world.playSound(null, player.posX, player.posY, player.posZ,
+//								SoundHandler.IMPACT_RANGED_0, player.getSoundCategory(), 0.5F * ConfigurationHandler.bowThudSoundVolume, 0.9F + player.world.rand.nextFloat() * 0.2F);
+//							}
+							
+							if ( !arrow.world.isRemote ) SoundHandler.playSound(player, SoundHandler.IMPACT_RANGED_0, 0.5F * ConfigurationHandler.bowStrikeSoundVolume, 0.9F + player.world.rand.nextFloat() * 0.2F);
 						}
 
 					}
@@ -1316,8 +1365,7 @@ public class EventHandlers
 					{
 						try
 						{
-							Integer i = Integer.valueOf(t.substring(10)); // Integer i =
-																			// Integer.valueOf(t.substring(t.indexOf('~')+1));
+							Integer i = Integer.valueOf(t.substring(10));
 							EnchantmentLightning.doLightning(arrow.shootingEntity, arrow, i);
 							arrow.setDead();
 						}
@@ -1328,7 +1376,81 @@ public class EventHandlers
 				}
 			}
 		}
+		else if ( event.getEntity() instanceof EntityPotion )
+		{
+			EntityPotion entityPotion = (EntityPotion) event.getEntity();
+
+			BlockPos pos = event.getRayTraceResult().getBlockPos();
+
+			if ( pos == null )
+			{
+				pos = event.getRayTraceResult().entityHit.getPosition();
+			}
+			
+			if ( pos == null )
+			{
+				return;
+			}
+
+			if ( ConfigurationHandler.extraSplashPotionWidth > 0.0D || ConfigurationHandler.extraSplashPotionHeight > 0.0D )
+			{
+				AxisAlignedBB axisalignedbb0 = entityPotion.getEntityBoundingBox().grow(4.0D, 2.0D, 4.0D);
+				AxisAlignedBB axisalignedbb1 = entityPotion.getEntityBoundingBox().grow(4.0D+ConfigurationHandler.extraSplashPotionWidth, 2.0D+ConfigurationHandler.extraSplashPotionHeight, 4.0D+ConfigurationHandler.extraSplashPotionWidth);
+				
+		        List<EntityLivingBase> list0 = entityPotion.world.<EntityLivingBase>getEntitiesWithinAABB(EntityLivingBase.class, axisalignedbb0);
+		        List<EntityLivingBase> list1 = entityPotion.world.<EntityLivingBase>getEntitiesWithinAABB(EntityLivingBase.class, axisalignedbb1);
+	
+				list1.removeAll(list0);
+	
+		        if ( !list1.isEmpty() )
+		        {
+		            for ( EntityLivingBase entitylivingbase : list1 )
+		            {
+		                if ( entitylivingbase.canBeHitWithPotion() )
+		                {
+		                    double d0 = entityPotion.getDistanceSq(entitylivingbase);
+		                    double r = 4.0D + ConfigurationHandler.extraSplashPotionWidth + ConfigurationHandler.extraSplashPotionHeight; r *= r;
+		                    
+		                    if ( d0 < r )
+		                    {
+		                        double d1 = 1.0D - Math.sqrt(d0) / 4.0D;
+	
+		                        if ( entitylivingbase == event.getRayTraceResult().entityHit )
+		                        {
+		                            d1 = 1.0D;
+		                        }
+	
+		                        for ( PotionEffect potioneffect : PotionUtils.getEffectsFromStack(entityPotion.getPotion()) )
+		                        {
+		                            Potion potion = potioneffect.getPotion();
+	
+		                            if ( potion.isInstant() )
+		                            {
+		                                potion.affectEntity(entityPotion, entityPotion.getThrower(), entitylivingbase, potioneffect.getAmplifier(), d1);
+		                            }
+		                            else
+		                            {
+		                                int i = (int)(d1 * (double)potioneffect.getDuration() + 0.5D);
+	
+		                                if (i > 20)
+		                                {
+		                                    entitylivingbase.addPotionEffect(new PotionEffect(potion, i, potioneffect.getAmplifier(), potioneffect.getIsAmbient(), potioneffect.doesShowParticles()));
+		                                }
+		                            }
+		                        }
+		                    }
+		                }
+		            }
+		        }
+			}
+		}
 	}
+	
+//	private boolean canPotionHit(EntityLivingBase elb, EntityPotion potion)
+//	{
+//        return ( elb.world.rayTraceBlocks(new Vec3d(elb.posX, elb.posY, elb.posZ), new Vec3d(potion.posX, potion.posY+potion.getEyeHeight(), potion.posZ), false, true, false) == null ||
+//        		 elb.world.rayTraceBlocks(new Vec3d(elb.posX, elb.posY+elb.height, elb.posZ), new Vec3d(potion.posX, potion.posY+potion.getEyeHeight(), potion.posZ), false, true, false) == null );
+//	}
 
 	public void playDragonEffect(Entity e)
 	{
@@ -1411,47 +1533,5 @@ public class EventHandlers
 				e.posZ + (double) (e.world.rand.nextFloat() * e.width * 2.0F) - (double) e.width, d0, d1, d2);
 			}
 		}
-	}
-
-	public static void playAetherealizedEffect(Entity e, int amount)
-	{
-		if (ConfigurationHandler.aetherealizedDamageParticles && e.world instanceof WorldServer)
-		{
-			double h = e.height / 2.0;
-
-			if (amount > 1)
-			{
-				((WorldServer) e.world).spawnParticle(EnumParticleTypes.CRIT_MAGIC, e.posX, e.posY + h, e.posZ + 1.5,
-				amount, 0.0D, 0.0D, 0.01D, 0.0D);
-				((WorldServer) e.world).spawnParticle(EnumParticleTypes.CRIT_MAGIC, e.posX + 0.75, e.posY + h,
-				e.posZ + 1.28, amount, 0.0D, 0.0D, 0.01D, 0.0D);
-				((WorldServer) e.world).spawnParticle(EnumParticleTypes.CRIT_MAGIC, e.posX + 1.28, e.posY + h,
-				e.posZ + 0.75, amount, 0.0D, 0.0D, 0.01D, 0.0D);
-				((WorldServer) e.world).spawnParticle(EnumParticleTypes.ENCHANTMENT_TABLE, e.posX + 1.4, e.posY + h,
-				e.posZ + 1.4, amount, 0.0D, 0.0D, 0.0D, 0.0D);
-				((WorldServer) e.world).spawnParticle(EnumParticleTypes.CRIT_MAGIC, e.posX + 1.5, e.posY + h, e.posZ,
-				amount, 0.0D, 0.0D, 0.01D, 0.0D);
-				((WorldServer) e.world).spawnParticle(EnumParticleTypes.CRIT_MAGIC, e.posX + 1.28, e.posY + h,
-				e.posZ - 0.75, amount, 0.0D, 0.0D, 0.01D, 0.0D);
-				((WorldServer) e.world).spawnParticle(EnumParticleTypes.CRIT_MAGIC, e.posX + 0.75, e.posY + h,
-				e.posZ - 1.28, amount, 0.0D, 0.0D, 0.01D, 0.0D);
-				((WorldServer) e.world).spawnParticle(EnumParticleTypes.ENCHANTMENT_TABLE, e.posX + 1.4, e.posY + h,
-				e.posZ - 1.4, amount, 0.0D, 0.0D, 0.0D, 0.0D);
-				((WorldServer) e.world).spawnParticle(EnumParticleTypes.CRIT_MAGIC, e.posX, e.posY + h, e.posZ - 1.5,
-				amount, 0.0D, 0.0D, 0.01D, 0.0D);
-				((WorldServer) e.world).spawnParticle(EnumParticleTypes.CRIT_MAGIC, e.posX - 0.75, e.posY + h,
-				e.posZ - 1.28, amount, 0.0D, 0.0D, 0.01D, 0.0D);
-				((WorldServer) e.world).spawnParticle(EnumParticleTypes.CRIT_MAGIC, e.posX - 1.28, e.posY + h,
-				e.posZ - 0.75, amount, 0.0D, 0.0D, 0.01D, 0.0D);
-				((WorldServer) e.world).spawnParticle(EnumParticleTypes.CRIT_MAGIC, e.posX - 1.5, e.posY + h, e.posZ,
-				amount, 0.0D, 0.0D, 0.01D, 0.0D);
-				((WorldServer) e.world).spawnParticle(EnumParticleTypes.CRIT_MAGIC, e.posX - 1.28, e.posY + h,
-				e.posZ + 0.75, amount, 0.0D, 0.0D, 0.01D, 0.0D);
-				((WorldServer) e.world).spawnParticle(EnumParticleTypes.CRIT_MAGIC, e.posX - 0.75, e.posY + h,
-				e.posZ + 1.28, amount, 0.0D, 0.0D, 0.01D, 0.0D);
-			}
-
-		}
-
 	}
 }

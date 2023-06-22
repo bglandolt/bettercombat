@@ -12,6 +12,7 @@ public class BetterCombatPotions
 	public static Potion AETHEREALIZED;
 	public static Potion PRECISION;
 	public static Potion BRUTALITY;
+	public static Potion BLEEDING;
 
 	@SubscribeEvent
 	public static void registerPotions( RegistryEvent.Register<Potion> event )
@@ -20,5 +21,6 @@ public class BetterCombatPotions
 		r.register(AETHEREALIZED = new PotionAetherealized());
 		r.register(PRECISION = new PotionPrecision());
 		r.register(BRUTALITY = new PotionBrutality());
+		r.register(BLEEDING = new PotionBleeding());
 	}
 }

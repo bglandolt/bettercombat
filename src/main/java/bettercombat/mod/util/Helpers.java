@@ -18,7 +18,6 @@ import bettercombat.mod.util.ConfigurationHandler.CustomSword;
 import bettercombat.mod.util.ConfigurationHandler.CustomWeapon;
 import bettercombat.mod.util.ConfigurationHandler.CustomWeaponPotionEffect;
 import bettercombat.mod.util.ConfigurationHandler.SoundType;
-import net.minecraft.client.entity.EntityPlayerSP;
 import net.minecraft.enchantment.Enchantment;
 import net.minecraft.enchantment.EnchantmentHelper;
 import net.minecraft.entity.Entity;
@@ -217,7 +216,7 @@ public final class Helpers
 		int sweepAmount 			= 0;
 		
 		double critChance 			= ConfigurationHandler.baseCritPercentChance;
-		double critDamage			= player.getEntityAttribute(BetterCombatAttributes.CRIT_DAMAGE).getAttributeValue();
+		double critDamage			= player.getEntityAttribute(EventHandlers.CRIT_DAMAGE).getAttributeValue();
 		double additionalReach		= 0.0D;
 		double enchantmentModifier 	= 0.0D;
 		double armor 				= 0.0D;
@@ -297,7 +296,7 @@ public final class Helpers
 			configWeapon = false;
 		}
 		
-		critChance += player.getEntityAttribute(BetterCombatAttributes.CRIT_CHANCE).getAttributeValue() - ConfigurationHandler.baseCritPercentChance;
+		critChance += player.getEntityAttribute(EventHandlers.CRIT_CHANCE).getAttributeValue() - ConfigurationHandler.baseCritPercentChance;
 		
 		float tgtHealth = 0.0F;
 		float tgtMaxHealth = 0.0F;
@@ -332,29 +331,29 @@ public final class Helpers
 			{
 				case "bettercombat:precision":
 				{
-					critChance += (1 + effect.getAmplifier()) * ConfigurationHandler.critChancePotionAmplifier;
+					critChance += (1.0D + effect.getAmplifier()) * ConfigurationHandler.critChancePotionAmplifier;
 					break;
 				}
 				case "bettercombat:brutality":
 				{
-					critDamage += (1 + effect.getAmplifier()) * ConfigurationHandler.critDamagePotionAmplifier;
+					critDamage += (1.0D + effect.getAmplifier()) * ConfigurationHandler.critDamagePotionAmplifier;
 					break;
 				}
 				case "wards:effect_knockback":
 				{
-					knockbackMod += (1 + effect.getAmplifier());
+					knockbackMod += (1.0D + effect.getAmplifier());
 					break;
 				}
 				case "wards:effect_sharpness":
 				{
-					enchantmentModifier += 0.5F + (1 + effect.getAmplifier()) * 0.5F;
+					enchantmentModifier += 0.5D + (1 + effect.getAmplifier()) * 0.5D;
 					break;
 				}
 				case "wards:effect_smite":
 				{
 					if ( victim.getCreatureAttribute() == EnumCreatureAttribute.UNDEAD )
 					{
-						enchantmentModifier += (1 + effect.getAmplifier()) * 2.5F;
+						enchantmentModifier += (1.0D + effect.getAmplifier()) * 2.5D;
 					}
 					break;
 				}
@@ -362,7 +361,7 @@ public final class Helpers
 				{
 					if ( victim.getCreatureAttribute() == EnumCreatureAttribute.ARTHROPOD )
 					{
-						enchantmentModifier += (1 + effect.getAmplifier()) * 2.5F;
+						enchantmentModifier += (1.0D + effect.getAmplifier()) * 2.5D;
 					}
 					break;
 				}
@@ -380,7 +379,7 @@ public final class Helpers
 				{
 					if ( !weapon.isEmpty() && weapon.isItemDamaged() )
 					{
-						if ( player.world.rand.nextInt((2 + effect.getAmplifier())) > 0 )
+						if ( player.getRNG().nextInt((2 + effect.getAmplifier())) > 0 )
 						{
 							weapon.setItemDamage(weapon.getItemDamage() - 1);
 						}
@@ -441,14 +440,14 @@ public final class Helpers
 		}
 		else
 		{
-			if ( (player.fallDistance > 0.0D && !player.onGround) && !player.isOnLadder() && !player.isInWater() && !player.isPotionActive(MobEffects.BLINDNESS))
+			if ( (player.fallDistance > 0.0D && !player.onGround) && !player.isOnLadder() && !player.isInWater() && !player.isPotionActive(MobEffects.BLINDNESS) )
 			{
 				critChance += ConfigurationHandler.jumpCrits;
 			}
 
 			critChance += player.getEntityAttribute(SharedMonsterAttributes.LUCK).getAttributeValue() * ConfigurationHandler.luckCritModifier;
 
-			isCrit = player.getRNG().nextFloat() < critChance;
+			isCrit = critChance > player.getRNG().nextFloat();
 		}
 		
 		if ( isCrit )
@@ -458,6 +457,10 @@ public final class Helpers
 			if ( hitResult != null )
 			{
 				damage *= hitResult.getDamageModifier();
+			}
+			else
+			{
+				damage *= critDamage;
 			}
 		}
 
@@ -483,15 +486,15 @@ public final class Helpers
 			{
 				SoundHandler.playImpactSound(player, mainhand, soundType, animation, isMetal);
 				
-				if ( customWeaponPotionEffect != null && customWeaponPotionEffect.potionChance >= player.world.rand.nextFloat() )
+				if ( customWeaponPotionEffect != null && ((customWeaponPotionEffect.potionChance <= 0.0F && isCrit) || customWeaponPotionEffect.potionChance >= player.getRNG().nextFloat()) )
 				{
 					if ( customWeaponPotionEffect.afflict )
 					{
-						victim.addPotionEffect(new PotionEffect(customWeaponPotionEffect.potionEffect, customWeaponPotionEffect.potionDuration, customWeaponPotionEffect.potionPower, true, false));
+						victim.addPotionEffect(new PotionEffect(customWeaponPotionEffect.getPotion(), customWeaponPotionEffect.potionDuration, customWeaponPotionEffect.potionPower-1, true, false));
 					}
 					else
 					{
-						player.addPotionEffect(new PotionEffect(customWeaponPotionEffect.potionEffect, customWeaponPotionEffect.potionDuration, customWeaponPotionEffect.potionPower, true, false));
+						player.addPotionEffect(new PotionEffect(customWeaponPotionEffect.getPotion(), customWeaponPotionEffect.potionDuration, customWeaponPotionEffect.potionPower-1, true, false));
 					}
 				}
 				
@@ -565,15 +568,15 @@ public final class Helpers
 
 							sweepVictim.knockBack(player, (float)(0.5D * knockbackMod * MathHelper.clamp((4.0D + sweepAmount) / 8.0D, 0.5D, 1.0D)), MathHelper.sin(player.rotationYaw * 0.017453292F), -MathHelper.cos(player.rotationYaw * 0.017453292F));
 							
-							if ( ConfigurationHandler.customPotionEffectsWorkOnSweep && customWeaponPotionEffect != null && customWeaponPotionEffect.potionChance >= player.world.rand.nextFloat() )
+							if ( ConfigurationHandler.customPotionEffectsWorkOnSweep && customWeaponPotionEffect != null && ( (customWeaponPotionEffect.potionChance <= 0.0F && isCrit) || customWeaponPotionEffect.potionChance >= player.getRNG().nextFloat()))
 							{
 								if ( customWeaponPotionEffect.afflict )
 								{
-									sweepVictim.addPotionEffect(new PotionEffect(customWeaponPotionEffect.potionEffect, customWeaponPotionEffect.potionDuration, customWeaponPotionEffect.potionPower, true, false));
+									sweepVictim.addPotionEffect(new PotionEffect(customWeaponPotionEffect.getPotion(), customWeaponPotionEffect.potionDuration, customWeaponPotionEffect.potionPower-1, true, false));
 								}
 								else
 								{
-									player.addPotionEffect(new PotionEffect(customWeaponPotionEffect.potionEffect, customWeaponPotionEffect.potionDuration, customWeaponPotionEffect.potionPower, true, false));
+									player.addPotionEffect(new PotionEffect(customWeaponPotionEffect.getPotion(), customWeaponPotionEffect.potionDuration, customWeaponPotionEffect.potionPower-1, true, false));
 								}
 							}
 						}
@@ -691,7 +694,7 @@ public final class Helpers
 
 				armor += armorToughness;
 				
-				if ( armor > 1 && !isCrit && damage <= tgtHealth && player.world.rand.nextFloat() * 2.0F * damage <= (player.world.rand.nextDouble() + tgtHealthPercent) * armor )
+				if ( armor > 1 && !isCrit && damage <= tgtHealth && player.getRNG().nextFloat() * 2.0F * damage <= (player.getRNG().nextDouble() + tgtHealthPercent) * armor )
 				{
 					SoundHandler.playImpactArmorMetalSound(player, tgtMaxHealth, tgtHealthPercent);
 				}
@@ -704,7 +707,7 @@ public final class Helpers
 			/* DAMAGE PARTICLES */
 			if ( ConfigurationHandler.damageParticles && player.world instanceof WorldServer )
 			{
-				if ( damage > 2.0F )
+				if ( damage >= 1.0D )
 				{
 					int k = (int) (damage * 0.5D);
 					((WorldServer) player.world).spawnParticle(EnumParticleTypes.DAMAGE_INDICATOR, victim.posX, victim.posY + victim.height * 0.5F, victim.posZ, k, 0.1D, 0.0D, 0.1D, 0.2D);
@@ -713,7 +716,7 @@ public final class Helpers
 		}
 		else
 		{
-			player.world.playSound(null, player.posX, player.posY, player.posZ, SoundEvents.ENTITY_PLAYER_ATTACK_NODAMAGE, player.getSoundCategory(), 1.0F, 0.8F + player.world.rand.nextFloat() * 0.4F);
+			player.world.playSound(null, player.posX, player.posY, player.posZ, SoundEvents.ENTITY_PLAYER_ATTACK_NODAMAGE, player.getSoundCategory(), 1.0F, 0.8F + player.getRNG().nextFloat() * 0.4F);
 		}
 		
 		player.addExhaustion(0.1F);
@@ -727,14 +730,14 @@ public final class Helpers
 		}
 		
 		EntityLivingBase victim;
-				
+
 		if ( entity instanceof MultiPartEntityPart )
 		{
-			IEntityMultiPart ientitymultipart = ((MultiPartEntityPart)entity).parent;
+			IEntityMultiPart parent = ((MultiPartEntityPart)entity).parent;
 			
-			if ( ientitymultipart instanceof EntityLivingBase )
+			if ( parent instanceof EntityLivingBase )
 			{
-				victim = (EntityLivingBase)ientitymultipart;
+				victim = (EntityLivingBase)parent;
 			}
 			else
 			{
@@ -829,7 +832,7 @@ public final class Helpers
 
 	private static float randomPitch(EntityPlayer player)
 	{
-		return 0.9F + player.world.rand.nextFloat() * 0.2F;
+		return 0.9F + player.getRNG().nextFloat() * 0.2F;
 	}
 
 	public static final double RADIAN_TO_DEGREE = 180.0D/Math.PI;
@@ -868,7 +871,7 @@ public final class Helpers
 		double additive = 1.0D;
 		double multiplicative = 1.0D;
 		
-		for ( AttributeModifier attribute : player.getEntityAttribute(EntityPlayerSP.REACH_DISTANCE).getModifiers() )
+		for ( AttributeModifier attribute : player.getEntityAttribute(EntityPlayer.REACH_DISTANCE).getModifiers() )
 		{
 			switch( attribute.getOperation() )
 			{

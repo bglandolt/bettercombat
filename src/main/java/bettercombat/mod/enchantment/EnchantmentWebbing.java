@@ -7,6 +7,7 @@ import net.minecraft.block.BlockAir;
 import net.minecraft.enchantment.Enchantment;
 import net.minecraft.enchantment.EnchantmentArrowKnockback;
 import net.minecraft.entity.Entity;
+import net.minecraft.entity.projectile.EntityArrow;
 import net.minecraft.init.Blocks;
 import net.minecraft.inventory.EntityEquipmentSlot;
 import net.minecraft.util.math.BlockPos;
@@ -59,9 +60,14 @@ public class EnchantmentWebbing extends Enchantment
 		return 25;
 	}
 
-	public static void doWebbing( Entity attacker, Entity victim )
+	public static void doWebbing( EntityArrow arrow, Entity attacker, Entity victim )
 	{
 		BlockPos pos = victim.getPosition();
+		
+		if ( pos == null )
+		{
+			pos = arrow.getPosition();
+		}
 		
 		if ( pos == null )
 		{

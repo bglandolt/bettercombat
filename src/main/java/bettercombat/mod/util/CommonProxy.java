@@ -1,15 +1,19 @@
 package bettercombat.mod.util;
 
 import bettercombat.mod.handler.EventHandlers;
+import bettercombat.mod.network.PacketHandler;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.fml.common.event.FMLInitializationEvent;
 import net.minecraftforge.fml.common.event.FMLPostInitializationEvent;
 import net.minecraftforge.fml.common.event.FMLPreInitializationEvent;
 
-public abstract class CommonProxy
+public class CommonProxy
 {
-    public abstract void spawnSweep(EntityPlayer player);
+    public void spawnSweep(EntityPlayer player)
+    {
+    	
+    }
 
 	public void postInit( FMLPostInitializationEvent event )
 	{
@@ -27,6 +31,10 @@ public abstract class CommonProxy
 		ConfigurationHandler.init(event.getSuggestedConfigurationFile());
         MinecraftForge.EVENT_BUS.register(new ConfigurationHandler());
         ConfigurationHandler.createInstLists();
+        
+		PacketHandler.registerMessages(Reference.MOD_ID);
+		SoundHandler.registerSounds();
+
 //		registerParticles();
 	}
 

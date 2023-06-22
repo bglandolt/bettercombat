@@ -7,10 +7,7 @@ import bettercombat.mod.client.handler.EventHandlersClient;
 import bettercombat.mod.client.particle.EntitySweepAttack2FX;
 import bettercombat.mod.combat.DefaultImplOffHandAttack;
 import bettercombat.mod.combat.IOffHandAttack;
-import bettercombat.mod.network.PacketHandler;
 import bettercombat.mod.util.CommonProxy;
-import bettercombat.mod.util.Reference;
-import bettercombat.mod.util.SoundHandler;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.settings.KeyBinding;
 import net.minecraft.entity.player.EntityPlayer;
@@ -34,11 +31,9 @@ public class ClientProxy extends CommonProxy
 	{
 		super.preInit(event);
 		ClientRegistry.registerKeyBinding(fastEquip);
-		PacketHandler.registerMessages(Reference.MOD_ID);
 		CapabilityManager.INSTANCE.register(IOffHandAttack.class, new StorageOffHandAttack(), DefaultImplOffHandAttack::new);
-		SoundHandler.registerSounds();
 	}
-	
+
 	@Override
 	public void postInit( FMLPostInitializationEvent event )
 	{

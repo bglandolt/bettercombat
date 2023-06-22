@@ -17,7 +17,7 @@ public class ConfigurationHandler
 	{
 		if ( config == null )
 		{
-			config = new Configuration(configFile, Integer.toString(9));
+			config = new Configuration(configFile, Integer.toString(10));
 			loadConfiguration();
 		}
 	}
@@ -53,7 +53,7 @@ public class ConfigurationHandler
 	/* CRITICAL --------------------------------------------------------------------------------------------------------------------- */
 
 	public static boolean autoCritOnSneakAttacks = true;
-	public static double baseCritPercentChance = 0.1;
+	public static double baseCritPercentChance = 0.05;
 	public static double baseCritPercentDamage = 1.5;
 	public static double jumpCrits = 0.1;
 	public static double luckCritModifier = 0.1;
@@ -73,7 +73,7 @@ public class ConfigurationHandler
 	public static float lightningEnchantmentWetModifier = 1.5F;
 	public static boolean webbingEnchantmentEnabled = true;
 	public static boolean revitalizeEnchantmentEnabled = true;
-	public static float revitalizePercentPerLevel = 0.1F;
+	public static float revitalizePercentPerLevel = 0.2F;
 	public static boolean sorceryEnchantmentEnabled = true;
 	public static float sorceryPercentPerLevel = 0.1F;
 
@@ -83,7 +83,7 @@ public class ConfigurationHandler
 	public static double inertiaOnAttack = 0.5;
 	public static boolean fastEquipHotbarOnly = false;
 	public static double extraAttackHeight = 0.5;
-	public static double extraAttackWidth = 0.2;
+	public static double extraAttackWidth = 0.05;
 	public static float nauseaAffectsMobs = 2.2F;
 	public static double miningFatigueDamageReduction = 0.0;
 	public static float silverArmorDamagesUndeadAttackers = 1.5F;
@@ -123,7 +123,10 @@ public class ConfigurationHandler
 	public static boolean customPotionEffectsWorkOnSweep = true;
 	public static double strengthPotionMultiplier = 0.05;
 	public static double weaknessPotionMultiplier = 0.1;
-
+	public static double extraSplashPotionWidth = 0.0D;
+	public static double extraSplashPotionHeight = 2.0D;
+	public static float bleedingDamagePerTick = 0.5F;
+	
 	/* SOUND --------------------------------------------------------------------------------------------------------------------- */
 	
 		public static float bowThudSoundVolume = 1.0F;
@@ -161,13 +164,13 @@ public class ConfigurationHandler
 	/* VISUAL --------------------------------------------------------------------------------------------------------------------- */
 
 		public static boolean aetherealizedDamageParticles = true;
-		public static float breathingAnimationIntensity = 0.02F;
-		public static float breathingAnimationSpeed = 0.032F;
-		public static float cameraPitchSwing = 0.08F;
+		public static float breathingAnimationIntensity = 0.025F;
+		public static float breathingAnimationSpeed = 0.036F;
+		public static float cameraPitchSwing = 0.09F;
+		public static float rotationYawSwing = 0.18F;
 		public static boolean damageParticles = true;
 		public static boolean moreSweep = true;
 		public static boolean showShieldCooldownCrosshair = true;
-		public static float rotationYawSwing = 0.16F;
 
 	/* AXE --------------------------------------------------------------------------------------------------------------------- */
 	
@@ -216,38 +219,38 @@ public class ConfigurationHandler
 		public static ArrayList<CustomSword> swords = new ArrayList<CustomSword>();
 		private static String[] swordList =
 		{
-				"[Sword Substring=golden_sword]		[Additional Attack Speed=0.2]",
-				"[Sword Substring=stone_sword]		[Additional Attack Speed=-0.1]",
-				"[Sword Substring=wooden_sword]		[Additional Attack Speed=0.2]"
+				"[Sword Substring=golden_sword]		[Additional Attack Speed=0.8]",
+				"[Sword Substring=stone_sword]		[Additional Attack Speed=-0.8]",
+				"[Sword Substring=wooden_sword]		[Additional Attack Speed=0.8]"
 		};
 		
 	/* WEAPONS --------------------------------------------------------------------------------------------------------------------- */
 
-		public static ArrayList<CustomWeapon> weapons = new ArrayList<CustomWeapon>();
+		public static ArrayList<CustomWeapon> weapons = new ArrayList<CustomWeapon>(); //  2h .25, blunt 0.25  stab 0, sweep 0.25, chop 0.5
 		private static String[] weaponList =
 		{
-			"[Weapon Substring=pike_]		[Sound Type=POLEARM]	[Animation=STAB]	[Property=TWOHAND]		[Sweep=0]	[Additional Reach=2.0]	[Knockback=0.25]	[Crit Chance=0.1]	[Additional Crit Damage=0.0]",
-			"[Weapon Substring=glaive_]		[Sound Type=POLEARM]	[Animation=STAB]	[Property=TWOHAND]		[Sweep=2]	[Additional Reach=1.0]	[Knockback=0.75]	[Crit Chance=0.1]	[Additional Crit Damage=0.0]",
-			"[Weapon Substring=spear_]		[Sound Type=POLEARM]	[Animation=STAB]	[Property=MAINHAND]		[Sweep=0]	[Additional Reach=1.0]	[Knockback=0.25]	[Crit Chance=0.1]	[Additional Crit Damage=0.0]",
-			"[Weapon Substring=lance_]		[Sound Type=POLEARM]	[Animation=STAB]	[Property=MAINHAND]		[Sweep=0]	[Additional Reach=1.0]	[Knockback=2.0]		[Crit Chance=0.1]	[Additional Crit Damage=0.0]",
-			"[Weapon Substring=halberd_]	[Sound Type=POLEARM]	[Animation=CHOP]	[Property=TWOHAND]		[Sweep=0]	[Additional Reach=1.0]	[Knockback=1.0]		[Crit Chance=0.25]	[Additional Crit Damage=0.0]",
-			"[Weapon Substring=staff]		[Sound Type=POLEARM]	[Animation=SWEEP]	[Property=TWOHAND]		[Sweep=2]	[Additional Reach=1.0]	[Knockback=2.0]		[Crit Chance=0.1]	[Additional Crit Damage=0.5]",
-			"[Weapon Substring=warhammer_]	[Sound Type=BLUNT]		[Animation=CHOP]	[Property=VERSATILE]	[Sweep=0]	[Additional Reach=0.0]	[Knockback=1.75]	[Crit Chance=0.1]	[Additional Crit Damage=0.0]",
-			"[Weapon Substring=hammer_]		[Sound Type=BLUNT]		[Animation=CHOP]	[Property=ONEHAND]		[Sweep=0]	[Additional Reach=0.0]	[Knockback=3.0]		[Crit Chance=0.1]	[Additional Crit Damage=0.0]",
-			"[Weapon Substring=mace_]		[Sound Type=BLUNT]		[Animation=CHOP]	[Property=ONEHAND]		[Sweep=0]	[Additional Reach=0.0]	[Knockback=1.5]		[Crit Chance=0.1]	[Additional Crit Damage=0.0]",
-			"[Weapon Substring=club_]		[Sound Type=BLUNT]		[Animation=CHOP]	[Property=ONEHAND]		[Sweep=0]	[Additional Reach=0.0]	[Knockback=1.5]		[Crit Chance=0.1]	[Additional Crit Damage=0.0]",
-			"[Weapon Substring=caestus]		[Sound Type=BLUNT]		[Animation=STAB]	[Property=ONEHAND]		[Sweep=0]	[Additional Reach=0.0]	[Knockback=1.0]		[Crit Chance=0.1]	[Additional Crit Damage=0.0]		[Potion Effect=minecraft:slowness,1,10,1.0]",
-			"[Weapon Substring=greatsword_]	[Sound Type=BLADE]		[Animation=SWEEP]	[Property=TWOHAND]		[Sweep=3]	[Additional Reach=1.0]	[Knockback=0.75]	[Crit Chance=0.1]	[Additional Crit Damage=0.0]",
-			"[Weapon Substring=katana_]		[Sound Type=BLADE]		[Animation=CHOP]	[Property=VERSATILE]	[Sweep=0]	[Additional Reach=0.0]	[Knockback=0.75]	[Crit Chance=0.1]	[Additional Crit Damage=0.5]",
-			"[Weapon Substring=longsword_]	[Sound Type=BLADE]		[Animation=SWEEP]	[Property=VERSATILE]	[Sweep=1]	[Additional Reach=0.0]	[Knockback=0.75]	[Crit Chance=0.1]	[Additional Crit Damage=0.0]",
-			"[Weapon Substring=saber_]		[Sound Type=BLADE]		[Animation=SWEEP]	[Property=ONEHAND]		[Sweep=1]	[Additional Reach=0.0]	[Knockback=0.5]		[Crit Chance=0.1]	[Additional Crit Damage=0.0]",
-			"[Weapon Substring=rapier_]		[Sound Type=BLADE]		[Animation=STAB]	[Property=ONEHAND]		[Sweep=0]	[Additional Reach=0.0]	[Knockback=0.0]		[Crit Chance=0.1]	[Additional Crit Damage=0.0]",
-			"[Weapon Substring=_sword]		[Sound Type=BLADE]		[Animation=SWEEP]	[Property=ONEHAND]		[Sweep=1]	[Additional Reach=0.0]	[Knockback=0.5]		[Crit Chance=0.1]	[Additional Crit Damage=0.0]",
-			"[Weapon Substring=battleaxe_]	[Sound Type=AXE]		[Animation=CHOP]	[Property=VERSATILE]	[Sweep=0]	[Additional Reach=0.0]	[Knockback=1.0]		[Crit Chance=0.25]	[Additional Crit Damage=0.0]",
-			"[Weapon Substring=_shovel]		[Sound Type=AXE]		[Animation=CHOP]	[Property=ONEHAND]		[Sweep=0]	[Additional Reach=0.0]	[Knockback=0.5]		[Crit Chance=0.1]	[Additional Crit Damage=0.0]",
-			"[Weapon Substring=_pickaxe]	[Sound Type=AXE]		[Animation=CHOP]	[Property=ONEHAND]		[Sweep=0]	[Additional Reach=0.0]	[Knockback=0.5]		[Crit Chance=0.1]	[Additional Crit Damage=0.0]",
-			"[Weapon Substring=_axe]		[Sound Type=AXE]		[Animation=CHOP]	[Property=ONEHAND]		[Sweep=0]	[Additional Reach=0.0]	[Knockback=1.5]		[Crit Chance=0.25]	[Additional Crit Damage=0.0]",
-			"[Weapon Substring=_hoe]		[Sound Type=AXE]		[Animation=CHOP]	[Property=ONEHAND]		[Sweep=0]	[Additional Reach=0.0]	[Knockback=0.5]		[Crit Chance=0.1]	[Additional Crit Damage=0.0]"
+			"[Weapon Substring=pike_]		[Sound Type=POLEARM]	[Animation=STAB]	[Property=TWOHAND]		[Sweep=0]	[Additional Reach=2.0]	[Knockback=0.2]	[Crit Chance=0.1]	[Additional Crit Damage=0.0]",
+			"[Weapon Substring=glaive_]		[Sound Type=POLEARM]	[Animation=SWEEP]	[Property=TWOHAND]		[Sweep=2]	[Additional Reach=1.0]	[Knockback=0.5]	[Crit Chance=0.1]	[Additional Crit Damage=0.0]",
+			"[Weapon Substring=spear_]		[Sound Type=POLEARM]	[Animation=STAB]	[Property=MAINHAND]		[Sweep=0]	[Additional Reach=1.0]	[Knockback=0.2]	[Crit Chance=0.1]	[Additional Crit Damage=0.0]",
+			"[Weapon Substring=lance_]		[Sound Type=POLEARM]	[Animation=STAB]	[Property=MAINHAND]		[Sweep=0]	[Additional Reach=1.0]	[Knockback=1.0]		[Crit Chance=0.1]	[Additional Crit Damage=0.0]",
+			"[Weapon Substring=halberd_]		[Sound Type=POLEARM]	[Animation=CHOP]	[Property=TWOHAND]		[Sweep=0]	[Additional Reach=1.0]	[Knockback=0.8]		[Crit Chance=0.25]	[Additional Crit Damage=0.0]",
+			"[Weapon Substring=staff]		[Sound Type=POLEARM]	[Animation=SWEEP]	[Property=TWOHAND]		[Sweep=2]	[Additional Reach=1.0]	[Knockback=1.0]		[Crit Chance=0.1]	[Additional Crit Damage=0.5]	[Potion Effect=CRIT,RECEIVE,minecraft:speed,2,160]",
+			"[Weapon Substring=warhammer_]	[Sound Type=BLUNT]		[Animation=CHOP]	[Property=VERSATILE]	[Sweep=0]	[Additional Reach=0.0]	[Knockback=1.0]	[Crit Chance=0.1]	[Additional Crit Damage=0.0]",
+			"[Weapon Substring=hammer_]		[Sound Type=BLUNT]		[Animation=CHOP]	[Property=ONEHAND]		[Sweep=0]	[Additional Reach=0.0]	[Knockback=1.5]		[Crit Chance=0.1]	[Additional Crit Damage=0.0]	[Potion Effect=CRIT,AFFLICT,minecraft:nausea,1,100]",
+			"[Weapon Substring=mace_]		[Sound Type=BLUNT]		[Animation=CHOP]	[Property=ONEHAND]		[Sweep=0]	[Additional Reach=0.0]	[Knockback=0.8]		[Crit Chance=0.1]	[Additional Crit Damage=0.0]",
+			"[Weapon Substring=club_]		[Sound Type=BLUNT]		[Animation=CHOP]	[Property=ONEHAND]		[Sweep=0]	[Additional Reach=0.0]	[Knockback=0.8]		[Crit Chance=0.1]	[Additional Crit Damage=0.0]",
+			"[Weapon Substring=caestus]		[Sound Type=BLUNT]		[Animation=STAB]	[Property=ONEHAND]		[Sweep=0]	[Additional Reach=0.0]	[Knockback=0.2]		[Crit Chance=0.1]	[Additional Crit Damage=0.0]",
+			"[Weapon Substring=greatsword_]	[Sound Type=BLADE]		[Animation=SWEEP]	[Property=TWOHAND]		[Sweep=3]	[Additional Reach=1.0]	[Knockback=0.5]	[Crit Chance=0.1]	[Additional Crit Damage=0.0]",
+			"[Weapon Substring=katana_]		[Sound Type=BLADE]		[Animation=CHOP]	[Property=VERSATILE]	[Sweep=0]	[Additional Reach=0.0]	[Knockback=0.5]	[Crit Chance=0.1]	[Additional Crit Damage=0.5]",
+			"[Weapon Substring=longsword_]	[Sound Type=BLADE]		[Animation=SWEEP]	[Property=VERSATILE]	[Sweep=1]	[Additional Reach=0.0]	[Knockback=0.5]	[Crit Chance=0.1]	[Additional Crit Damage=0.0]",
+			"[Weapon Substring=saber_]		[Sound Type=BLADE]		[Animation=SWEEP]	[Property=ONEHAND]		[Sweep=1]	[Additional Reach=0.0]	[Knockback=0.2]		[Crit Chance=0.1]	[Additional Crit Damage=0.0]",
+			"[Weapon Substring=rapier_]		[Sound Type=BLADE]		[Animation=STAB]	[Property=ONEHAND]		[Sweep=0]	[Additional Reach=0.0]	[Knockback=0.0]		[Crit Chance=0.1]	[Additional Crit Damage=0.0]	[Potion Effect=CRIT,AFFLICT,bettercombat:bleeding,1,100]",
+			"[Weapon Substring=battleaxe_]	[Sound Type=AXE]		[Animation=CHOP]	[Property=VERSATILE]	[Sweep=0]	[Additional Reach=0.0]	[Knockback=0.8]		[Crit Chance=0.25]	[Additional Crit Damage=0.0]",
+			"[Weapon Substring=_shovel]		[Sound Type=AXE]		[Animation=CHOP]	[Property=ONEHAND]		[Sweep=0]	[Additional Reach=0.0]	[Knockback=0.5]		[Crit Chance=0.05]	[Additional Crit Damage=0.0]",
+			"[Weapon Substring=_sword]		[Sound Type=BLADE]		[Animation=SWEEP]	[Property=ONEHAND]		[Sweep=1]	[Additional Reach=0.0]	[Knockback=0.2]		[Crit Chance=0.1]	[Additional Crit Damage=0.0]",
+			"[Weapon Substring=_pickaxe]		[Sound Type=AXE]		[Animation=CHOP]	[Property=ONEHAND]		[Sweep=0]	[Additional Reach=0.0]	[Knockback=0.5]		[Crit Chance=0.05]	[Additional Crit Damage=0.0]",
+			"[Weapon Substring=_axe]			[Sound Type=AXE]		[Animation=CHOP]	[Property=ONEHAND]		[Sweep=0]	[Additional Reach=0.0]	[Knockback=0.8]		[Crit Chance=0.25]	[Additional Crit Damage=0.0]",
+			"[Weapon Substring=_hoe]			[Sound Type=AXE]		[Animation=CHOP]	[Property=ONEHAND]		[Sweep=0]	[Additional Reach=0.0]	[Knockback=0.2]		[Crit Chance=0.05]	[Additional Crit Damage=0.0]"
 		};
 	
 	public static class CustomAxe
@@ -304,17 +307,18 @@ public class ConfigurationHandler
 	{
 		public float potionChance;
 		public boolean afflict;
-		public Potion potionEffect;
+		private Potion potionEffect;
 		public int potionPower;
 		public int potionDuration;
-
-		public CustomWeaponPotionEffect( float potionChance, boolean afflict, Potion potionEffect, int potionPower, int potionDuration )
+		
+//		public Potion getPotion()
+//		{
+//			return Potion.getPotionFromResourceLocation(this.potionEffect);
+//		}
+		
+		public Potion getPotion()
 		{
-			this.potionChance = potionChance;
-			this.afflict = afflict;
-			this.potionEffect = potionEffect;
-			this.potionPower = potionPower;
-			this.potionDuration = potionDuration;
+			return potionEffect;
 		}
 	}
 	
@@ -353,27 +357,27 @@ public class ConfigurationHandler
 		/* --------------------------------------------------------------------------------------------------------------------- */
 		String ATTRIBUTES = "(Advanced settings) Attributes";
 
-		addedSwingTickCooldown = config.get("Added Attack Speed Tick Cooldown", ATTRIBUTES, 0.5, "Add partial ticks to all attack swing cooldown. This defaults to 0.5F, which rounds up all swing cooldowns. A swing cooldown of 12.5 ticks would instead become 13 ticks.").getDouble();
-		baseAttackDamage = config.get("Attribute Base Attack Damage", ATTRIBUTES, 1.0, "Base ATTACK_DAMAGE attribute for the player. Vanilla is 1.0F. If you want to nerf unarmed & non-weapon damage, instead adjust the setting 'Unarmed & Non-Weapon Damage'.").getDouble();
-		baseAttackSpeed = config.get("Attribute Base Attack Speed", ATTRIBUTES, 4.0, "Base ATTACK_SPEED attribute for the player. Vanilla is 4.0F. This value only affects non-weapons, such as fists. An attack speed of 4.0 means 4 attacks per second. Higher values mean faster attack swing recovery. Attack speed formula    -->    20 / attackSpeed. 1.6 attack speed takes 12.5 ticks to recover after an attack swing, which means 1.6 attacks per second. 0.8 means 25 ticks to recover after an attack swing. 4.0 means 5 ticks to recover after an attack. It is best if you do not adjust this value!").getDouble();
-		baseCritPercentChance = config.get("Base Critical Percent Chance", ATTRIBUTES, 0.1, "Base chance of landing a critical strike with an attack. Default 0.1F, meaining 10% critical strike chance. Set to negative to disable.").getDouble();
-		baseCritPercentDamage = config.get("Base Critical Percent Damage", ATTRIBUTES, 1.5, "How much damage crits do (multiplier). Default 1.5F, meaning crits do 50% extra damage (150% of total damage).").getDouble();
-		baseReachDistance = config.get("Attribute Base Reach Distance", ATTRIBUTES, 4.0, "Base REACH_DISTANCE attribute for the player. Vanilla is 4.0F in singleplayer, and increased to 5.0F in multiplayer to account for latency. This reach distance config is only for attacking distance, not mining distance. Set to 0.0 to disable this setting completely and instead use the vanilla reach distance value instead.").getDouble();
+		addedSwingTickCooldown = config.get(ATTRIBUTES, "Added Attack Speed Tick Cooldown", 0.5, "Add partial ticks to all attack swing cooldown. This defaults to 0.5, which rounds up all swing cooldowns. A swing cooldown of 12.5 ticks would instead become 13 ticks.").getDouble();
+		baseAttackDamage = config.get(ATTRIBUTES, "Attribute Base Attack Damage", 1.0, "Base ATTACK_DAMAGE attribute for the player. Vanilla is 1.0F. If you want to nerf unarmed & non-weapon damage, instead adjust the setting 'Unarmed & Non-Weapon Damage'.").getDouble();
+		baseAttackSpeed = config.get(ATTRIBUTES, "Attribute Base Attack Speed", 4.0, "Base ATTACK_SPEED attribute for the player. Vanilla is 4.0F. This value only affects non-weapons, such as fists. An attack speed of 4.0 means 4 attacks per second. Higher values mean faster attack swing recovery. Attack speed formula    -->    20 / attackSpeed. 1.6 attack speed takes 12.5 ticks to recover after an attack swing, which means 1.6 attacks per second. 0.8 means 25 ticks to recover after an attack swing. 4.0 means 5 ticks to recover after an attack. It is best if you do not adjust this value!").getDouble();
+		baseCritPercentChance = config.get(ATTRIBUTES, "Base Critical Percent Chance", 0.05, "Base chance of landing a critical strike with an attack. Default 0.05, meaining 5% critical strike chance. Set to a negative number to disable random crit chance and return to the vanilla ways.").getDouble();
+		baseCritPercentDamage = config.get(ATTRIBUTES, "Base Critical Percent Damage", 1.5, "How much damage crits do (multiplier). Default 1.5F, meaning crits do 50% extra damage (150% of total damage).").getDouble();
+		baseReachDistance = config.get(ATTRIBUTES, "Attribute Base Reach Distance", 4.0, "Base REACH_DISTANCE attribute for the player. Vanilla is 4.0F in singleplayer, and increased to 5.0F in multiplayer to account for latency. This reach distance config is only for attacking distance, not mining distance. Set to 0.0 to disable this setting completely and instead use the vanilla reach distance value instead.").getDouble();
 		minimumAttackSpeedTicks = config.getInt("Minimum Attack Speed Tick Cooldown", ATTRIBUTES, 8, 5, 20, "The minimum cooldown (in ticks) for an attack swing cooldown. The default for this setting is 8, which means the minimum attack speed cooldown is 8 ticks. This translates to the maximum attack speed of a weapon being 2.5 and any attack speed value higher than 2.5 will not affect how fast the weapon attacks (unless the player attack speed is slowed or affected by mining fatigue, then higher attack speed values counteract the debuff).");
 		/* --------------------------------------------------------------------------------------------------------------------- */
 		String CRITICAL = "Critical Strikes";
 		
 		autoCritOnSneakAttacks = config.getBoolean("Auto Critical On Sneak Attacks", CRITICAL, true, "Automatically critical strike a mob when you are not their attack target or revenge target.");
-		critsDisableShield = config.get("Critical Strikes Disable Shields", CRITICAL, 3.0, "Critical strikes with any weapon disable shields, similar to how axes disable shields for 100 ticks. The shield disable duration is based off of damage, for example, having this setting at 3.0, an attack dealing 7.0 damage to a blocker would disable a shield for 21 ticks. Set to 0.0 to disable this feature.").getDouble();
-		jumpCrits = config.get("Add Critical Chance On Falling", CRITICAL, 0.1, "Adds additional critical strike chance when the player is falling, like in vanilla. Set to 0.0F to disable.").getDouble();
-		luckCritModifier = config.get("Luck Affects Critical Chance", CRITICAL, 0.1, "This setting allows the LUCK attribute to affect critical strike chance. Formula = ( LUCK * luckCritModifier ). If luckCritModifier is 0.1 then 2 LUCK would give 20% crit chance. Set to 0.0 to disable.").getDouble();
+		critsDisableShield = config.get(CRITICAL, "Critical Strikes Disable Shields", 3.0, "Critical strikes with any weapon disable shields, similar to how axes disable shields for 100 ticks. The shield disable duration is based off of damage, for example, having this setting at 3.0, an attack dealing 7.0 damage to a blocker would disable a shield for 21 ticks. Set to 0.0 to disable this feature.").getDouble();
+		jumpCrits = config.get(CRITICAL, "Add Critical Chance On Falling", 0.1, "Adds additional critical strike chance when the player is falling, like in vanilla. Set to 0.0F to disable.").getDouble();
+		luckCritModifier = config.get(CRITICAL, "Luck Affects Critical Chance", 0.1, "This setting allows the LUCK attribute to affect critical strike chance. Formula = ( LUCK * luckCritModifier ). If luckCritModifier is 0.1 then 2 LUCK would give 20% crit chance. Set to 0.0 to disable.").getDouble();
 		/* --------------------------------------------------------------------------------------------------------------------- */
 		String DUALWIELD = "Dual-Wielding";
 		
-		offHandEfficiency = config.get("Offhand Efficiency", DUALWIELD, 0.75, "The percent efficiency of an attack with offhanded weapon    -->   damage * efficiency.").getDouble();
+		offHandEfficiency = config.get(DUALWIELD, "Offhand Efficiency", 0.75, "The percent efficiency of an attack with offhanded weapon    -->   damage * efficiency.").getDouble();
 		sneakingDisablesOffhandAttack = config.getBoolean("Sneaking Disables Offhand Attack", DUALWIELD, true, "If set to true, attacking with your offhand is disabled while sneaking. The purpose of this is to add compatibility to mods such as 'CarryOn' or 'Effortless Building' where you need to use certian right-click functionality.");
 		versatileFatigueAmount = config.getInt("Versatile Fatigue Amount", DUALWIELD, 0, 3, 10, "How much mining fatigue is applied when dual-wielding with a versatile weapon. Default 3, which translates to 30% slower attack speed, or Mining Fatigue III.");
-		miningFatigueDamageReduction = config.get("Mining Fatigue Damage Reduction", DUALWIELD, 0.0, "Reduces the damage dealt of an attack per level of Mining Fatigue. For example, if this setting is set to 0.25F, then Mining Fatigue II reduces player damage by 50%. Set 0.0F to disable.").getDouble();
+		miningFatigueDamageReduction = config.get(DUALWIELD, "Mining Fatigue Damage Reduction", 0.0, "Reduces the damage dealt of an attack per level of Mining Fatigue. For example, if this setting is set to 0.25F, then Mining Fatigue II reduces player damage by 50%. Set 0.0F to disable.").getDouble();
 		/* --------------------------------------------------------------------------------------------------------------------- */
 		String ENCHANTMENTS = "Enchantments";
 		
@@ -383,7 +387,7 @@ public class ConfigurationHandler
 		lightningEnchantmentDamagePerLevel = config.getFloat("Lightning Enchantment Damage Per Level", ENCHANTMENTS, 2.0F, 0.0F, 256.0F, "Lightning enchantment damage per level. A base of 3 and 2 per level means Lightning V deals 13 damage.");
 		lightningEnchantmentWetModifier = config.getFloat("Lightning Enchantment Wet Modifier", ENCHANTMENTS, 1.5F, 0.0F, 256.0F, "This number is multiplied by the total lightning damage when targets are wet. 1.5F means 50% more damage.");
 		revitalizeEnchantmentEnabled = config.getBoolean("Revitalize Enchantment Enabled", ENCHANTMENTS, true, "Set to true to enable the Revitalize enchantment.");
-		revitalizePercentPerLevel = config.getFloat("Revitalize Healing Percentage Per Level", ENCHANTMENTS, 0.1F, 0.0F, 16.0F, "The damage multipler for the Revitalize enchantment, per level. 0.1F means a 10% increase in healing received per level.");
+		revitalizePercentPerLevel = config.getFloat("Revitalize Healing Percentage Per Level", ENCHANTMENTS, 0.2F, 0.0F, 16.0F, "The damage multipler for the Revitalize enchantment, per level. 0.2F means a 20% increase in healing received per level.");
 		sorceryEnchantmentEnabled = config.getBoolean("Sorcery Enchantment Enabled", ENCHANTMENTS, true, "Set to true to enable the Sorcery enchantment.");
 		sorceryPercentPerLevel = config.getFloat("Sorcery Damage Percentage Per Level", ENCHANTMENTS, 0.1F, 0.0F, 16.0F, "The damage multipler for the Sorcery enchantment, per level. 0.1F means a 10% increase in magic damage per level.");
 		webbingEnchantmentEnabled = config.getBoolean("Webbing Enchantment Enabled", ENCHANTMENTS, true, "Set to true to enable the Webbing enchantment.");
@@ -391,35 +395,37 @@ public class ConfigurationHandler
 		String GENERAL = "General";
 		
 		moreSprint = config.getBoolean("Attack & Sprint", GENERAL, true, "Attacking an enemy while sprinting will no longer interrupt your sprint.");
-		inertiaOnAttack = config.get("Intertia on Attack", GENERAL, 0.5, "Multiplies the player speed by this amount when they swing a weapon. Set to 1.0 to disable.").getDouble();
+		inertiaOnAttack = config.get(GENERAL, "Intertia on Attack", 0.5, "Multiplies the player speed by this amount when they swing a weapon. Set to 1.0 to disable.").getDouble();
 		fastEquipHotbarOnly = config.getBoolean("Fast Equip Hotbar Only", GENERAL, false, "Set to true to have Fast Equip use only items in the hotbar instead of the entire inventory.");
-		extraAttackWidth = config.get("Extra Attack Width", GENERAL, 0.1, "How wide the hitbox will be extended for melee attacks.").getDouble();
-		extraAttackHeight = config.get("Extra Attack Height", GENERAL, 0.5, "How high the hitbox will be extended for melee attacks").getDouble();
+		extraAttackWidth = config.get(GENERAL, "Extra Attack Width", 0.05, "How wide the hitbox will be extended for melee attacks.").getDouble();
+		extraAttackHeight = config.get(GENERAL, "Extra Attack Height", 0.5, "How high the hitbox will be extended for melee attacks").getDouble();
 		nauseaAffectsMobs = config.getFloat("Nausea Affects Mobs", GENERAL, 2.2F, 0.0F, 256.0F, "Setting to have Nausea & Blindness affect mobs. If a mob has a height equal to or less than this value, it will be affected by Blindess and Nausea potion effects, which causes them to often lose their target and stumble around. Set to 0.0F to disable.");
 		silverArmorDamagesUndeadAttackers = config.getFloat("Silver Armor Damage", GENERAL, 1.5F, 0.0F, 256.0F, "Thorns, but for undead. How much damage undead attackers will take against an entity wearing Silver armor per piece of Silver armor. Setting this to 1.5F and wearing 2 pieces of Silver armor deals 3.0F damage to undead attackers. Silver weapons get a damage bonus, so why not add a special interaction with Silver armor? Set to 0.0F to disable.");
 		grassPathingRequiresAnimation = config.getBoolean("Digging Grass Paths Requires Animation", GENERAL, true, "If set to true, shoveling grass paths requires an animation. Shovels with a faster attack speed will path land faster.");
 		tillingRequiresAnimation = config.getBoolean("Tilling Land Requires Animation", GENERAL, true, "If set to true, tilling land requires an animation. Hoes with a faster attack speed till land faster.");
 		strippingBarkRequiresAnimation = config.getBoolean("Stripping Bark Requires Animation", GENERAL, true, "If set to true, stripping bark requires an animation. Axes with a faster attack speed strip bark faster. Enable this setting if you have future MC installed which allows stripping of bark.");
 		cancelSpartanWeaponryFatigue = config.getBoolean("Cancel Spartan Weaponry Fatigue", GENERAL, true, "Set to true to disable weapon fatigue from Spartan Weaponry, this mod instead handles two-handed and versatile weapons.");
-
-		// clearMiningFatigueFromSpartanWeaponry // XXX
 		
 		/* --------------------------------------------------------------------------------------------------------------------- */
 		String KNOCKBACK = "Knockback";
 		
-		betterKnockback = config.getBoolean("Better Knockback", KNOCKBACK, true, "Enable have the KNOCKBACK_RESISTANCE attribute reduce the STRENGTH of knockback effects, rather than reducing the CHANCE to not be knocked back. (For example: by default, a knockback_resistance of 0.5 means a 50% chance to not be knocked back from an attack. However, if this setting is true, a knockback_resistance of 0.5 means the distance or effects of being knocked back are 50% less far or powerful. NOTE: some combat mods already have this feature!");
-		knockUpStrengthMultiplier = config.get("knock Up Strength Multiplier", KNOCKBACK, 0.5, "Multiply the motionY amount of knockback by this amount. Set to 0.5 by default to reduce the motionY by 50%. Does nothing if betterKnockback is disabled.").getDouble();
-		knockbackStrengthMultiplier = config.get("knockback Strength Multiplier", KNOCKBACK, 1.0, "Multiply the motionXZ amount of knockback by this amount. This setting is pretty sensitive, and values below 0.5 have almost no visible knockback.").getDouble();
-		sprintingKnockbackAmount = config.get("Sprinting Knockback Amount", KNOCKBACK, 0.5, "Increases the knockback of an attack when sprinting. For example, setting this to 2.0F is the same knockback amount as Knockback II.").getDouble();
+		betterKnockback = config.getBoolean("Better Knockback", KNOCKBACK, true, "Enable have the KNOCKBACK_RESISTANCE attribute reduce the strength of knockback effects, rather than reducing the chance to not be knocked back. (For example: by default, a knockback_resistance of 0.5 means a 50% chance to not be knocked back from an attack. However, if this setting is true, a knockback_resistance of 0.5 means the distance or effects of being knocked back are 50% less far or powerful.");
+		knockUpStrengthMultiplier = config.get(KNOCKBACK, "knock Up Strength Multiplier", 0.5, "Multiply the motionY amount of knockback by this amount. Set to 0.5 by default to reduce the motionY by 50%. Does nothing if betterKnockback is disabled.").getDouble();
+		knockbackStrengthMultiplier = config.get(KNOCKBACK, "knockback Strength Multiplier", 1.0, "Multiply the motionXZ amount of knockback by this amount. This setting is pretty sensitive, and values below 0.5 have almost no visible knockback.").getDouble();
+		sprintingKnockbackAmount = config.get(KNOCKBACK, "Sprinting Knockback Amount", 0.5, "Increases the knockback of an attack when sprinting. For example, setting this to 2.0F is the same knockback amount as Knockback II.").getDouble();
 		/* --------------------------------------------------------------------------------------------------------------------- */
 		String POTIONS = "Potions";
 		
 		alchemizedAmplifier = config.getFloat("Aetherealized Potion Damage", POTIONS, 0.2F, 0.0F, 1.0F, "The percentage of your physical damage that is converted to magical by the Aetherealized potion, per level. 0.2 means 20% of your physical damage (per level) is converted to magic damage.");
-		critChancePotionAmplifier = config.get("Percision Potion Chance", POTIONS, 0.1, "The additive percent increase to your critical strike chance that the Percision potion adds, per level. 0.1 means add 10% critical strike chance (per level) to your base critical strike chance.").getDouble();
-		critDamagePotionAmplifier = config.get("Brutality Potion Damage", POTIONS, 0.1, "The additive percent increase to your critical strike damage that the Brutality potion adds, per level. 0.1 means add 10% critical strike damage (per level) to your base critical strike damage.").getDouble();
-		customPotionEffectsWorkOnSweep = config.getBoolean("Weapon Potion Effects Work With Sweep", KNOCKBACK, true, "Enable have custom Potion Effects from custom weapons work with Sweep and apply on swept targets.");
-		strengthPotionMultiplier = config.get("Strength Potion Damage", POTIONS, 0.05, "Changes the Strength potion to be a percentage damage increase instead of a flat increase. If set to 0.05, then a Potion of Strength (+3 Attack Damage) will instead increase damage dealt by 15%. Set to 0.0 to disable.").getDouble();
-		weaknessPotionMultiplier = config.get("Weakness Potion Damage", POTIONS, 0.1, "Changes the Weakness potion to be a percentage damage decrease instead of a flat decrease. If set to 0.1, then a Potion of Weakness (-4 Attack Damage) will instead decrease damage dealt by 40%. Set to 0.0 to disable.").getDouble();
+		critChancePotionAmplifier = config.get(POTIONS, "Percision Potion Chance", 0.1, "The additive percent increase to your critical strike chance that the Percision potion adds, per level. 0.1 means add 10% critical strike chance (per level) to your base critical strike chance.").getDouble();
+		critDamagePotionAmplifier = config.get(POTIONS, "Brutality Potion Damage", 0.1, "The additive percent increase to your critical strike damage that the Brutality potion adds, per level. 0.1 means add 10% critical strike damage (per level) to your base critical strike damage.").getDouble();
+		customPotionEffectsWorkOnSweep = config.getBoolean("Weapon Potion Effects Work With Sweep", POTIONS, true, "Enable have custom Potion Effects from custom weapons work with Sweep and apply on swept targets.");
+		strengthPotionMultiplier = config.get(POTIONS, "Strength Potion Damage", 0.05, "Changes the Strength potion to be a percentage damage increase instead of a flat increase. If set to 0.05, then a Potion of Strength (+3 Attack Damage) will instead increase damage dealt by 15%. Set to 0.0 to disable.").getDouble();
+		weaknessPotionMultiplier = config.get(POTIONS, "Weakness Potion Damage", 0.1, "Changes the Weakness potion to be a percentage damage decrease instead of a flat decrease. If set to 0.1, then a Potion of Weakness (-4 Attack Damage) will instead decrease damage dealt by 40%. Set to 0.0 to disable.").getDouble();
+		extraSplashPotionWidth = config.get(POTIONS, "Extra Splash Potion Width", 0.0, "Additional splash potion width.").getDouble();
+		extraSplashPotionHeight = config.get(POTIONS, "Extra Splash Potion Height", 0.2, "Additional splash potion height.").getDouble();
+		bleedingDamagePerTick = config.getFloat("Bleeding Damage Per Tick", POTIONS, 0.5F, 0.0F, 256.0F, "The amount of damage bleeding does, per level, per second.");
+
 		/* --------------------------------------------------------------------------------------------------------------------- */
 		String SOUND = "Sound";
 		
@@ -445,18 +451,18 @@ public class ConfigurationHandler
 		/* --------------------------------------------------------------------------------------------------------------------- */
 		String UNARMED = "Unarmed";
 		
-		fistAndNonWeaponDamageReduction = config.get("Unarmed & Non-Weapon Damage Reduction", UNARMED, 0.5, "Reduce damage from unarmed and non-weapon attacks. The damage of unarmed and non-weapons is reduced by this amount. The reason for this, is that unarmed and non-weapon attacks technically have a higher DPS than wooden tools when 'Hurt Resistant Time' is removed, so unarmed and non-weapon damage should be lowered.", 0.0, baseAttackDamage).getDouble();
-		fistAndNonWeaponKnockbackReduction = config.get("Unarmed & Non-Weapon Knockback Reduction", UNARMED, 0.0, "Reduce the knockback from unarmed and non-weapon attacks. The knockback of unarmed and non-weapons is reduced by this amount.", 0.0, baseKnockback).getDouble();
-		fistAndNonWeaponReachReduction = config.get("Unarmed & Non-Weapon Reach Reduction", UNARMED, 0.5, "Reduce the attack range from fists and non-weapon attacks. The range of unarmed and non-weapons is reduced by this amount.", 0.0, 4.0).getDouble();
+		fistAndNonWeaponDamageReduction = config.get(UNARMED, "Unarmed & Non-Weapon Damage Reduction", 0.5, "Reduce damage from unarmed and non-weapon attacks. The damage of unarmed and non-weapons is reduced by this amount. The reason for this, is that unarmed and non-weapon attacks technically have a higher DPS than wooden tools when 'Hurt Resistant Time' is removed, so unarmed and non-weapon damage should be lowered.", 0.0, baseAttackDamage).getDouble();
+		fistAndNonWeaponKnockbackReduction = config.get(UNARMED, "Unarmed & Non-Weapon Knockback Reduction", 0.0, "Reduce the knockback from unarmed and non-weapon attacks. The knockback of unarmed and non-weapons is reduced by this amount.", 0.0, baseKnockback).getDouble();
+		fistAndNonWeaponReachReduction = config.get(UNARMED, "Unarmed & Non-Weapon Reach Reduction", 0.5, "Reduce the attack range from fists and non-weapon attacks. The range of unarmed and non-weapons is reduced by this amount.", 0.0, 4.0).getDouble();
 		/* --------------------------------------------------------------------------------------------------------------------- */
 		String VISUAL = "Visual";
 
 		aetherealizedDamageParticles = config.getBoolean("Aetherealized Damage Particles", VISUAL, true, "Enable to have the Aetherealized potion create a ring of particles around the target when struck.");
-		breathingAnimationIntensity = config.getFloat("Breathing Animation Intensity", VISUAL, 0.02F, 0.0F, 0.16F, "How fast items move up and down for the breathing animation.");
-		breathingAnimationSpeed = config.getFloat("Breathing Animation Speed", VISUAL, 0.032F, 0.0F, 0.16F, "How far items move up and down for the breathing animation.");
+		breathingAnimationIntensity = config.getFloat("Breathing Animation Intensity", VISUAL, 0.025F, 0.0F, 1.0F, "How fast items move up and down for the breathing animation.");
+		breathingAnimationSpeed = config.getFloat("Breathing Animation Speed", VISUAL, 0.036F, 0.0F, 1.0F, "How far items move up and down for the breathing animation.");
 		showShieldCooldownCrosshair = config.getBoolean("Show Shield Cooldown Crosshair", GENERAL, true, "Show the shield cooldown crosshair, similar to the dual-wielding crosshairs.");
-		cameraPitchSwing = config.getFloat("Camera Pitch Swing", VISUAL, 0.08F, 0.0F, 0.16F, "How much your camera pitch moves when you swing a weapon. May cause slight motion sickness if set too high. Set to 0.0F to disable.");
-		rotationYawSwing = config.getFloat("Rotation Yaw Swing", VISUAL, 0.16F, 0.0F, 0.32F, "How much your camera yaw moves when you swing a weapon. May cause slight motion sickness if set too high. Set to 0.0F to disable.");
+		cameraPitchSwing = config.getFloat("Camera Pitch Swing", VISUAL, 0.09F, 0.0F, 1.0F, "How much your camera pitch moves when you swing a weapon. May cause slight motion sickness if set too high. Set to 0.0F to disable.");
+		rotationYawSwing = config.getFloat("Rotation Yaw Swing", VISUAL, 0.18F, 0.0F, 1.0F, "How much your camera yaw moves when you swing a weapon. May cause slight motion sickness if set too high. Set to 0.0F to disable.");
 		damageParticles = config.getBoolean("Damage Particles", VISUAL, true, "Enable to show heart damage particles (this is a vanilla feature, this option is here for those who wish to disable it).");
 		moreSweep = config.getBoolean("More Attack Hit Particles", VISUAL, true, "Add sweep particles on attack (looks good, reccommend you keep this as true).");
 
@@ -543,18 +549,24 @@ public class ConfigurationHandler
 			+ "Setting [Reach] to 4.0 for a weapon would mean a reach distance of 4.0 blocks for that weapon.\n\n"
 
 			+ "The [Crit Chance] field is the critical chance for weapons.\n"
-			+ "Setting [Crit Chance] to 10 for a weapon would mean critical strike chance is 10%.\n\n"
+			+ "Setting [Crit Chance] to 0.1 for a weapon would mean critical strike chance is 10%.\n\n"
 			
 			+ "The [Additional Crit Damage] field is the critical damage multiplier for weapons.\n"
 			+ "Setting [Additional Crit Damage] to 50 for a weapon would mean critical strike damage deals an additional 50% damage.\n\n"
 
 			+ "The [Potion Effect] field is optional! It gives weapons a chance to apply a potion effect when you attack an entity with a weapon.\n"
-			+ "The order goes for the potion effect: resource location, power, duration, chance. Only one potion effect is supported. \n"
-			+ "[Potion Effect=1.0,AFFLICT,minecraft:poison,1,30] -> 100% Chance on hit: Afflict Poison II for 30 seconds.\n"
+			+ "Only one potion effect is supported. The order goes for the potion effect  ->  chance, afflict/receive, resource location, power, duration.\n"
+			+ "'Chance on hit:' can be instead be changed to on 'Critical Strike:' if chance is set to CRIT or 0.0. This setting allows for some interesting crit builds.\n"
+			+ "Setting afflict/receive to AFFLICT causes the victim to gain the potion effect. Setting afflict/receive to RECEIVE causes the attacker gain the potion effect.\n"
+			+ "Duration is in ticks. There are 20 ticks per second. A duration of 100 would apply the potion effect for 5 seconds.\n\n"
+			
+			+ "[Potion Effect=1.0,AFFLICT,minecraft:poison,2,600] -> 100% Chance on hit: Afflict Poison II for 30 seconds.\n"
 			+ "[Potion Effect=0.5,AFFLICT,minecraft:instant_damage,3,0] -> 50% Chance on hit: Afflict Harming III.\n"
-			+ "[Potion Effect=0.1,AFFLICT,minecraft:slowness,1,5] -> 10% Chance on hit: Afflict Slowness I for 5 seconds.\n"
-			+ "[Potion Effect=0.2,RECIEVE,minecraft:swiftness,2,8] -> 20% Chance on hit: Recieve Swiftness II for 8 seconds.\n"
-			+ "[Potion Effect=0.01,RECIEVE,minecraft:instant_health,2,8] -> 1% Chance on hit: Recieve Instant Health II.\n");
+			+ "[Potion Effect=0.1,AFFLICT,minecraft:slowness,1,100] -> 10% Chance on hit: Afflict Slowness I for 5 seconds.\n"
+			+ "[Potion Effect=0.2,RECEIVE,minecraft:swiftness,2,160] -> 20% Chance on hit: Receive Swiftness II for 8 seconds.\n"
+			+ "[Potion Effect=0.01,RECEIVE,minecraft:instant_health,2,0] -> 1% Chance on hit: Receive Instant Health II.\n"
+			+ "[Potion Effect=CRIT,AFFLICT,bettercombat:bleeding,1,100] -> Critical strike: Afflict Bleeding I for 5 seconds.\n"
+			+ "[Potion Effect=CRIT,RECEIVE,bettercombat:brutality,1,200] -> Critical strike: Receive Brutality I for 10 seconds.\n");
 		
 		/* --------------------------------------------------------------------------------------------------------------------- */
 		String SHIELD = "Custom Shields";
@@ -630,7 +642,7 @@ public class ConfigurationHandler
 			}
 			catch ( Exception e )
 			{
-				System.out.println("WARNING, incorrect Shield Tweaker: " + s);
+				System.out.println(e + " - WARNING, incorrect Shield Tweaker: " + s);
 			}
 		}
 		
@@ -648,7 +660,7 @@ public class ConfigurationHandler
 			}
 			catch ( Exception e )
 			{
-				System.out.println("WARNING, incorrect Axe Tweaker: " + s);
+				System.out.println(e + " - WARNING, incorrect Axe Tweaker: " + s);
 			}
 		}
 		
@@ -665,7 +677,7 @@ public class ConfigurationHandler
 			}
 			catch ( Exception e )
 			{
-				System.out.println("WARNING, incorrect Sword Tweaker: " + s);
+				System.out.println(e + " - WARNING, incorrect Sword Tweaker: " + s);
 			}
 		}
 		
@@ -690,25 +702,49 @@ public class ConfigurationHandler
 				{
 					String[] potionEffectList = list[19].split(",");
 					
-					customWeapon.customWeaponPotionEffect = new CustomWeaponPotionEffect
-					(
-						Float.parseFloat(potionEffectList[0]),
-						!potionEffectList[1].equals("RECIEVE"),
-						Potion.getPotionFromResourceLocation(potionEffectList[2]),
-						Integer.parseInt(potionEffectList[3]),
-						Integer.parseInt(potionEffectList[4])
-					);
+					System.out.println(list[19]);
+					
+					try
+					{
+						if ( potionEffectList != null )
+						{
+							CustomWeaponPotionEffect customPotionEffect = new CustomWeaponPotionEffect();
+							
+							System.out.println(potionEffectList[0]);
+							System.out.println(potionEffectList[1]);
+							System.out.println(potionEffectList[2]);
+							System.out.println(potionEffectList[3]);
+
+							customPotionEffect.potionChance = getPotionChance(potionEffectList[0]);
+							customPotionEffect.afflict = potionEffectList[1].toLowerCase().equals("afflict");
+							customPotionEffect.potionEffect = Potion.getPotionFromResourceLocation(potionEffectList[2]);
+							
+							if ( customPotionEffect.potionEffect == null )
+							{
+								throw new NullPointerException("Incorrect Potion resource location!");
+							}
+							
+							customPotionEffect.potionPower = Integer.parseInt(potionEffectList[3]);
+							customPotionEffect.potionDuration = Integer.parseInt(potionEffectList[4]);
+
+							customWeapon.customWeaponPotionEffect = customPotionEffect;
+						}
+					}
+					catch ( Exception e )
+					{
+						System.out.println(e.getMessage() + " - WARNING, incorrect Custom Potion Effect: " + s);
+					}
 				}
 				catch ( Exception e )
 				{
-					System.out.println("WARNING, incorrect Weapon Tweaker (Custom Potion Effect): " + s);
+					
 				}
 				
 				weapons.add(customWeapon);
 			}
 			catch ( Exception e )
 			{
-				System.out.println("WARNING, incorrect Weapon Tweaker: " + s);
+				System.out.println(e + " - WARNING, incorrect Weapon Tweaker: " + s);
 			}
 		}
 		
@@ -727,8 +763,20 @@ public class ConfigurationHandler
 			}
 			catch ( Exception e )
 			{
-				System.out.println("WARNING, incorrect Bow Damage Tweaker: " + s);
+				System.out.println(e + " - WARNING, incorrect Bow Damage Tweaker: " + s);
 			}
+		}
+	}
+
+	private static float getPotionChance( String potionEffectList )
+	{
+		try
+		{
+			return Float.parseFloat(potionEffectList);
+		}
+		catch ( Exception e )
+		{
+			return 0.0F;
 		}
 	}
 

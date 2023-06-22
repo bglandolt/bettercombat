@@ -116,11 +116,15 @@ public class AnimationHandler
     /* ======================================================================================================================================== */
     /*																CUSTOM RENDER 																*/
     /* ======================================================================================================================================== */
-    /* ======================================================================================================================================== */
 
 	@SubscribeEvent
 	public void disableVanillaHandRender( RenderSpecificHandEvent event ) // -90, 120, -36 === -110, 116, -36
 	{
+		
+//		ClientProxy.EHC_INSTANCE.mc.player.hurtTime = 0; // event.getPartialTicks(); // TODO
+//		ClientProxy.EHC_INSTANCE.mc.player.maxHurtTime = 1000; // TODO
+//		ClientProxy.EHC_INSTANCE.mc.player.attackedAtYaw = 0;
+
 //		xx = (float)ClientProxy.EHC_INSTANCE.mc.player.posX;
 //		yy = (float)ClientProxy.EHC_INSTANCE.mc.player.posY - 50;
 //		zz = (float)ClientProxy.EHC_INSTANCE.mc.player.posZ;
@@ -614,7 +618,7 @@ public class AnimationHandler
 	private void animationChopCameraMainhand()
 	{
 		/* Reduce momentum based off attack speed */
-		float f = 13.0F / ClientProxy.EHC_INSTANCE.betterCombatMainhand.getSwingTimerCap();
+		float f = ClientProxy.EHC_INSTANCE.betterCombatMainhand.getSwingTimerCap() / 12.0F;
 		
 		/* Camera */
     	float rotation = MathHelper.sin( 0.75F + this.mainhandEnergy * 2.5F * PI);
@@ -709,7 +713,7 @@ public class AnimationHandler
 	private void animationChopCameraOffhand()
 	{
 		/* Reduce momentum based off attack speed */
-		float f = 13.0F / ClientProxy.EHC_INSTANCE.betterCombatOffhand.getSwingTimerCap();
+		float f = ClientProxy.EHC_INSTANCE.betterCombatOffhand.getSwingTimerCap() / 12.0F;
 		
 		/* Camera */
     	float rotation = MathHelper.sin( 0.75F + this.offhandEnergy * 2.5F * PI);
@@ -774,7 +778,7 @@ public class AnimationHandler
 
 	private void animationSweepCameraMainhand()
 	{
-		float f = 13.0F / ClientProxy.EHC_INSTANCE.betterCombatMainhand.getSwingTimerCap();
+		float f = ClientProxy.EHC_INSTANCE.betterCombatMainhand.getSwingTimerCap() / 12.0F;
 
 		/* Camera */
     	float rotation = MathHelper.cos(0.5F + this.mainhandEnergy * 2.5F * PI);
@@ -830,7 +834,8 @@ public class AnimationHandler
 
 	private void animationSweepCameraOffhand()
 	{
-		float f = 13.0F / ClientProxy.EHC_INSTANCE.betterCombatOffhand.getSwingTimerCap();
+		/* Reduce momentum based off attack speed */
+		float f = ClientProxy.EHC_INSTANCE.betterCombatOffhand.getSwingTimerCap() / 12.0F;
 
 		/* Camera */
     	float rotation = MathHelper.cos(0.5F + this.offhandEnergy * 2.5F * PI);
@@ -918,7 +923,11 @@ public class AnimationHandler
 				moveUp = -moveRight * closeCap*2.3F;
 			}
 		}
-		/* (READY) LOWEST | 0.0F -> 0.2F */
+		else
+		{
+			/* (READY) LOWEST | 0.0F -> 0.2F */
+			moveClose = MathHelper.sin(this.mainhandEnergy*PI*5.0F) * 0.1F;
+		}
 		
 		GlStateManager.translate(
        	/* X */ moveRight,
@@ -933,7 +942,7 @@ public class AnimationHandler
 	private void animationStabCameraMainhand()
 	{
 		/* Reduce momentum based off attack speed */
-		float f = 13.0F / ClientProxy.EHC_INSTANCE.betterCombatMainhand.getSwingTimerCap();
+		float f = ClientProxy.EHC_INSTANCE.betterCombatMainhand.getSwingTimerCap() / 12.0F;
 		
 		/* Camera */
 		float rotation = MathHelper.sin(-0.4F + this.mainhandEnergy * 2.127323F * PI);
@@ -1017,7 +1026,11 @@ public class AnimationHandler
 				moveUp = -moveRight * closeCap*2.3F;
 			}
 		}
-		/* (READY) LOWEST | 0.0F -> 0.2F */
+		else
+		{
+			/* (READY) LOWEST | 0.0F -> 0.2F */
+			moveClose = MathHelper.sin(this.mainhandEnergy*PI*5.0F) * 0.1F;
+		}
 		
 		GlStateManager.translate(
        	/* X */ -moveRight,
@@ -1032,7 +1045,7 @@ public class AnimationHandler
 	private void animationStabCameraOffhand()
 	{
 		/* Reduce momentum based off attack speed */
-		float f = 13.0F / ClientProxy.EHC_INSTANCE.betterCombatOffhand.getSwingTimerCap();
+		float f = ClientProxy.EHC_INSTANCE.betterCombatOffhand.getSwingTimerCap() / 12.0F;
 		
 		/* Camera */
 		float rotation = MathHelper.sin(-0.4F + this.offhandEnergy * 2.127323F * PI);

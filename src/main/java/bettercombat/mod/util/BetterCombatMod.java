@@ -15,6 +15,7 @@ public class BetterCombatMod
 {
     @SidedProxy(modId = Reference.MOD_ID, clientSide = Reference.CLIENT_PROXY_CLASS, serverSide = Reference.SERVER_PROXY_CLASS)
     public static CommonProxy proxy;
+    
     @Mod.Instance(Reference.MOD_ID)
     public static BetterCombatMod modInstance;
 
