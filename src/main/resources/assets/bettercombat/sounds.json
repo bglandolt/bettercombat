@@ -999,6 +999,36 @@
       }
     ]
   },
+  "player.swing_slow_left_3": {
+    "category": "player",
+    "subtitle": "player.weapon",
+    "sounds": [
+      {
+        "name": "bettercombat:player/swing_slow_left_3",
+        "stream": false
+      }
+    ]
+  },
+  "player.swing_slow_left_4": {
+    "category": "player",
+    "subtitle": "player.weapon",
+    "sounds": [
+      {
+        "name": "bettercombat:player/swing_slow_left_4",
+        "stream": false
+      }
+    ]
+  },
+  "player.swing_slow_left_5": {
+    "category": "player",
+    "subtitle": "player.weapon",
+    "sounds": [
+      {
+        "name": "bettercombat:player/swing_slow_left_5",
+        "stream": false
+      }
+    ]
+  },
   "player.swing_slow_right_0": {
     "category": "player",
     "subtitle": "player.weapon",
@@ -1025,6 +1055,36 @@
     "sounds": [
       {
         "name": "bettercombat:player/swing_slow_right_2",
+        "stream": false
+      }
+    ]
+  },
+ "player.swing_slow_right_3": {
+    "category": "player",
+    "subtitle": "player.weapon",
+    "sounds": [
+      {
+        "name": "bettercombat:player/swing_slow_right_3",
+        "stream": false
+      }
+    ]
+  },
+ "player.swing_slow_right_4": {
+    "category": "player",
+    "subtitle": "player.weapon",
+    "sounds": [
+      {
+        "name": "bettercombat:player/swing_slow_right_4",
+        "stream": false
+      }
+    ]
+  },
+ "player.swing_slow_right_5": {
+    "category": "player",
+    "subtitle": "player.weapon",
+    "sounds": [
+      {
+        "name": "bettercombat:player/swing_slow_right_5",
         "stream": false
       }
     ]

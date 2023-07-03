@@ -24,6 +24,8 @@ public class PacketOnItemUse implements IMessage
 	private int y;
 	private int z;
 	
+	private boolean mainhand;
+	
 	private Integer sideHit;
 
 	public PacketOnItemUse()
@@ -31,12 +33,14 @@ public class PacketOnItemUse implements IMessage
 		
 	}
 	
-	public PacketOnItemUse(int posX, int posY, int posZ, EnumFacing sideHit )
+	public PacketOnItemUse(int posX, int posY, int posZ, boolean mh, EnumFacing sideHit )
 	{
 //		this.entityId = entityId;
 		this.x = posX;
 		this.y = posY;
 		this.z = posZ;
+		
+		this.mainhand = mh;
 		
 		this.sideHit = sideHit.getIndex();
 	}
@@ -53,6 +57,8 @@ public class PacketOnItemUse implements IMessage
 		this.y = buf.readBoolean() ? -ByteBufUtils.readVarInt(buf, 2) : ByteBufUtils.readVarInt(buf, 2);
 		this.z = buf.readBoolean() ? -ByteBufUtils.readVarInt(buf, 4) : ByteBufUtils.readVarInt(buf, 4);
 		
+		this.mainhand = buf.readBoolean();
+				
 		this.sideHit = ByteBufUtils.readVarInt(buf, 1);
 
 	}
@@ -100,6 +106,8 @@ public class PacketOnItemUse implements IMessage
 			ByteBufUtils.writeVarInt(buf, this.z, 4);
 		}
 		
+		buf.writeBoolean(this.mainhand);
+		
 		ByteBufUtils.writeVarInt(buf, this.sideHit, 1);
 
 	}
@@ -118,7 +126,16 @@ public class PacketOnItemUse implements IMessage
 			EntityPlayerMP player = ctx.getServerHandler().player;
 			BlockPos blockPos = new BlockPos(message.x,message.y,message.z);
 			
-			EnumActionResult result = player.getHeldItemMainhand().getItem().onItemUse(player, player.world, blockPos, EnumHand.MAIN_HAND, EnumFacing.getFront(message.sideHit), 0.0F, 0.0F, 0.0F);
+			final EnumActionResult result;
+			
+			if ( message.mainhand )
+			{
+				result = player.getHeldItemMainhand().getItem().onItemUse(player, player.world, blockPos, EnumHand.MAIN_HAND, EnumFacing.getFront(message.sideHit), 0.0F, 0.0F, 0.0F);
+			}
+			else
+			{
+				result = player.getHeldItemOffhand().getItem().onItemUse(player, player.world, blockPos, EnumHand.OFF_HAND, EnumFacing.getFront(message.sideHit), 0.0F, 0.0F, 0.0F);
+			}
 		
 			if ( result.equals(EnumActionResult.SUCCESS) )
 			{

@@ -183,9 +183,15 @@ public class SoundHandler
 	public static SoundEvent SWING_SLOW_LEFT_0;
 	public static SoundEvent SWING_SLOW_LEFT_1;
 	public static SoundEvent SWING_SLOW_LEFT_2;
+	public static SoundEvent SWING_SLOW_LEFT_3;
+	public static SoundEvent SWING_SLOW_LEFT_4;
+	public static SoundEvent SWING_SLOW_LEFT_5;
 	public static SoundEvent SWING_SLOW_RIGHT_0;
 	public static SoundEvent SWING_SLOW_RIGHT_1;
 	public static SoundEvent SWING_SLOW_RIGHT_2;
+	public static SoundEvent SWING_SLOW_RIGHT_3;
+	public static SoundEvent SWING_SLOW_RIGHT_4;
+	public static SoundEvent SWING_SLOW_RIGHT_5;
 	
 	/*                EQUIP              */
 
@@ -409,9 +415,15 @@ public class SoundHandler
 		SWING_SLOW_LEFT_0 = registerSound("player.swing_slow_left_0");
 		SWING_SLOW_LEFT_1 = registerSound("player.swing_slow_left_1");
 		SWING_SLOW_LEFT_2 = registerSound("player.swing_slow_left_2");
+		SWING_SLOW_LEFT_3 = registerSound("player.swing_slow_left_3");
+		SWING_SLOW_LEFT_4 = registerSound("player.swing_slow_left_4");
+		SWING_SLOW_LEFT_5 = registerSound("player.swing_slow_left_5");
 		SWING_SLOW_RIGHT_0 = registerSound("player.swing_slow_right_0");
 		SWING_SLOW_RIGHT_1 = registerSound("player.swing_slow_right_1");
 		SWING_SLOW_RIGHT_2 = registerSound("player.swing_slow_right_2");
+		SWING_SLOW_RIGHT_3 = registerSound("player.swing_slow_right_3");
+		SWING_SLOW_RIGHT_4 = registerSound("player.swing_slow_right_4");
+		SWING_SLOW_RIGHT_5 = registerSound("player.swing_slow_right_5");
 		
 		/* --------------------------------- */
 		/*                EQUIP              */
@@ -502,7 +514,7 @@ public class SoundHandler
 			}
 			else
 			{
-				swingNonMetalLeft(elb, volume, pitch);
+				swingPunchLeft(elb, volume, pitch);
 				return;
 			}
 		}
@@ -559,7 +571,7 @@ public class SoundHandler
 
 		if ( !betterCombatHand.hasCustomWeapon() )
 		{
-			swingNonMetalRight(elb, volume, pitch);
+			swingPunchRight(elb, volume, pitch);
 			return;
 		}
 		
@@ -688,7 +700,7 @@ public class SoundHandler
 		
 		if ( Helpers.isMetal(itemStack) )
 		{
-			/* AXE BLADE BLUNT NONE POLEARM */
+			/* AXE, BLADE, BLUNT, NONE, POLEARM */
 			switch ( betterCombatHand.getSoundType() )
 			{
 				case BLADE:
@@ -707,6 +719,11 @@ public class SoundHandler
 					return;
 				}
 			}
+		}
+		else
+		{
+			playEquipOtherLeftSound(elb, volume, pitch);
+			return;
 		}
 	}
 	
@@ -741,6 +758,11 @@ public class SoundHandler
 				}
 			}
 		}
+		else
+		{
+			playEquipOtherRightSound(elb, volume, pitch);
+			return;
+		}
 	}
 	
 	/* -------------------------------------------------------------------------------------------------------------------- */
@@ -768,15 +790,20 @@ public class SoundHandler
 				}
 				case AXE:
 				{
-					playEquipAxeLeftSound(elb, volume, pitch);
+					playSheatheAxeLeftSound(elb, volume, pitch);
 					return;
 				}
 				default:
 				{
-					playEquipOtherLeftSound(elb, volume, pitch);
+					playSheatheOtherLeftSound(elb, volume, pitch);
 					return;
 				}
 			}
+		}
+		else
+		{
+			playSheatheOtherLeftSound(elb, volume, pitch);
+			return;
 		}
 	}
 	
@@ -801,17 +828,20 @@ public class SoundHandler
 				}
 				case AXE:
 				{
-					playSheatheBladeRightSound(elb, volume, pitch);
-					// XXX playEquipAxeLeftSound(elb, volume, pitch);
+					playSheatheAxeRightSound(elb, volume, pitch);
 					return;
 				}
 				default:
 				{
-					playSheatheBladeRightSound(elb, volume, pitch);
-					// XXX playEquipOthereLeftSound(elb, volume, pitch);
+					playSheatheOtherRightSound(elb, volume, pitch);
 					return;
 				}
 			}
+		}
+		else
+		{
+			playSheatheOtherRightSound(elb, volume, pitch);
+			return;
 		}
 	}
 
@@ -1545,13 +1575,47 @@ public class SoundHandler
 		}
 	}
 	
+	public static void swingPunchRight( EntityLivingBase elb, float volume, float pitch )
+	{
+		/* Punch sound noise reduced */
+
+		switch( elb.world.rand.nextInt(4) )
+		{
+			case 0:
+			{
+				playSound(elb, SWING_NORMAL_RIGHT_0, volume*0.6F, pitch);
+				return;
+			}
+			case 1:
+			{
+				playSound(elb, SWING_NORMAL_RIGHT_1, volume*0.6F, pitch);
+				return;
+			}
+			case 2:
+			{
+				playSound(elb, SWING_NORMAL_RIGHT_2, volume*0.6F, pitch);
+				return;
+			}
+			case 3:
+			{
+				playSound(elb, SWING_NORMAL_RIGHT_3, volume*0.6F, pitch);
+				return;
+			}
+			default:
+			{
+				playSound(elb, SWING_NORMAL_RIGHT_0, volume*0.6F, pitch);
+				return;
+			}
+		}
+	}
+	
 	public static void swingNonMetalRight( EntityLivingBase elb, float volume, float pitch )
 	{
 		if ( pitch <= 0.9F )
 		{
 			pitch += 0.1F;
 			
-			switch( elb.world.rand.nextInt(3) )
+			switch( elb.world.rand.nextInt(6) )
 			{
 				case 0:
 				{
@@ -1566,6 +1630,21 @@ public class SoundHandler
 				case 2:
 				{
 					playSound(elb, SWING_SLOW_RIGHT_2, volume, pitch);
+					return;
+				}
+				case 3:
+				{
+					playSound(elb, SWING_SLOW_RIGHT_3, volume, pitch);
+					return;
+				}
+				case 4:
+				{
+					playSound(elb, SWING_SLOW_RIGHT_4, volume, pitch);
+					return;
+				}
+				case 5:
+				{
+					playSound(elb, SWING_SLOW_RIGHT_5, volume, pitch);
 					return;
 				}
 				default:
@@ -1631,13 +1710,47 @@ public class SoundHandler
 		}
 	}
 	
+	public static void swingPunchLeft( EntityLivingBase elb, float volume, float pitch )
+	{
+		/* This should technically never get run */
+		
+		switch( elb.world.rand.nextInt(4) )
+		{
+			case 0:
+			{
+				playSound(elb, SWING_NORMAL_LEFT_0, volume, pitch);
+				return;
+			}
+			case 1:
+			{
+				playSound(elb, SWING_NORMAL_LEFT_1, volume, pitch);
+				return;
+			}
+			case 2:
+			{
+				playSound(elb, SWING_NORMAL_LEFT_2, volume, pitch);
+				return;
+			}
+			case 3:
+			{
+				playSound(elb, SWING_NORMAL_LEFT_3, volume, pitch);
+				return;
+			}
+			default:
+			{
+				playSound(elb, SWING_NORMAL_LEFT_0, volume, pitch);
+				return;
+			}
+		}
+	}
+	
 	public static void swingNonMetalLeft( EntityLivingBase elb, float volume, float pitch )
 	{
 		if ( pitch <= 0.9F )
 		{
 			pitch += 0.1F;
 			
-			switch( elb.world.rand.nextInt(3) )
+			switch( elb.world.rand.nextInt(6) )
 			{
 				case 0:
 				{
@@ -1652,6 +1765,21 @@ public class SoundHandler
 				case 2:
 				{
 					playSound(elb, SWING_SLOW_LEFT_2, volume, pitch);
+					return;
+				}
+				case 3:
+				{
+					playSound(elb, SWING_SLOW_LEFT_3, volume, pitch);
+					return;
+				}
+				case 4:
+				{
+					playSound(elb, SWING_SLOW_LEFT_4, volume, pitch);
+					return;
+				}
+				case 5:
+				{
+					playSound(elb, SWING_SLOW_LEFT_5, volume, pitch);
 					return;
 				}
 				default:
@@ -1995,6 +2123,104 @@ public class SoundHandler
 			}
 		}
 	}
+	
+	private static void playSheatheAxeLeftSound( EntityLivingBase elb, float volume, float pitch )
+	{
+		switch( elb.world.rand.nextInt(2) )
+		{
+			case 0:
+			{
+				playSound(elb, SHEATHE_AXE_LEFT_0, volume, pitch);
+				return;
+			}
+			case 1:
+			{
+				playSound(elb, SHEATHE_AXE_LEFT_1, volume, pitch);
+				return;
+			}
+			default:
+			{
+				playSound(elb, SHEATHE_AXE_LEFT_0, volume, pitch);
+				return;
+			}
+		}
+	}
+	
+	private static void playSheatheAxeRightSound( EntityLivingBase elb, float volume, float pitch )
+	{
+		switch( elb.world.rand.nextInt(2) )
+		{
+			case 0:
+			{
+				playSound(elb, SHEATHE_AXE_RIGHT_0, volume, pitch);
+				return;
+			}
+			case 1:
+			{
+				playSound(elb, SHEATHE_AXE_RIGHT_1, volume, pitch);
+				return;
+			}
+			default:
+			{
+				playSound(elb, SHEATHE_AXE_RIGHT_0, volume, pitch);
+				return;
+			}
+		}
+	}
+	
+	private static void playSheatheOtherLeftSound( EntityLivingBase elb, float volume, float pitch )
+	{
+		switch( elb.world.rand.nextInt(3) )
+		{
+			case 0:
+			{
+				playSound(elb, SHEATHE_OTHER_LEFT_0, volume, pitch);
+				return;
+			}
+			case 1:
+			{
+				playSound(elb, SHEATHE_OTHER_LEFT_1, volume, pitch);
+				return;
+			}
+			case 2:
+			{
+				playSound(elb, SHEATHE_OTHER_LEFT_2, volume, pitch);
+				return;
+			}
+			default:
+			{
+				playSound(elb, SHEATHE_OTHER_LEFT_0, volume, pitch);
+				return;
+			}
+		}
+	}
+	
+	private static void playSheatheOtherRightSound( EntityLivingBase elb, float volume, float pitch )
+	{
+		switch( elb.world.rand.nextInt(2) )
+		{
+			case 0:
+			{
+				playSound(elb, SHEATHE_OTHER_RIGHT_0, volume, pitch);
+				return;
+			}
+			case 1:
+			{
+				playSound(elb, SHEATHE_OTHER_RIGHT_1, volume, pitch);
+				return;
+			}
+			case 2:
+			{
+				playSound(elb, SHEATHE_OTHER_RIGHT_2, volume, pitch);
+				return;
+			}
+			default:
+			{
+				playSound(elb, SHEATHE_OTHER_RIGHT_0, volume, pitch);
+				return;
+			}
+		}
+	}
 
 	private static void playImpactDefaultSound(EntityLivingBase elb, float volume, float pitch)
 	{
@@ -2013,15 +2239,17 @@ public class SoundHandler
 	
 	public static void playSound( Entity player, SoundEvent soundEvent, float volume, float pitch )
 	{
-		try
-		{
-			player.playSound(soundEvent, volume, pitch);
-			player.world.playSound(null, player.posX, player.posY, player.posZ, soundEvent, player.getSoundCategory(), volume, pitch);
-		}
-		catch ( Exception e )
-		{
-			/* Random crash on world reload. I don't care just wrap it in a try catch */
-		}
+		player.playSound(soundEvent, volume, pitch);
+
+//		try
+//		{
+//			player.playSound(soundEvent, volume, pitch);
+//			player.world.playSound(null, player.posX, player.posY, player.posZ, soundEvent, player.getSoundCategory(), volume, pitch);
+//		}
+//		catch ( Exception e )
+//		{
+//			/* Random crash on world reload. I don't care just wrap it in a try catch */
+//		}
 	}
 	
 	

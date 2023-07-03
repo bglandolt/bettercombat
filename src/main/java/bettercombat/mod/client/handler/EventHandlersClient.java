@@ -8,12 +8,12 @@ import bettercombat.mod.client.BetterCombatHand;
 import bettercombat.mod.client.ClientProxy;
 import bettercombat.mod.network.PacketBreakBlock;
 import bettercombat.mod.network.PacketFastEquip;
-import bettercombat.mod.network.PacketFatigue;
 import bettercombat.mod.network.PacketHandler;
 import bettercombat.mod.network.PacketMainhandAttack;
 import bettercombat.mod.network.PacketOffhandAttack;
 import bettercombat.mod.network.PacketOnItemUse;
 import bettercombat.mod.network.PacketShieldBash;
+import bettercombat.mod.network.PacketStopActiveHand;
 import bettercombat.mod.util.ConfigurationHandler;
 import bettercombat.mod.util.ConfigurationHandler.CustomShield;
 import bettercombat.mod.util.ConfigurationHandler.CustomSword;
@@ -36,7 +36,6 @@ import net.minecraft.entity.Entity;
 import net.minecraft.entity.monster.IMob;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.entity.player.EntityPlayerMP;
-import net.minecraft.init.Items;
 import net.minecraft.inventory.EntityEquipmentSlot;
 import net.minecraft.item.EnumAction;
 import net.minecraft.item.Item;
@@ -46,7 +45,6 @@ import net.minecraft.item.ItemShield;
 import net.minecraft.item.ItemSpade;
 import net.minecraft.item.ItemStack;
 import net.minecraft.item.ItemSword;
-import net.minecraft.item.ItemTool;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.util.EnumActionResult;
 import net.minecraft.util.EnumHand;
@@ -98,7 +96,7 @@ public class EventHandlersClient
 	public int mainhandAttackCooldown = ConfigurationHandler.minimumAttackSpeedTicks;
 	
 //	private boolean keyBindAttackIsKeyDown = false;
-	private boolean keyBindUseItemIsKeyDown = false;
+//	private boolean keyBindUseItemIsKeyDown = false;
 	
     /* ====================================================================================================================================================== */
     /* ====================================================================================================================================================== */
@@ -136,7 +134,7 @@ public class EventHandlersClient
 		if ( !player.getActiveItemStack().isEmpty() )
 		{
 			/* If the player is blocking, */
-			if ( player.isActiveItemStackBlocking() && player.getItemInUseCount() > 0 && player.getActiveHand().equals(EnumHand.OFF_HAND) )
+			if ( Helpers.isHandActive(this.mc.player, EnumHand.OFF_HAND) )
 			{
 				Item shield = player.getActiveItemStack().getItem();
 
@@ -172,8 +170,8 @@ public class EventHandlersClient
 					/* Set the internal shield cooldown */
 					player.getCooldownTracker().setCooldown(shield, bashCooldown);
 					
-					player.stopActiveHand();
-
+					PacketHandler.instance.sendToServer(new PacketStopActiveHand());
+					
 					/* animate the shield bash */
 					ClientProxy.EHC_INSTANCE.betterCombatOffhand.setShieldBashing();
 									
@@ -237,27 +235,14 @@ public class EventHandlersClient
 			/* Cancel left-click! */
 			return true;
 		}
-				
-		/* If the MAINHAND and OFFHAND is NOT empty, */
-		if ( !this.itemStackMainhand.isEmpty() && !this.itemStackOffhand.isEmpty() )
-		{
-			/* Set the fatigue to the custom weapon fatigue */
-			int fatigue = this.betterCombatMainhand.getFatigue() + this.betterCombatOffhand.getFatigue()/2;
-			
-			/* Send a fatigue packet if there is fatigue */
-			if ( fatigue > 0 )
-			{
-				PacketHandler.instance.sendToServer(new PacketFatigue(fatigue));
-			}
-		}
-		
+						
 		/* ----------------------------------------- */
 		/*             	  SWING WEAPON               */
 		/* ----------------------------------------- */
-		
+
 		/* Reset the MAINHAND cooldown so the player cannot attack for a period of time */
-		this.resetMainhandCooldown(player);
 		this.mc.player.resetCooldown();
+		this.resetMainhandCooldown(player);
 
 		/* SWING! Initiate the MAINHAND animation for attacking */
 		this.betterCombatMainhand.initiateAnimation(this.mainhandCooldown);
@@ -352,12 +337,12 @@ public class EventHandlersClient
 			if ( mov.typeOfHit == Type.BLOCK && mov.getBlockPos() != null && mov.getBlockPos() != BlockPos.ORIGIN )
 			{
 				/* If the MAINHAND item can interact with that block, */
-				if ( this.itemCanInteractWithBlock(this.itemStackMainhand.getItem()) )
+				if ( this.toolCanInteractWithBlock(this.itemStackMainhand.getItem()) )
 				{
 					if ( this.itemStackMainhand.getItem().onItemUse(this.mc.player, this.mc.player.world, mov.getBlockPos(), EnumHand.MAIN_HAND, mov.sideHit, 0.0F, 0.0F, 0.0F) == EnumActionResult.SUCCESS )
 					{
 						/* HIT! Send a packet that uses the item on the block! */
-						PacketHandler.instance.sendToServer(new PacketOnItemUse(mov.getBlockPos().getX(), mov.getBlockPos().getY(), mov.getBlockPos().getZ(), mov.sideHit));
+						PacketHandler.instance.sendToServer(new PacketOnItemUse(mov.getBlockPos().getX(), mov.getBlockPos().getY(), mov.getBlockPos().getZ(), true, mov.sideHit));
 						return;
 					}
 				}
@@ -380,7 +365,92 @@ public class EventHandlersClient
 		
 		/* MISS! Send an attack packet with NO target! */
 		PacketHandler.instance.sendToServer(new PacketMainhandAttack());
+		return;
 	}
+
+	private boolean toolCanInteractWithBlock( Item item )
+    {
+    	return (ConfigurationHandler.tillingRequiresAnimation && item instanceof ItemHoe) || (ConfigurationHandler.grassPathingRequiresAnimation && item instanceof ItemSpade) || (ConfigurationHandler.strippingBarkRequiresAnimation && item instanceof ItemAxe);
+	}
+
+	private RayTraceResult getMainhandMouseover()
+    {
+    	return getMouseOverExtended(this.mc.player, Helpers.getMainhandReach(this.mc.player, this.betterCombatMainhand.getAdditionalReach()), this.getExtraSweepWidth(this.betterCombatMainhand.getSweep()));
+	}
+
+	/* ====================================================================================================================================================== */
+    /* ====================================================================================================================================================== */
+    /*																	ATTACK - OFF HAND																	  */
+    /* ====================================================================================================================================================== */
+    /* ====================================================================================================================================================== */
+	
+	public void offhandAttack()
+	{
+		RayTraceResult mov = mc.objectMouseOver;
+				
+		if ( mov == null || mc.objectMouseOver.entityHit == null )
+		{
+			mov = this.getOffhandMouseover();
+		}
+		
+		if ( mov != null )
+		{
+			if ( mov.typeOfHit == Type.BLOCK && mov.getBlockPos() != null && mov.getBlockPos() != BlockPos.ORIGIN )
+			{
+				if ( this.toolCanInteractWithBlock(this.itemStackOffhand.getItem()) )
+				{					
+					if ( this.itemStackOffhand.getItem().onItemUse(this.mc.player, this.mc.player.world, mov.getBlockPos(), EnumHand.OFF_HAND, mov.sideHit, 0.0F, 0.0F, 0.0F) == EnumActionResult.SUCCESS )
+					{
+						PacketHandler.instance.sendToServer(new PacketOnItemUse(mov.getBlockPos().getX(), mov.getBlockPos().getY(), mov.getBlockPos().getZ(), false, mov.sideHit));
+						return;
+					}
+				}
+				
+				if ( this.swingThroughGrass(mov.getBlockPos()) )
+				{
+					/* Get a new MOV after the grass or plant has been broken */
+					mov = this.getOffhandMouseover();
+				}
+			}
+			
+			if ( mov != null && mov.entityHit != null && this.canPVP(mov.entityHit, this.mc.player) && ConfigurationHandler.rightClickAttackable(mov.entityHit) )
+			{
+				if ( this.itemStackOffhand.getItem() instanceof ItemShield )
+				{
+					PacketHandler.instance.sendToServer(new PacketShieldBash(mov.entityHit.getEntityId()));
+					return;
+				}
+				else
+				{
+					PacketHandler.instance.sendToServer(new PacketOffhandAttack(mov.entityHit.getEntityId()));
+					return;
+				}
+			}
+		}
+		
+		if ( this.itemStackOffhand.getItem() instanceof ItemShield )
+		{
+			PacketHandler.instance.sendToServer(new PacketShieldBash());
+			return;
+		}
+		else
+		{
+			PacketHandler.instance.sendToServer(new PacketOffhandAttack());
+			return;
+		}
+	}
+	
+	private RayTraceResult getOffhandMouseover()
+    {
+    	return getMouseOverExtended(this.mc.player, Helpers.getOffhandReach(this.mc.player, this.betterCombatOffhand.getAdditionalReach(), this.itemStackOffhand, this.itemStackMainhand), this.getExtraSweepWidth(this.betterCombatOffhand.getSweep()));
+	}
+	
+    /* ====================================================================================================================================================== */
+    /* ====================================================================================================================================================== */
+    /*																	SWING THROUGH GRASS	 														  */
+    /* ====================================================================================================================================================== */
+    /* ====================================================================================================================================================== */
+	
 	
     private boolean swingThroughGrass( BlockPos pos )
     {
@@ -418,95 +488,20 @@ public class EventHandlersClient
 		
 		return false;
     }
-
-	private boolean itemCanInteractWithBlock( Item item )
-    {
-    	return item instanceof ItemTool || item instanceof ItemHoe;
-	}
-
-	private RayTraceResult getMainhandMouseover()
-    {
-    	return getMouseOverExtended(this.mc.player, Helpers.getMainhandReach(this.mc.player, this.betterCombatMainhand.getAdditionalReach()), this.getExtraSweepWidth(this.betterCombatMainhand.getSweep()));
-	}
-
-	/* ====================================================================================================================================================== */
-    /* ====================================================================================================================================================== */
-    /*																	ATTACK - OFF HAND																	  */
-    /* ====================================================================================================================================================== */
-    /* ====================================================================================================================================================== */
-	
-	public void offhandAttack()
-	{
-		RayTraceResult mov = mc.objectMouseOver;
-				
-		if ( mov == null || mc.objectMouseOver.entityHit == null )
-		{
-			mov = this.getOffhandMouseover();
-		}
-		
-		if ( mov != null )
-		{
-			if ( mov.typeOfHit == Type.BLOCK && mov.getBlockPos() != null && mov.getBlockPos() != BlockPos.ORIGIN )
-			{
-				if ( this.itemStackOffhand.getItem() instanceof ItemTool || this.itemStackOffhand.getItem() instanceof ItemHoe )
-				{
-					PacketHandler.instance.sendToServer(new PacketOnItemUse(mov.getBlockPos().getX(), mov.getBlockPos().getY(), mov.getBlockPos().getZ(), mov.sideHit));
-					
-					if ( this.itemStackOffhand.getItem().onItemUse(this.mc.player, this.mc.player.world, mov.getBlockPos(), EnumHand.OFF_HAND, mov.sideHit, 0.0F, 0.0F, 0.0F) == EnumActionResult.SUCCESS )
-					{
-						return;
-					}
-				}
-				
-				if ( this.swingThroughGrass(mov.getBlockPos()) )
-				{
-					/* Get a new MOV after the grass or plant has been broken */
-					mov = this.getOffhandMouseover();
-				}
-			}
-			
-			if ( mov != null && mov.entityHit != null && this.canPVP(mov.entityHit, this.mc.player) && ConfigurationHandler.rightClickAttackable(mov.entityHit) )
-			{
-				if ( this.itemStackOffhand.getItem() instanceof ItemShield )
-				{
-					this.mc.player.setActiveHand(EnumHand.OFF_HAND);
-					this.mc.player.stopActiveHand();
-					PacketHandler.instance.sendToServer(new PacketShieldBash(mov.entityHit.getEntityId()));
-				}
-				else
-				{
-					this.mc.player.setActiveHand(EnumHand.OFF_HAND);
-					this.mc.player.stopActiveHand();
-					PacketHandler.instance.sendToServer(new PacketOffhandAttack(mov.entityHit.getEntityId()));
-				}
-				return;
-			}
-		}
-		
-		if ( this.itemStackOffhand.getItem() instanceof ItemShield )
-		{
-			this.mc.player.setActiveHand(EnumHand.OFF_HAND);
-			this.mc.player.stopActiveHand();
-			PacketHandler.instance.sendToServer(new PacketShieldBash());
-		}
-		else
-		{
-			this.mc.player.setActiveHand(EnumHand.OFF_HAND);
-			this.mc.player.stopActiveHand();
-			PacketHandler.instance.sendToServer(new PacketOffhandAttack());
-		}
-	}
-	
-	private RayTraceResult getOffhandMouseover()
-    {
-    	return getMouseOverExtended(this.mc.player, Helpers.getMainhandReach(this.mc.player, this.betterCombatOffhand.getAdditionalReach()), this.getExtraSweepWidth(this.betterCombatOffhand.getSweep()));
-	}
-	
+    
     /* ====================================================================================================================================================== */
     /* ====================================================================================================================================================== */
     /*																	RIGHT CLICK - MAIN HAND 	 														  */
     /* ====================================================================================================================================================== */
     /* ====================================================================================================================================================== */
+	
+//	if ( !this.rightClickMouse(EnumHand.MAIN_HAND) && this.rightClickMouse(EnumHand.OFF_HAND) )
+//	{
+//		if ( this.itemStackMainhand.useItemRightClick(this.mc.player.world, this.mc.player, EnumHand.MAIN_HAND).getType() == EnumActionResult.FAIL )
+//		{
+//			this.itemStackMainhand.useItemRightClick(this.mc.player.world, this.mc.player, EnumHand.MAIN_HAND);
+//		}
+//	}
 	
 	/* Return TRUE to overwrite/cancel the default click
 	 * Return FALSE to use the default click
@@ -514,7 +509,7 @@ public class EventHandlersClient
 	 * MAINHAND has priority for using items and interacting 
 	 */
 	public boolean overwriteRightClick()
-	{		
+	{
 		/* If the player is not valid, */
 		if ( this.invalidPlayer(this.mc.player) )
 		{
@@ -539,9 +534,10 @@ public class EventHandlersClient
 			return false;
 		}
 		
-		/* If the MAINHAND has a TWOHAND weapon, */
+		/* If the MAINHAND has a TWOHAND weapon, prevent placing blocks, but use the item */
 		if ( this.itemStackMainhand.getItemUseAction() == EnumAction.NONE && this.betterCombatMainhand.getWeaponProperty() == WeaponProperty.TWOHAND )
 		{
+			/* Only use the MAINHAND */
 			this.rightClickMouse(EnumHand.MAIN_HAND);
 
 			/* Cancel right-click! */
@@ -564,14 +560,16 @@ public class EventHandlersClient
 				
 				Block block = this.mc.player.world.getBlockState(pos).getBlock();
 				
-				if ( this.useTools(this.mc.player, block) )
+				if ( this.useToolsMainhandOnly(this.mc.player, block) )
 				{
 					/* Cancel right-click! */
 					return true;
 				}
 			}
 			
+			/* Only use the MAINHAND item */
 			this.rightClickMouse(EnumHand.MAIN_HAND);
+
 			/* Cancel right-click! */
 			return true;
 		}
@@ -579,28 +577,21 @@ public class EventHandlersClient
 		/* If the MAINHAND has an action, OR if the OFFHAND has an action, */
 		if ( this.itemStackMainhand.getItemUseAction() != EnumAction.NONE || this.itemStackOffhand.getItemUseAction() != EnumAction.NONE )
 		{
-			/* If the MAINHAND has a BLOCK action, */
-			if ( this.itemStackMainhand.getItemUseAction() == EnumAction.BLOCK )
+			/* If the OFFHAND can block */
+			if ( this.itemStackOffhand.getItemUseAction() == EnumAction.BLOCK )
 			{
-				/* Cancel right-click! */
-				return true;
+				if ( ConfigurationHandler.disableBlockingWhileAttacking && !this.isMainhandAttackReady() )
+				{
+					PacketHandler.instance.sendToServer(new PacketStopActiveHand());
+				}
 			}
 			
-			/* !this.isMainhandAttackReady() */
-//			if ( this.itemStackOffhand.getItemUseAction() == EnumAction.BLOCK )
+//			if ( this.rightClickMouse(EnumHand.MAIN_HAND) || this.rightClickMouse(EnumHand.OFF_HAND) )
 //			{
-//				if ( player.getCooldownTracker().hasCooldown(this.itemStackOffhand.getItem()) )
-//				{
-//					player.stopActiveHand();
-//					return true;
-//				}
-//				else if ( ConfigurationHandler.disableBlockingWhileAttacking && !this.isMainhandAttackReady() )
-//				{
-//					player.stopActiveHand();
-//					return true;
-//				}
+//				/* Cancel right-click! */
+//				return true;
 //			}
-			
+
 			/* Continue with right-click and use item! */
 			return false;
 		}
@@ -613,14 +604,12 @@ public class EventHandlersClient
 			/* If that position is invalid, */
 			if ( pos == null && pos == BlockPos.ORIGIN )
 			{
-				/* Cancel right-click, as there was an error! */
+				/* Cancel right-click! */
 				return true;
 			}
 			
 			Block block = this.mc.player.world.getBlockState(pos).getBlock();
-			
-			// !block.hasTileEntity(block.getDefaultState())
-			
+						
 			/* If the block is a PLANT and the MAINHAND OR OFFHAND has a HOE, */
 			if ( (block instanceof IPlantable || block instanceof IShearable) && (this.itemStackMainhand.getItem() instanceof ItemHoe || this.itemStackOffhand.getItem() instanceof ItemHoe) )
 			{
@@ -628,28 +617,32 @@ public class EventHandlersClient
 				return false;
 			}
 			/* 
-			 * Otherwise, if the block is NOT a Tile Entity, such as a chest or bed,
-			 * AND the MAINHAND has the ability to interact, such as tilling or stripping bark,
+			 * Otherwise, if the player can interact with any hand,
+			 */
+			else if ( !this.betterCombatMainhand.hasCustomWeapon() && !this.betterCombatOffhand.hasCustomWeapon() )
+			{
+				/* Continue with right-click, placing blocks! */
+				return false;
+			}
+			/* 
+			 * Otherwise, if the player can interact with any hand,
+			 */
+			else if ( this.rightClickMouse(EnumHand.MAIN_HAND) || this.rightClickMouse(EnumHand.OFF_HAND) )
+			{
+				/* Cancel right-click! */
+				return true;
+			}
+			/* 
+			 * If hands have the ability to interact, such as tilling, pathing, or stripping bark,
 			 */
 			else if ( this.useTools(this.mc.player, block) )
 			{
-				/* Use tools */
+				/* Cancel right-click, use tools! */
 				return true;
 			}
-			else
-			{
-				/* Continue with right-click! */
-				return false;
-			}
 		}
-		/* Otherwise, if there is no entity hit and the mainhand does not have a weapon, continue with the right click and do not attack, instead use the mainhand item (and no offhand weapon) */
+		/* Otherwise, if there is no entity hit and there are no weapons */
 		else if ( mov.entityHit == null && !this.betterCombatMainhand.hasCustomWeapon() && !this.betterCombatOffhand.hasCustomWeapon() )
-		{
-			/* Continue with right-click! */
-			return false;
-		}
-		/* Otherwise, if the keybind is held down, */
-		else if ( this.keyBindUseItemIsKeyDown ) // XXX
 		{
 			/* Continue with right-click! */
 			return false;
@@ -673,10 +666,10 @@ public class EventHandlersClient
 			/* Cancel right-click! */
 			return true; 
 		}
-				
+
 		/* ----------------------------------------- */
 		/*             	  SWING WEAPON               */
-		/* ----------------------------------------- */		
+		/* ----------------------------------------- */
 		
 		return this.rightClick(this.mc.player);
 	}
@@ -708,7 +701,7 @@ public class EventHandlersClient
 		
 		if ( ConfigurationHandler.tillingRequiresAnimation )
 		{
-			if ( block instanceof BlockDirt || block instanceof BlockGrass ||  block instanceof BlockGrassPath )
+			if ( block instanceof BlockDirt || block instanceof BlockGrass || block instanceof BlockGrassPath )
 			{
 				if ( this.itemStackMainhand.getItem() instanceof ItemHoe )
 				{
@@ -755,27 +748,66 @@ public class EventHandlersClient
 		/* Continue with right-click! */
 		return false;
 	}
+	
+	private boolean useToolsMainhandOnly( EntityPlayerSP player, Block block )
+	{
+		if ( ConfigurationHandler.grassPathingRequiresAnimation )
+		{
+			if ( block instanceof BlockGrass )
+			{
+				if ( this.itemStackMainhand.getItem() instanceof ItemSpade )
+				{
+					if ( this.isMainhandAttackReady() )
+					{
+						this.overwriteLeftClick(false);
+					}
+					return true;
+				}
+			}
+		}
+		
+		if ( ConfigurationHandler.tillingRequiresAnimation )
+		{
+			if ( block instanceof BlockDirt || block instanceof BlockGrass ||  block instanceof BlockGrassPath )
+			{
+				if ( this.itemStackMainhand.getItem() instanceof ItemHoe )
+				{
+					if ( this.isMainhandAttackReady() )
+					{
+						this.overwriteLeftClick(false);
+					}
+					return true;
+				}
+			}
+		}
+		
+		if ( ConfigurationHandler.strippingBarkRequiresAnimation )
+		{
+			if ( block instanceof BlockLog )
+			{
+				if ( this.itemStackMainhand.getItem() instanceof ItemAxe )
+				{
+					if ( this.isMainhandAttackReady() )
+					{
+						this.overwriteLeftClick(false);
+					}
+					return true;
+				}
+			}
+		}
+		
+		/* Continue with right-click! */
+		return false;
+	}
 
+	/* Initiate the right click attack, prepares offhandAttack */
 	private boolean rightClick( EntityPlayerSP player )
 	{
 		if ( this.betterCombatOffhand.hasCustomWeapon() )
 		{
-			/* If both the MAINHAND AND OFFHAND have items, */
-			if ( !this.itemStackMainhand.isEmpty() && !this.itemStackOffhand.isEmpty() )
-			{
-				/* Set the fatigue to the custom weapon fatigue */
-				int fatigue = this.betterCombatOffhand.getFatigue() + this.betterCombatMainhand.getFatigue()/2;
-				
-				/* Send a fatigue packet if there is fatigue */
-				if ( fatigue > 0 )
-				{
-					PacketHandler.instance.sendToServer(new PacketFatigue(fatigue));
-				}
-			}
-			
 			/* Reset the OFFHAND cooldown so the player cannot attack for a period of time */
 			this.resetOffhandCooldown(player);
-			
+						
 			/* SWING! Initiate the OFFHAND animation for attacking */
 			this.betterCombatOffhand.initiateAnimation(this.offhandCooldown);
 			
@@ -787,23 +819,23 @@ public class EventHandlersClient
 		return false;
 	}
 	
-	@SuppressWarnings("incomplete-switch")
-    private void rightClickMouse( EnumHand enumhand )
-    {
+    private boolean rightClickMouse( EnumHand enumhand )
+    {    	
         if ( !this.mc.playerController.getIsHittingBlock() )
         {
-            //this.mc.rightClickDelayTimer = 4;
+        	// TODO
+            // this.mc.rightClickDelayTimer = 4;
 
             if ( !this.mc.player.isRowingBoat() )
             {
                 if ( this.mc.objectMouseOver == null )
                 {
-                    return;
+                    return false;
                 }
                 
                 ItemStack itemstack = this.mc.player.getHeldItem(enumhand);
 
-                if (this.mc.objectMouseOver != null)
+                if ( this.mc.objectMouseOver != null )
                 {
                     switch (this.mc.objectMouseOver.typeOfHit)
                     {
@@ -811,15 +843,15 @@ public class EventHandlersClient
                         {
                             if (this.mc.playerController.interactWithEntity(this.mc.player, this.mc.objectMouseOver.entityHit, this.mc.objectMouseOver, enumhand) == EnumActionResult.SUCCESS)
                             {
-                                return;
+                                return true;
                             }
 
                             if (this.mc.playerController.interactWithEntity(this.mc.player, this.mc.objectMouseOver.entityHit, enumhand) == EnumActionResult.SUCCESS)
                             {
-                                return;
+                                return true;
                             }
-
-                            break;
+                            
+                    		break;
                         }
                         case BLOCK:
                         {
@@ -831,11 +863,9 @@ public class EventHandlersClient
                                 
                                 EnumActionResult enumactionresult;
 
-                    			if ( this.itemStackOffhand.getItem() instanceof ItemHoe || this.itemStackOffhand.getItem() instanceof ItemSpade )
+                				if ( this.toolCanInteractWithBlock(itemstack.getItem()) )
                     			{
-                    				this.mc.player.inventory.offHandInventory.set(0, new ItemStack(Items.AIR));
-                    				enumactionresult = this.mc.playerController.processRightClickBlock(this.mc.player, this.mc.world, blockpos, this.mc.objectMouseOver.sideHit, this.mc.objectMouseOver.hitVec, enumhand);
-                    				this.mc.player.inventory.offHandInventory.set(0, this.itemStackOffhand);
+                					return false;
                     			}
                     			else
                     			{
@@ -851,21 +881,33 @@ public class EventHandlersClient
                                         this.mc.entityRenderer.itemRenderer.resetEquippedProgress(enumhand);
                                     }
 
-                                    return;
+                                    return true;
                                 }
                             }
+                    		break;
+                        }
+                        default:
+                        {
+                			break;
                         }
                     }
                 }
 
-                if (itemstack.isEmpty() && (this.mc.objectMouseOver == null || this.mc.objectMouseOver.typeOfHit == RayTraceResult.Type.MISS)) net.minecraftforge.common.ForgeHooks.onEmptyClick(this.mc.player, enumhand);
+                if (itemstack.isEmpty() && (this.mc.objectMouseOver == null || this.mc.objectMouseOver.typeOfHit == RayTraceResult.Type.MISS))
+                {
+                	net.minecraftforge.common.ForgeHooks.onEmptyClick(this.mc.player, enumhand);
+                    return true;
+                }
+                
                 if (!itemstack.isEmpty() && this.mc.playerController.processRightClick(this.mc.player, this.mc.world, enumhand) == EnumActionResult.SUCCESS)
                 {
                     this.mc.entityRenderer.itemRenderer.resetEquippedProgress(enumhand);
-                    return;
+                    return true;
                 }
             }
         }
+        
+        return false;
     }
 	
 //	@SubscribeEvent( priority = EventPriority.NORMAL, receiveCanceled = true )
@@ -898,7 +940,7 @@ public class EventHandlersClient
 
 		if ( event.isButtonstate() && event.getButton() == rightClick.getKeyCode() + 100 )
 		{
-			this.keyBindUseItemIsKeyDown = false;
+			// this.keyBindUseItemIsKeyDown = false;
 			
 			if ( this.overwriteRightClick() )
 			{
@@ -946,6 +988,16 @@ public class EventHandlersClient
     /*																	TICK UDPATE																			  */
     /* ====================================================================================================================================================== */
 	
+//	@SubscribeEvent( priority = EventPriority.HIGH, receiveCanceled = true )
+//	public void livingUpdate( TickEvent.ClientTickEvent event )
+//	{
+//		if ( this.mc.player != null )
+//		{
+//			ClientProxy.AH_INSTANCE.breatheTicks += ConfigurationHandler.breathingAnimationSpeed;
+//			this.checkItemstacksChanged(false);
+//		}
+//	}
+	
 	private double hX;
 	private double hZ;
 	
@@ -953,8 +1005,12 @@ public class EventHandlersClient
 	public void tickEventLow( TickEvent.ClientTickEvent event )
 	{
 		if ( event.phase == TickEvent.Phase.END && this.mc.player != null )
-		{            
-			/* Too close animation */
+		{			
+			ClientProxy.AH_INSTANCE.breatheTicks += ConfigurationHandler.breathingAnimationSpeed;
+			
+			this.checkItemstacksChanged(false);
+			
+			/* Wall-aware positioning */
 			if ( this.mc.objectMouseOver != null )
 			{
 				if ( this.mc.objectMouseOver.hitVec != null )
@@ -1027,9 +1083,9 @@ public class EventHandlersClient
 					}
 				}
 				
-				if ( ConfigurationHandler.disableBlockingWhileAttacking && this.mc.player.isHandActive() && this.mc.player.getActiveHand().equals(EnumHand.OFF_HAND) )
+				if ( ConfigurationHandler.disableBlockingWhileAttacking && Helpers.isHandActive(this.mc.player, EnumHand.OFF_HAND) )
 				{
-					this.mc.player.resetActiveHand();
+					PacketHandler.instance.sendToServer(new PacketStopActiveHand());
 				}
 			}
 			else if ( this.betterCombatMainhand.equipSoundTimer > 0 && --this.betterCombatMainhand.equipSoundTimer <= 0 )
@@ -1057,9 +1113,9 @@ public class EventHandlersClient
 					}
 				}
 				
-				if ( ConfigurationHandler.disableBlockingWhileShieldBashing && this.mc.player.isHandActive() && this.mc.player.getActiveHand().equals(EnumHand.OFF_HAND) )
+				if ( ConfigurationHandler.disableBlockingWhileShieldBashing && Helpers.isHandActive(this.mc.player, EnumHand.OFF_HAND) )
 				{
-					this.mc.player.resetActiveHand();
+					PacketHandler.instance.sendToServer(new PacketStopActiveHand());
 				}
 			}
 			else if ( this.betterCombatOffhand.equipSoundTimer > 0 && --this.betterCombatOffhand.equipSoundTimer <= 0 )
@@ -1087,16 +1143,6 @@ public class EventHandlersClient
 		}
 		
 		return d0;
-	}
-
-	@SubscribeEvent( priority = EventPriority.HIGH, receiveCanceled = true )
-	public void livingUpdate( TickEvent.ClientTickEvent event )
-	{
-		if ( this.mc.player != null )
-		{
-			ClientProxy.AH_INSTANCE.breatheTicks += ConfigurationHandler.breathingAnimationSpeed;
-			this.checkItemstacksChanged(false);
-		}
 	}
 	
 //	@SubscribeEvent( priority = EventPriority.HIGH, receiveCanceled = true )
@@ -1141,7 +1187,7 @@ public class EventHandlersClient
             this.itemStackMainhand = this.mc.player.getHeldItemMainhand();
 
             /* Current Weapon */
-            if (!this.itemStackMainhand.isEmpty())
+            if ( !this.itemStackMainhand.isEmpty() )
             {
             	try
             	{
@@ -1198,15 +1244,16 @@ public class EventHandlersClient
         		SoundHandler.playSheatheSoundLeft(this.mc.player, this.betterCombatOffhand, this.itemStackOffhand, this.offhandAttackCooldown, Helpers.isMetal(this.itemStackOffhand));
         	}
         	
-        	/* Previous Weapon */
-        	try
-        	{
-        		this.mc.player.getAttributeMap().removeAttributeModifiers(this.mc.player.getHeldItemOffhand().getAttributeModifiers(EntityEquipmentSlot.MAINHAND));
-        	}
-        	catch ( Exception e )
-        	{
-
-        	}
+        	// this is not getting applied... why remove it
+//        	/* Previous Weapon */
+//        	try
+//        	{
+//        		this.mc.player.getAttributeMap().removeAttributeModifiers(this.mc.player.getHeldItemOffhand().getAttributeModifiers(EntityEquipmentSlot.MAINHAND));
+//        	}
+//        	catch ( Exception e )
+//        	{
+//
+//        	}
   
             /* Swap */
             this.itemStackOffhand = this.mc.player.getHeldItemOffhand();
@@ -1300,7 +1347,7 @@ public class EventHandlersClient
 	
 	public void resetMainhandCooldown( EntityPlayerSP player )
 	{
-		this.mainhandAttackCooldown = Helpers.getMainhandCooldown(player, this.itemStackMainhand);
+		this.mainhandAttackCooldown = Helpers.getMainhandCooldown(player, this.itemStackMainhand, this.itemStackOffhand);
 		
 		// this.mc.player.sendChatMessage(""+this.mainhandAttackCooldown);
 

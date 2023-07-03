@@ -36,6 +36,7 @@ import net.minecraft.init.Enchantments;
 import net.minecraft.init.MobEffects;
 import net.minecraft.init.SoundEvents;
 import net.minecraft.inventory.EntityEquipmentSlot;
+import net.minecraft.item.Item;
 import net.minecraft.item.ItemShield;
 import net.minecraft.item.ItemStack;
 import net.minecraft.item.ItemSword;
@@ -68,25 +69,17 @@ public final class Helpers
 		
 		if ( mainhandAttack ) /* MAINHAND */
 		{
-			// player.swingingHand = EnumHand.MAIN_HAND;
-
 			player.setHeldItem(EnumHand.OFF_HAND, ItemStack.EMPTY);
+			
+			playerAttackVictimWithWeapon(player, victim, mainhand, offhand, true);
+			
+			player.setHeldItem(EnumHand.OFF_HAND, offhand);
 
-			/* ATTACK */
-			try
+			if ( player.world.isRemote )
 			{
-				playerAttackVictimWithWeapon(player, victim, mainhand, offhand, true); // ConfigurationHandler.isItemWhiteList(mh.getItem())
+				ClientProxy.EHC_INSTANCE.checkItemstacksChanged(true);
 			}
-			finally
-			{
-				player.setHeldItem(EnumHand.OFF_HAND, offhand);
-				
-				if ( player.world.isRemote )
-				{
-					ClientProxy.EHC_INSTANCE.checkItemstacksChanged(true);
-				}
-			}
-
+			
 			if ( !mainhand.isEmpty() && victim instanceof EntityLivingBase )
 			{
 				ItemStack beforeHitCopy = mainhand.copy();
@@ -106,33 +99,25 @@ public final class Helpers
 			}
 		}
 		else /* OFFHAND */
-		{
-			//player.swingingHand = EnumHand.OFF_HAND;
-			
+		{			
 			player.setHeldItem(EnumHand.OFF_HAND, ItemStack.EMPTY);
 			player.setHeldItem(EnumHand.MAIN_HAND, offhand);
 
-			/* ATTACK */
-			try
+			if ( offhand.getItem() instanceof ItemShield )
 			{
-				if ( offhand.getItem() instanceof ItemShield )
-				{
-					playerAttackVictimWithShield(player, victim, offhand, (ItemShield)offhand.getItem());
-				}
-				else
-				{
-					playerAttackVictimWithWeapon(player, victim, mainhand, offhand, false);
-				}
+				playerAttackVictimWithShield(player, victim, (ItemShield)offhand.getItem());
 			}
-			finally
+			else
 			{
-				player.setHeldItem(EnumHand.OFF_HAND, offhand);
-				player.setHeldItem(EnumHand.MAIN_HAND, mainhand);
-				
-				if ( player.world.isRemote )
-				{
-					ClientProxy.EHC_INSTANCE.checkItemstacksChanged(true);
-				}
+				playerAttackVictimWithWeapon(player, victim, mainhand, offhand, false);
+			}
+			
+			player.setHeldItem(EnumHand.OFF_HAND, offhand);
+			player.setHeldItem(EnumHand.MAIN_HAND, mainhand);
+			
+			if ( player.world.isRemote )
+			{
+				ClientProxy.EHC_INSTANCE.checkItemstacksChanged(true);
 			}
 
 			if ( !offhand.isEmpty() && victim instanceof EntityLivingBase )
@@ -156,7 +141,7 @@ public final class Helpers
 	}
 
 	/*
-	 * vanilla attacks are cancelled and this method is instead called with
+	 * vanilla attacks are cancelled and this method is instead called
 	 */
 	public static void playerAttackVictimWithWeapon( EntityPlayer player, Entity entity, ItemStack mainhand, ItemStack offhand, boolean mainhandAttack )
 	{		
@@ -722,7 +707,7 @@ public final class Helpers
 		player.addExhaustion(0.1F);
 	}
 
-	private static void playerAttackVictimWithShield( EntityPlayer player, Entity entity, ItemStack itemStack, ItemShield shield )
+	private static void playerAttackVictimWithShield( EntityPlayer player, Entity entity, ItemShield shield )
 	{		
 		if ( entity == null || entity == player || !entity.isEntityAlive() || !entity.canBeAttackedWithItem() || entity.hitByEntity(player) )
 		{
@@ -786,7 +771,7 @@ public final class Helpers
 			}
 		}
 		
-		if ( ConfigurationHandler.shieldSilverDamageMultiplier != 1.0F && ((EntityLivingBase)victim).isEntityUndead() && Helpers.isSilver(itemStack) )
+		if ( ConfigurationHandler.shieldSilverDamageMultiplier != 1.0F && ((EntityLivingBase)victim).isEntityUndead() && isSilver(getString(shield)) )
 		{
 			damage *= ConfigurationHandler.shieldSilverDamageMultiplier;
 			EventHandlers.playSilverArmorEffect(victim);
@@ -802,7 +787,7 @@ public final class Helpers
 
 			if ( attacked )
 			{				
-				if ( isMetal(itemStack) )
+				if ( isMetal(getString(shield)) )
 				{
 					SoundHandler.playBashMetalShieldSound(player);
 				}
@@ -896,7 +881,7 @@ public final class Helpers
 		return calculateAttribute(reach, additive, multiplicative);
 	}
 	
-	public static int getMainhandCooldown( EntityPlayer player, ItemStack mh )
+	public static int getMainhandCooldown( EntityPlayer player, ItemStack mh, ItemStack oh )
 	{
 		double speed = player.getEntityAttribute(SharedMonsterAttributes.ATTACK_SPEED).getBaseValue();
 		
@@ -939,6 +924,12 @@ public final class Helpers
 					break;
 				}
 			}
+		}
+		
+		if ( !mh.isEmpty() && !oh.isEmpty() )
+		{
+			/* Set the fatigue to the custom weapon fatigue, only versatile weapons have fatigue */
+			speed /= 1.0 + ClientProxy.EHC_INSTANCE.betterCombatMainhand.getFatigue() + ClientProxy.EHC_INSTANCE.betterCombatOffhand.getFatigue()/2.0;
 		}
 		
 		return calculateAttackSpeedTicks(speed, multiply_base, multiply);
@@ -1291,6 +1282,13 @@ public final class Helpers
 					break;
 				}
 			}
+		}
+		
+
+		if ( !oh.isEmpty() && !mh.isEmpty() )
+		{
+			/* Set the fatigue to the custom weapon fatigue, only versatile weapons have fatigue */
+			speed /= 1.0 + ClientProxy.EHC_INSTANCE.betterCombatOffhand.getFatigue() + ClientProxy.EHC_INSTANCE.betterCombatMainhand.getFatigue()/2.0;
 		}
 
 		return calculateAttackSpeedTicks(speed, multiply_base, multiply);
@@ -1835,6 +1833,11 @@ public final class Helpers
 	public static String getString(ItemStack itemStack)
 	{
 		return itemStack.getItem().getRegistryName().getResourcePath();
+	}
+	
+	public static String getString(Item item)
+	{
+		return item.getRegistryName().getResourcePath();
 	}
 	
 	public static boolean isSilver(String string)

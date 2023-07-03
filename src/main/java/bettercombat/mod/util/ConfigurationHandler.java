@@ -62,7 +62,7 @@ public class ConfigurationHandler
 
 	public static double offHandEfficiency = 0.75;
 	public static boolean sneakingDisablesOffhandAttack = true;
-	public static int versatileFatigueAmount = 3;
+	public static double versatileFatigueAmount = 0.3;
 
 	/* ENCHANTMENTS --------------------------------------------------------------------------------------------------------------------- */
 
@@ -219,9 +219,8 @@ public class ConfigurationHandler
 		public static ArrayList<CustomSword> swords = new ArrayList<CustomSword>();
 		private static String[] swordList =
 		{
-				"[Sword Substring=golden_sword]		[Additional Attack Speed=0.8]",
-				"[Sword Substring=stone_sword]		[Additional Attack Speed=-0.8]",
-				"[Sword Substring=wooden_sword]		[Additional Attack Speed=0.8]"
+				"[Sword Substring=golden_sword]		[Additional Attack Speed=0.4]",
+				"[Sword Substring=wooden_sword]		[Additional Attack Speed=0.4]"
 		};
 		
 	/* WEAPONS --------------------------------------------------------------------------------------------------------------------- */
@@ -376,8 +375,8 @@ public class ConfigurationHandler
 		
 		offHandEfficiency = config.get(DUALWIELD, "Offhand Efficiency", 0.75, "The percent efficiency of an attack with offhanded weapon    -->   damage * efficiency.").getDouble();
 		sneakingDisablesOffhandAttack = config.getBoolean("Sneaking Disables Offhand Attack", DUALWIELD, true, "If set to true, attacking with your offhand is disabled while sneaking. The purpose of this is to add compatibility to mods such as 'CarryOn' or 'Effortless Building' where you need to use certian right-click functionality.");
-		versatileFatigueAmount = config.getInt("Versatile Fatigue Amount", DUALWIELD, 0, 3, 10, "How much mining fatigue is applied when dual-wielding with a versatile weapon. Default 3, which translates to 30% slower attack speed, or Mining Fatigue III.");
-		miningFatigueDamageReduction = config.get(DUALWIELD, "Mining Fatigue Damage Reduction", 0.0, "Reduces the damage dealt of an attack per level of Mining Fatigue. For example, if this setting is set to 0.25F, then Mining Fatigue II reduces player damage by 50%. Set 0.0F to disable.").getDouble();
+		versatileFatigueAmount = config.get(DUALWIELD, "Versatile Fatigue Amount", 0.3, "How much of a slow to attack speed is applied when dual-wielding with one VERSATILE weapon. Default 0.3, which translates to a 30% slower attack speed. Dual-weilding with two VERSATILE weapons will slow attack speed by 45%.").getDouble();
+		miningFatigueDamageReduction = config.get(DUALWIELD, "Mining Fatigue Damage Reduction", 0.0, "Reduces the damage dealt of an attack per level of Mining Fatigue. For example, if this setting is set to 0.25, then Mining Fatigue II reduces player damage by 50%. Set 0.0 to disable.").getDouble();
 		/* --------------------------------------------------------------------------------------------------------------------- */
 		String ENCHANTMENTS = "Enchantments";
 		
@@ -701,19 +700,12 @@ public class ConfigurationHandler
 				try
 				{
 					String[] potionEffectList = list[19].split(",");
-					
-					System.out.println(list[19]);
-					
+										
 					try
 					{
 						if ( potionEffectList != null )
 						{
 							CustomWeaponPotionEffect customPotionEffect = new CustomWeaponPotionEffect();
-							
-							System.out.println(potionEffectList[0]);
-							System.out.println(potionEffectList[1]);
-							System.out.println(potionEffectList[2]);
-							System.out.println(potionEffectList[3]);
 
 							customPotionEffect.potionChance = getPotionChance(potionEffectList[0]);
 							customPotionEffect.afflict = potionEffectList[1].toLowerCase().equals("afflict");

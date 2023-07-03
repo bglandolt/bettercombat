@@ -48,7 +48,6 @@ import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Vec3d;
 import net.minecraft.world.World;
 import net.minecraft.world.WorldServer;
-import net.minecraftforge.client.event.EntityViewRenderEvent;
 import net.minecraftforge.common.ForgeHooks;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.event.entity.EntityJoinWorldEvent;
@@ -60,6 +59,7 @@ import net.minecraftforge.event.entity.living.LivingHealEvent;
 import net.minecraftforge.event.entity.living.LivingHurtEvent;
 import net.minecraftforge.event.entity.living.LivingKnockBackEvent;
 import net.minecraftforge.event.entity.living.PotionEvent.PotionAddedEvent;
+import net.minecraftforge.event.entity.living.PotionEvent.PotionApplicableEvent;
 import net.minecraftforge.event.entity.player.AttackEntityEvent;
 import net.minecraftforge.event.entity.player.PlayerEvent;
 import net.minecraftforge.fml.common.ObfuscationReflectionHelper;
@@ -155,7 +155,7 @@ public class EventHandlers
 			
 			this.registerCritAttributes(player);
 
-			if ( player.world.isRemote )
+			if ( player.world.isRemote && player == ClientProxy.EHC_INSTANCE.mc.player )
 			{
 				ClientProxy.EHC_INSTANCE.checkItemstacksChanged(true);
 			}
@@ -244,7 +244,7 @@ public class EventHandlers
 	}
 
 	@SubscribeEvent(priority = EventPriority.NORMAL, receiveCanceled = true)
-	public void potionAdded(PotionAddedEvent event)
+	public void potionApplicable(PotionApplicableEvent event)
 	{
 		if ( ConfigurationHandler.cancelSpartanWeaponryFatigue && event.getEntityLiving() instanceof EntityPlayer )
 		{
@@ -252,11 +252,15 @@ public class EventHandlers
 						
 			if ( event.getPotionEffect().getDuration() == 20 && event.getPotionEffect().getPotion().equals(MobEffects.MINING_FATIGUE) )
 			{
-				event.setCanceled(true);
 				event.setResult(Result.DENY);
 			}
 		}
-		else if ( event.getEntityLiving() instanceof EntityCreature && ConfigurationHandler.nauseaAffectsMobs > 0.0F )
+	}
+	
+	@SubscribeEvent(priority = EventPriority.NORMAL, receiveCanceled = true)
+	public void potionAdded(PotionAddedEvent event)
+	{
+		if ( event.getEntityLiving() instanceof EntityCreature && ConfigurationHandler.nauseaAffectsMobs > 0.0F )
 		{
 			EntityCreature creature = (EntityCreature) (event.getEntityLiving());
 

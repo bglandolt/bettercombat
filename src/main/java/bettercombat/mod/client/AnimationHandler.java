@@ -231,11 +231,13 @@ public class AnimationHandler
 					/* Block animation takes 10 frames (3.33 ticks) */
 					if ( this.blockingTimer < 10 )
 					{
+	    				// System.out.println("++");
 						this.blockingTimer++;
 					}
         		}
 				else if ( this.blockingTimer > 0 )
     			{
+    				// System.out.println("--");
     				this.blockingTimer--;
     			}
 
@@ -257,7 +259,7 @@ public class AnimationHandler
 	
     private void positionBreathingShield()
     {
-    	GlStateManager.translate(0.0F, MathHelper.sin(this.breatheTicks) * ConfigurationHandler.breathingAnimationIntensity, -this.tooCloseTimer);
+    	GlStateManager.translate(0.0F, MathHelper.sin(this.breatheTicks) * ConfigurationHandler.breathingAnimationIntensity, -this.tooCloseTimer*0.5F);
 	}
 
 	/* ======================================================================================================================================== */
@@ -1314,7 +1316,7 @@ public class AnimationHandler
 
     private void positionBreathing()
 	{
-    	GlStateManager.translate(0.0F, MathHelper.sin(this.breatheTicks) * ConfigurationHandler.breathingAnimationIntensity, this.tooCloseTimer);
+    	GlStateManager.translate(0.0F, MathHelper.sin(this.breatheTicks) * ConfigurationHandler.breathingAnimationIntensity, this.tooCloseTimer*0.5F);
 	}
     
     /* ====================================================================================================================================================== */

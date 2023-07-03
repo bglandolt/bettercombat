@@ -114,7 +114,7 @@ public class BetterCombatHand
 		return SoundType.NONE;
 	}
 	
-	public int getFatigue()
+	public double getFatigue()
 	{
 		if ( this.hasCustomWeapon() )
 		{
@@ -124,7 +124,7 @@ public class BetterCombatHand
 			}
 		}
 		
-		return 0;
+		return 0.0;
 	}
 	
 	public double getAdditionalReach()
