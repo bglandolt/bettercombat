@@ -114,6 +114,12 @@ public class ConfigurationHandler
 	{
 	    "net.minecraft.item.ItemSword", "net.minecraft.item.ItemTool", "net.minecraft.item.ItemHoe", "com.oblivioussp.spartanweaponry.item.ItemThrowingWeapon"
 	};
+	
+	@SuppressWarnings("rawtypes")
+	private static ArrayList<Class> itemClassBlackArray = new ArrayList<Class>();
+	private static String[] itemClassBlacklist =
+	{
+	};
 
 	/* POTIONS --------------------------------------------------------------------------------------------------------------------- */
 
@@ -800,6 +806,18 @@ public class ConfigurationHandler
 			}
 		}
 		
+		for ( String className : itemClassBlacklist )
+		{
+			try
+			{
+				itemClassBlackArray.add(Class.forName(className));
+			}
+			catch ( ClassNotFoundException classNotFoundException )
+			{
+				
+			}
+		}
+		
 		for ( String className : entityBlacklist )
 		{
 			try
@@ -851,6 +869,20 @@ public class ConfigurationHandler
 	public static boolean isItemWhiteList( Item item )
 	{		
 		for ( Class clazz : itemClassWhiteArray )
+		{			
+			if ( clazz.isInstance(item) )
+			{
+				return true;
+			}
+		}
+		
+		return false;
+	}
+	
+	@SuppressWarnings( "rawtypes" )
+	public static boolean isItemBlackList( Item item )
+	{		
+		for ( Class clazz : itemClassBlackArray )
 		{			
 			if ( clazz.isInstance(item) )
 			{

@@ -259,7 +259,7 @@ public class AnimationHandler
 	
     private void positionBreathingShield()
     {
-    	GlStateManager.translate(0.0F, MathHelper.sin(this.breatheTicks) * ConfigurationHandler.breathingAnimationIntensity, -this.tooCloseTimer*0.5F);
+    	GlStateManager.translate(0.0F, MathHelper.sin(this.breatheTicks) * ConfigurationHandler.breathingAnimationIntensity, -this.tooCloseTimer*0.6F);
 	}
 
 	/* ======================================================================================================================================== */
@@ -1316,7 +1316,7 @@ public class AnimationHandler
 
     private void positionBreathing()
 	{
-    	GlStateManager.translate(0.0F, MathHelper.sin(this.breatheTicks) * ConfigurationHandler.breathingAnimationIntensity, this.tooCloseTimer*0.5F);
+    	GlStateManager.translate(0.0F, MathHelper.sin(this.breatheTicks) * ConfigurationHandler.breathingAnimationIntensity, this.tooCloseTimer*0.6F);
 	}
     
     /* ====================================================================================================================================================== */

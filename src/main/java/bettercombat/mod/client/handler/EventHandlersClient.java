@@ -126,6 +126,12 @@ public class EventHandlersClient
 			return true;
 		}
 		
+		if ( ConfigurationHandler.isItemBlackList(this.itemStackMainhand.getItem()) )
+		{
+			/* Continue with left-click! */
+			return false;
+		}
+		
 		/* ----------------------------------------- */
 		/*                SHIELD BASH                */
 		/* ----------------------------------------- */
@@ -248,10 +254,6 @@ public class EventHandlersClient
 		this.betterCombatMainhand.initiateAnimation(this.mainhandCooldown);
 				
 		/* Set the shield cooldown */
-//		if ( ConfigurationHandler.disableShieldAfterAttack && this.itemStackOffhand.getItem() instanceof ItemShield )
-//		{
-//			player.getCooldownTracker().setCooldown(this.itemStackOffhand.getItem(), this.mainhandCooldown);
-//		}
 						
 		return true;
 	}
@@ -528,9 +530,9 @@ public class EventHandlersClient
 			return true;
 		}
 
-		if ( this.itemStackMainhand.isEmpty() && this.itemStackOffhand.isEmpty() )
+		if ( this.itemStackMainhand.isEmpty() && (this.itemStackOffhand.isEmpty() || ConfigurationHandler.isItemBlackList(this.itemStackOffhand.getItem())) )
 		{
-			/* Continue with right-click! */
+			/* Continue with left-click! */
 			return false;
 		}
 		
@@ -969,18 +971,28 @@ public class EventHandlersClient
 			PacketHandler.instance.sendToServer(new PacketFastEquip());
 		}
 
-		if ( this.mc.gameSettings.keyBindUseItem.getKeyCode() != -99 && this.mc.gameSettings.keyBindUseItem.isPressed() )
+		if ( this.mc.gameSettings.keyBindUseItem.isPressed() )
 		{
-			Reflections.unpressKey(this.mc.gameSettings.keyBindUseItem);
-			this.mc.gameSettings.keyBindUseItem = new KeyBinding("key.use", -99, "key.categories.gameplay");
-			this.mc.gameSettings.keyBindUseItem.setToDefault();
+			if ( this.mc.gameSettings.keyBindUseItem.getKeyCode() != -99 )
+			{
+				Reflections.unpressKey(this.mc.gameSettings.keyBindUseItem);
+				this.mc.gameSettings.keyBindUseItem = new KeyBinding("key.use", -99, "key.categories.gameplay");
+				this.mc.gameSettings.keyBindUseItem.setToDefault();
+			}
+			
+			this.overwriteRightClick();
 		}
 		
-		if ( this.mc.gameSettings.keyBindAttack.getKeyCode() != -100 && this.mc.gameSettings.keyBindAttack.isPressed() )
+		if ( this.mc.gameSettings.keyBindAttack.isPressed() )
 		{
-			Reflections.unpressKey(this.mc.gameSettings.keyBindAttack);
-			this.mc.gameSettings.keyBindAttack = new KeyBinding("key.attack", -100, "key.categories.gameplay");
-			this.mc.gameSettings.keyBindAttack.setToDefault();
+			if ( this.mc.gameSettings.keyBindAttack.getKeyCode() != -100 )
+			{
+				Reflections.unpressKey(this.mc.gameSettings.keyBindAttack);
+				this.mc.gameSettings.keyBindAttack = new KeyBinding("key.attack", -100, "key.categories.gameplay");
+				this.mc.gameSettings.keyBindAttack.setToDefault();
+			}
+			
+			this.overwriteLeftClick(true);
 		}
 	}
 	
