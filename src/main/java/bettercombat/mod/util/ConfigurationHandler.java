@@ -91,6 +91,7 @@ public class ConfigurationHandler
 	public static boolean tillingRequiresAnimation = true;
 	public static boolean strippingBarkRequiresAnimation = false;
 	public static boolean cancelSpartanWeaponryFatigue = true;
+	public static boolean overrideLeftAndRightClickKeybinds = true;
 
 	/* KNOCKBACK --------------------------------------------------------------------------------------------------------------------- */
 
@@ -410,6 +411,7 @@ public class ConfigurationHandler
 		tillingRequiresAnimation = config.getBoolean("Tilling Land Requires Animation", GENERAL, true, "If set to true, tilling land requires an animation. Hoes with a faster attack speed till land faster.");
 		strippingBarkRequiresAnimation = config.getBoolean("Stripping Bark Requires Animation", GENERAL, true, "If set to true, stripping bark requires an animation. Axes with a faster attack speed strip bark faster. Enable this setting if you have future MC installed which allows stripping of bark.");
 		cancelSpartanWeaponryFatigue = config.getBoolean("Cancel Spartan Weaponry Fatigue", GENERAL, true, "Set to true to disable weapon fatigue from Spartan Weaponry, this mod instead handles two-handed and versatile weapons.");
+		overrideLeftAndRightClickKeybinds = config.getBoolean("Override Left And Right Click Keybinds", GENERAL, true, "Set to true to override left and right keybinds. Use at your own risk! Setting this to false might allow players to 'cheese' extra attacks and attack while on cooldown with certain weapons from mods!");
 		
 		/* --------------------------------------------------------------------------------------------------------------------- */
 		String KNOCKBACK = "Knockback";
@@ -615,7 +617,8 @@ public class ConfigurationHandler
 		/* --------------------------------------------------------------------------------------------------------------------- */
 		String BWLISTS = "White/Black Lists";
 
-		itemClassWhitelist = config.getStringList("Item Class Whitelist", BWLISTS, itemClassWhitelist, "Whitelisted item classes for attacking.");
+		itemClassWhitelist = config.getStringList("Item Class Whitelist", BWLISTS, itemClassWhitelist, "Whitelisted item classes for attacking. If an item is added to this list, it will function as an Immersive Combat weapon. The Custom Weapons config is for editing the values and attributes of weapons. The class  net.minecraft.item.ItemSword  and anything that extends it is added by default.");
+		itemClassBlacklist = config.getStringList("Item Class Blacklist", BWLISTS, itemClassBlacklist, "Blacklisted item classes. If an item is added to this list, it will have the default left-click and right-click behavior. This setting is useful for gun mods, or items that need to have their default left-click and right-click functionality. Example config value:  com.flansmod.common.guns.ItemGun");
 		entityBlacklist = config.getStringList("Entity Blacklist", BWLISTS, entityBlacklist, "Blacklisted entity classes for attacking. You will not be able to attack any entity that extends this class! Please note that entities extending IEntityOwnable are by default blacklisted, when the entity is owned by the attacker.");
 
 		/* --------------------------------------------------------------------------------------------------------------------- */

@@ -146,6 +146,7 @@ public class PacketOnItemUse implements IMessage
 					return;
 				}
 				
+				// TODO: stipping logs does not work with onItemUse
 				if ( block instanceof BlockLog )
 				{
 					if ( player.world instanceof WorldServer )

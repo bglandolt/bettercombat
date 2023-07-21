@@ -973,7 +973,7 @@ public class EventHandlersClient
 
 		if ( this.mc.gameSettings.keyBindUseItem.isPressed() )
 		{
-			if ( this.mc.gameSettings.keyBindUseItem.getKeyCode() != -99 )
+			if ( this.mc.gameSettings.keyBindUseItem.getKeyCode() != -99 && ConfigurationHandler.overrideLeftAndRightClickKeybinds )
 			{
 				Reflections.unpressKey(this.mc.gameSettings.keyBindUseItem);
 				this.mc.gameSettings.keyBindUseItem = new KeyBinding("key.use", -99, "key.categories.gameplay");
@@ -985,7 +985,7 @@ public class EventHandlersClient
 		
 		if ( this.mc.gameSettings.keyBindAttack.isPressed() )
 		{
-			if ( this.mc.gameSettings.keyBindAttack.getKeyCode() != -100 )
+			if ( this.mc.gameSettings.keyBindAttack.getKeyCode() != -100 && ConfigurationHandler.overrideLeftAndRightClickKeybinds )
 			{
 				Reflections.unpressKey(this.mc.gameSettings.keyBindAttack);
 				this.mc.gameSettings.keyBindAttack = new KeyBinding("key.attack", -100, "key.categories.gameplay");
