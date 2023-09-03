@@ -13,6 +13,7 @@ import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 
+import net.minecraft.client.Minecraft;
 import net.minecraft.client.settings.KeyBinding;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityLivingBase;
@@ -57,6 +58,14 @@ public class Reflections
 	private static Method getSoundVolume;
 	private static final String GSVL_SRG = "func_70599_aP";
 	private static final String GSVL_MCP = "getSoundVolume";
+	
+	private static Field rightClickDelayTimer;
+	private static final String RCDT_SRG = "field_71467_ac";
+	private static final String RCDT_MCP = "rightClickDelayTimer";
+	
+	private static Field leftClickCounter;
+	private static final String LCC_SRG = "field_71429_W";
+	private static final String LCC_MCP = "leftClickCounter";
 	
 	private static Method getSoundPitch;
 	private static final String GSPT_SRG = "func_70647_i";
@@ -278,6 +287,43 @@ public class Reflections
 			return 0.0F;
 		}
 
+	}
+	
+	
+	public static int getRightClickDelayTimer( Minecraft minecraft )
+	{
+		try
+		{
+			if ( rightClickDelayTimer == null )
+			{
+				rightClickDelayTimer = Minecraft.class.getDeclaredField(getName(RCDT_SRG, RCDT_MCP));
+				rightClickDelayTimer.setAccessible(true);
+			}
+
+			return rightClickDelayTimer.getInt(minecraft);
+		}
+		catch ( Exception ex )
+		{
+			throw new RuntimeException(ex);
+		}
+	}
+	
+	public static int getLeftClickCounter( Minecraft minecraft )
+	{
+		try
+		{
+			if ( leftClickCounter == null )
+			{
+				leftClickCounter = Minecraft.class.getDeclaredField(getName(LCC_SRG, LCC_MCP));
+				leftClickCounter.setAccessible(true);
+			}
+
+			return leftClickCounter.getInt(minecraft);
+		}
+		catch ( Exception ex )
+		{
+			throw new RuntimeException(ex);
+		}
 	}
 
 

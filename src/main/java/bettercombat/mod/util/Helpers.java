@@ -11,6 +11,8 @@ import javax.annotation.Nullable;
 
 import bettercombat.mod.client.ClientProxy;
 import bettercombat.mod.handler.EventHandlers;
+import bettercombat.mod.network.PacketHandler;
+import bettercombat.mod.network.PacketParrying;
 import bettercombat.mod.util.ConfigurationHandler.Animation;
 import bettercombat.mod.util.ConfigurationHandler.CustomAxe;
 import bettercombat.mod.util.ConfigurationHandler.CustomShield;
@@ -21,11 +23,11 @@ import bettercombat.mod.util.ConfigurationHandler.SoundType;
 import net.minecraft.enchantment.Enchantment;
 import net.minecraft.enchantment.EnchantmentHelper;
 import net.minecraft.entity.Entity;
+import net.minecraft.entity.EntityCreature;
 import net.minecraft.entity.EntityLiving;
 import net.minecraft.entity.EntityLivingBase;
 import net.minecraft.entity.EnumCreatureAttribute;
 import net.minecraft.entity.IEntityMultiPart;
-import net.minecraft.entity.IEntityOwnable;
 import net.minecraft.entity.MultiPartEntityPart;
 import net.minecraft.entity.SharedMonsterAttributes;
 import net.minecraft.entity.ai.attributes.AttributeModifier;
@@ -46,7 +48,6 @@ import net.minecraft.potion.PotionEffect;
 import net.minecraft.util.DamageSource;
 import net.minecraft.util.EnumHand;
 import net.minecraft.util.EnumParticleTypes;
-import net.minecraft.util.math.AxisAlignedBB;
 import net.minecraft.util.math.MathHelper;
 import net.minecraft.util.math.Vec3d;
 import net.minecraft.world.WorldServer;
@@ -145,52 +146,8 @@ public final class Helpers
 	 */
 	public static void playerAttackVictimWithWeapon( EntityPlayer player, Entity entity, ItemStack mainhand, ItemStack offhand, boolean mainhandAttack )
 	{		
-		if ( entity == null || entity == player || !entity.isEntityAlive() || !entity.canBeAttackedWithItem() || entity.hitByEntity(player) )
+		if ( entity == null || entity == player )
 		{
-			return;
-		}
-		
-		EntityLivingBase victim;
-				
-		if ( entity instanceof MultiPartEntityPart )
-		{
-			IEntityMultiPart ientitymultipart = ((MultiPartEntityPart)entity).parent;
-			
-			if ( ientitymultipart instanceof EntityLivingBase )
-			{
-				victim = (EntityLivingBase)ientitymultipart;
-			}
-			else
-			{
-				return;
-			}
-		}
-		else if ( entity instanceof EntityLivingBase )
-		{
-			victim = (EntityLivingBase)entity;
-			
-			if ( victim instanceof EntityArmorStand )
-			{
-				((EntityArmorStand)victim).punchCooldown = victim.world.getTotalWorldTime();
-			}
-		}
-		else /* Minecarts & Boats */
-		{
-			double damage = 0.0;
-			
-			if ( mainhandAttack )
-			{
-				damage = getMainhandAttackDamage(player, mainhand);
-			}
-			else
-			{
-				damage = getOffhandAttackDamage(player, offhand, mainhand);
-				damage *= ConfigurationHandler.offHandEfficiency;
-			}
-			
-			/* Damage has to be ~2 or higher, otherwise the boats and carts will not break */
-			entity.attackEntityFrom(DamageSource.causePlayerDamage(player), damage > 2.0F ? (float)damage : 2.0F );
-			player.world.playSound(null, player.posX, player.posY, player.posZ, SoundEvents.ENTITY_PLAYER_ATTACK_NODAMAGE, player.getSoundCategory(), 1.0F, 1.0F);
 			return;
 		}
 		
@@ -229,7 +186,7 @@ public final class Helpers
 				
 		CustomWeaponPotionEffect customWeaponPotionEffect = null;
 		
-		if ( ConfigurationHandler.isItemWhiteList(weapon.getItem()) )
+		if ( ConfigurationHandler.isItemClassWhiteList(weapon.getItem()) )
 		{
 			configWeapon = true;
 
@@ -276,7 +233,7 @@ public final class Helpers
 		{
 			damage -= ConfigurationHandler.fistAndNonWeaponDamageReduction;
 			knockbackMod -= ConfigurationHandler.fistAndNonWeaponKnockbackReduction;
-			additionalReach -= ConfigurationHandler.fistAndNonWeaponReachReduction;
+			additionalReach = -ConfigurationHandler.fistAndNonWeaponReachReduction;
 			isMetal = false;
 			configWeapon = false;
 		}
@@ -291,7 +248,57 @@ public final class Helpers
 		{
 			knockbackMod += ConfigurationHandler.sprintingKnockbackAmount;
 		}
+		
+		final EntityLivingBase victim;
+		
+		/* Head, legs, wings */
+		MultiPartEntityPart bodyPart = null;
+		
+		if ( entity instanceof MultiPartEntityPart )
+		{
 
+			bodyPart = (MultiPartEntityPart)entity;
+
+			if ( bodyPart.parent instanceof EntityLivingBase )
+			{
+				victim = (EntityLivingBase)bodyPart.parent;
+			}
+			else
+			{
+				/* Backup if the parent is not an EntityLivingBase */
+
+				if ( bodyPart.parent != null )
+				{
+					SoundHandler.playImpactSound(player, mainhand, soundType, animation, isMetal);
+					bodyPart.parent.attackEntityFromPart(bodyPart, DamageSource.causePlayerDamage(player), (float)damage);
+				}
+				
+				return;
+			}
+		}
+		else if ( entity instanceof EntityLivingBase )
+		{
+			victim = (EntityLivingBase)entity;
+			
+			if ( victim instanceof EntityArmorStand )
+			{
+				((EntityArmorStand)victim).punchCooldown = victim.world.getTotalWorldTime();
+			}
+		}
+		else /* Minecarts & Boats */
+		{
+			/* Damage has to be ~2 or higher, otherwise the boats and carts will not break */
+			entity.attackEntityFrom(DamageSource.causePlayerDamage(player), damage > 2.0F ? (float)damage : 2.0F );
+			entity.hitByEntity(player);
+			player.world.playSound(null, player.posX, player.posY, player.posZ, SoundEvents.ENTITY_PLAYER_ATTACK_NODAMAGE, player.getSoundCategory(), 1.0F, 1.0F);
+			return;
+		}
+		
+		if ( !entity.isEntityAlive() || !entity.canBeAttackedWithItem() )
+		{
+			return;
+		}
+		
 		try
 		{
 			armor = victim.getEntityAttribute(SharedMonsterAttributes.ARMOR).getAttributeValue();
@@ -377,7 +384,7 @@ public final class Helpers
 				}
 			}
 		}
-
+		
 		if ( ConfigurationHandler.autoCritOnSneakAttacks )
 		{
 			if ( victim instanceof IMob && victim instanceof EntityLiving )
@@ -395,7 +402,7 @@ public final class Helpers
 		{
 			tgtHealthPercent = tgtHealth / tgtMaxHealth;
 		}
-		catch (Exception e)
+		catch ( Exception e )
 		{
 			tgtHealthPercent = 0.0F;
 		}
@@ -406,17 +413,6 @@ public final class Helpers
 		}
 
 		enchantmentModifier = EnchantmentHelper.getModifierForCreature(weapon, victim.getCreatureAttribute());
-
-		/* CombatRules */
-//		if ( (armor > 0.0D || armorToughness > 0.0D) && ConfigurationHandler.warhammerArmorPiercingAdjustments && weaponName.contains("warhammer_") )
-//		{
-//			double damageAfterArmor = damage * (1.0F - (MathHelper.clamp(armor - damage / (2.0F + armorToughness / 4.0F), armor * 0.2F, 20.0F)) / 25.0F);
-//
-//			if ( damageAfterArmor < damage )
-//			{
-//				damage += damage - (damageAfterArmor * 0.8F);
-//			}
-//		}
 
 		if ( ConfigurationHandler.baseCritPercentChance < 0.0F )
 		{
@@ -461,96 +457,83 @@ public final class Helpers
 			player.setSprinting(false);
 		}
 		
-		victim.hurtResistantTime = 0;
-		boolean attacked = victim.attackEntityFrom(DamageSource.causePlayerDamage(player), (float) damage);
-		victim.hurtResistantTime = 0;
-				
-		if ( victim instanceof EntityLivingBase )
+		if ( playerAttackedVictim(player, victim, bodyPart, (float)damage) )
 		{
-			if ( attacked )
+			SoundHandler.playImpactSound(player, mainhand, soundType, animation, isMetal);
+			
+			if ( customWeaponPotionEffect != null && ((customWeaponPotionEffect.potionChance <= 0.0F && isCrit) || customWeaponPotionEffect.potionChance >= player.getRNG().nextFloat()) )
 			{
-				SoundHandler.playImpactSound(player, mainhand, soundType, animation, isMetal);
-				
-				if ( customWeaponPotionEffect != null && ((customWeaponPotionEffect.potionChance <= 0.0F && isCrit) || customWeaponPotionEffect.potionChance >= player.getRNG().nextFloat()) )
+				if ( customWeaponPotionEffect.afflict )
 				{
-					if ( customWeaponPotionEffect.afflict )
-					{
-						victim.addPotionEffect(new PotionEffect(customWeaponPotionEffect.getPotion(), customWeaponPotionEffect.potionDuration, customWeaponPotionEffect.potionPower-1, true, false));
-					}
-					else
-					{
-						player.addPotionEffect(new PotionEffect(customWeaponPotionEffect.getPotion(), customWeaponPotionEffect.potionDuration, customWeaponPotionEffect.potionPower-1, true, false));
-					}
-				}
-				
-				if ( configWeapon && ConfigurationHandler.moreSweep )
-				{
-					spawnSweepHit(player, victim);
-				}
-								
-				if ( victim instanceof EntityLivingBase )
-				{
-					victim.knockBack(player, (float)(0.5D * knockbackMod), MathHelper.sin(player.rotationYaw * 0.017453292F), -MathHelper.cos(player.rotationYaw * 0.017453292F));
+					victim.addPotionEffect(new PotionEffect(customWeaponPotionEffect.getPotion(), customWeaponPotionEffect.potionDuration, customWeaponPotionEffect.potionPower-1, true, false));
 				}
 				else
 				{
-					victim.addVelocity(-MathHelper.sin(player.rotationYaw * 0.017453292F) * (float)(0.5D * knockbackMod), 0.0D, MathHelper.cos(player.rotationYaw * 0.017453292F) * (float)(0.5D * knockbackMod));
+					player.addPotionEffect(new PotionEffect(customWeaponPotionEffect.getPotion(), customWeaponPotionEffect.potionDuration, customWeaponPotionEffect.potionPower-1, true, false));
+				}
+			}
+			
+			if ( configWeapon && ConfigurationHandler.moreSweep )
+			{
+				spawnSweepHit(player, victim);
+			}
+							
+			victim.knockBack(player, (float)(0.5D * knockbackMod), MathHelper.sin(player.rotationYaw * 0.017453292F), -MathHelper.cos(player.rotationYaw * 0.017453292F));
+			
+			NBTTagList nbttaglist = mainhand.getEnchantmentTagList();
+
+			/*
+			 * SWEEPING Weapons with this property will inflict half attack damage (for
+			 * level I) or full attack damage (for level II) to all targets that get hit by
+			 * the sweep attack
+			 */
+			for ( int i = 0; i < nbttaglist.tagCount(); ++i )
+			{
+				NBTTagCompound nbttagcompound = nbttaglist.getCompoundTagAt(i);
+				Enchantment enchantment = Enchantment.getEnchantmentByID(nbttagcompound.getShort("id"));
+				int j = nbttagcompound.getShort("lvl");
+				if ( enchantment == Enchantments.SWEEPING )
+				{
+					if ( j > 0 )
+					{
+						/* Level 1 Sweeping Edge = 1 (goes up to 3) */
+						sweepAmount += j;
+					}
+				}
+			}
+
+			/* Sweep only if sweepAmount is greater than 0, then subtract 1 from sweepAmount */
+			if ( sweepAmount-- > 0 )
+			{
+				boolean swept = false;
+				
+				/* How far the other entities must be from the main sweep target */
+				final double sweepRange = 1.0D + player.width + sweepAmount * 0.25D;
+				
+				if ( mainhandAttack )
+				{
+					additionalReach = getMainhandReach(player, additionalReach);
+				}
+				else
+				{
+					additionalReach = getOffhandReach(player, additionalReach, offhand, mainhand);
 				}
 				
-				NBTTagList nbttaglist = mainhand.getEnchantmentTagList();
+				/* Get the entities around the victim */
+				List<EntityLivingBase> sweepVictims = player.world.getEntitiesWithinAABB(EntityLivingBase.class, victim.getEntityBoundingBox().grow(sweepRange*MathHelper.SQRT_2, 1.0D, sweepRange*MathHelper.SQRT_2));
 
-				/*
-				 * SWEEPING Weapons with this property will inflict half attack damage (for
-				 * level I) or full attack damage (for level II) to all targets that get hit by
-				 * the sweep attack
-				 */
-				for ( int i = 0; i < nbttaglist.tagCount(); ++i )
+				for ( EntityLivingBase sweepVictim : sweepVictims )
 				{
-					NBTTagCompound nbttagcompound = nbttaglist.getCompoundTagAt(i);
-					Enchantment enchantment = Enchantment.getEnchantmentByID(nbttagcompound.getShort("id"));
-					int j = nbttagcompound.getShort("lvl");
-					if ( enchantment == Enchantments.SWEEPING )
-					{
-						if ( j > 0 )
+					if ( sweepVictim != player && sweepVictim != victim && sweepVictim.isEntityAlive() && player.getDistanceSq(sweepVictim) <= (additionalReach+sweepVictim.width)*(additionalReach+sweepVictim.width) && victim.getDistanceSq(sweepVictim) <= (sweepRange)*(sweepRange) && ConfigurationHandler.rightClickAttackable(player, sweepVictim) && !player.isOnSameTeam(sweepVictim) )
+					{							
+						swept = true;
+						
+						double sweepDamage = ConfigurationHandler.baseAttackDamage;
+
+						sweepDamage = MathHelper.clamp(damage * (sweepAmount / 4.0D), ConfigurationHandler.baseAttackDamage, damage);
+						
+						if ( playerAttackedVictim(player, sweepVictim, null, (float)sweepDamage) )
 						{
-							/* Level 1 Sweeping Edge = 1 (goes up to 3) */
-							sweepAmount += j;
-						}
-					}
-				}
-
-				if ( sweepAmount-- > 0 )
-				{
-					boolean swept = false;
-					
-					/* How far the other entities must be from the main sweep target */
-					final double sweepRange = (4.0D + sweepAmount) / 2.0D;
-					
-					if ( mainhandAttack )
-					{
-						additionalReach = getMainhandReach(player, additionalReach);
-					}
-					else
-					{
-						additionalReach = getOffhandReach(player, additionalReach, offhand, mainhand);
-					}
-
-					List<EntityLivingBase> sweepVictims = player.world.getEntitiesWithinAABB(EntityLivingBase.class, new AxisAlignedBB(player.posX - additionalReach, victim.posY - 1.0D, player.posZ - additionalReach, player.posX + additionalReach, victim.posY + 1.0D, player.posZ + additionalReach));
-					
-					for ( EntityLivingBase sweepVictim : sweepVictims )
-					{
-						if ( sweepVictim != player && sweepVictim != victim && sweepVictim.isEntityAlive() && player.getDistanceSq(sweepVictim) <= additionalReach*additionalReach && victim.getDistanceSq(sweepVictim) <= sweepRange*sweepRange && canAttackWithOffHand(player, sweepVictim) && isEntityInView( player, sweepVictim ) && !player.isOnSameTeam(sweepVictim) )
-						{							
-							swept = true;
-							
-							double sweepDamage = ConfigurationHandler.baseAttackDamage;
-
-							sweepDamage = MathHelper.clamp(damage * (sweepAmount / 4.0D), ConfigurationHandler.baseAttackDamage, damage);
-							
-							sweepVictim.hurtResistantTime = 0;
-							sweepVictim.attackEntityFrom(DamageSource.causePlayerDamage(player), (float) sweepDamage);
-							sweepVictim.hurtResistantTime = 0;
-
 							sweepVictim.knockBack(player, (float)(0.5D * knockbackMod * MathHelper.clamp((4.0D + sweepAmount) / 8.0D, 0.5D, 1.0D)), MathHelper.sin(player.rotationYaw * 0.017453292F), -MathHelper.cos(player.rotationYaw * 0.017453292F));
 							
 							if ( ConfigurationHandler.customPotionEffectsWorkOnSweep && customWeaponPotionEffect != null && ( (customWeaponPotionEffect.potionChance <= 0.0F && isCrit) || customWeaponPotionEffect.potionChance >= player.getRNG().nextFloat()))
@@ -566,174 +549,176 @@ public final class Helpers
 							}
 						}
 					}
-
-					if ( swept )
-					{
-						player.spawnSweepParticles();
-						player.world.playSound(null, player.posX, player.posY, player.posZ, SoundEvents.ENTITY_PLAYER_ATTACK_SWEEP, player.getSoundCategory(), ConfigurationHandler.weaponHitSoundVolume, randomPitch(player));
-					}
-				}
-				
-				if ( isCrit )
-				{
-					player.onCriticalHit(victim);
-					
-					player.world.playSound(null, player.posX, player.posY, player.posZ, SoundEvents.ENTITY_PLAYER_ATTACK_CRIT, player.getSoundCategory(), ConfigurationHandler.weaponHitSoundVolume, randomPitch(player));
-					
-					if ( enchantmentModifier > 0.0F )
-					{
-						player.onEnchantmentCritical(victim);
-					}
 				}
 
-				/* SHIELD */
-				ItemStack activeItem = victim.isHandActive() ? victim.getActiveItemStack() : ItemStack.EMPTY;
-				
-//				public void disableShield(boolean p_190777_1_)
-//			    {
-//			        float f = 0.25F + (float)EnchantmentHelper.getEfficiencyModifier(this) * 0.05F;
-//
-//			        if (p_190777_1_)
-//			        {
-//			            f += 0.75F;
-//			        }
-//
-//			        if (this.rand.nextFloat() < f)
-//			        {
-//			            this.getCooldownTracker().setCooldown(this.getActiveItemStack().getItem(), 100);
-//			            this.resetActiveHand();
-//			            this.world.setEntityState(this, (byte)30);
-//			        }
-//			    }
-				
-//				else if (id == 30)
-//	            {
-//	                this.playSound(SoundEvents.ITEM_SHIELD_BREAK, 0.8F, 0.8F + this.world.rand.nextFloat() * 0.4F);
-//	            }
-				
-
-				/* TESTING! remove XXX */
-//				if ( player.getPositionVector() != null )
-//				{
-//					Vec3d vec3d = player.getPositionVector();
-//
-//					Vec3d vec3d1 = victim.getLook(1.0F);
-//					Vec3d vec3d2 = vec3d.subtractReverse(new Vec3d(victim.posX, victim.posY, victim.posZ)).normalize();
-//					vec3d2 = new Vec3d(vec3d2.x, 0.0D, vec3d2.z);
-//
-//					if ( vec3d2.dotProduct(vec3d1) < 0.0D )
-//					{
-//					}
-//
-//				}
-				/* TESTING! remove XXX */
-				
-				/* Blocking */
-				//if ( (activeItem.getItem() instanceof ItemShield) )
-				if ( victim.isActiveItemStackBlocking() && configWeapon )
+				if ( swept )
 				{
-					Vec3d vec3d = player.getPositionVector();
+					player.world.playSound(null, player.posX, player.posY, player.posZ, SoundEvents.ENTITY_PLAYER_ATTACK_SWEEP, player.getSoundCategory(), ConfigurationHandler.weaponHitSoundVolume, randomPitch(player));
+				}
+			}
+			
+			if ( isCrit )
+			{
+				player.onCriticalHit(victim);
+				
+				player.world.playSound(null, player.posX, player.posY, player.posZ, SoundEvents.ENTITY_PLAYER_ATTACK_CRIT, player.getSoundCategory(), ConfigurationHandler.weaponHitSoundVolume, randomPitch(player));
+				
+				if ( enchantmentModifier > 0.0F )
+				{
+					player.onEnchantmentCritical(victim);
+				}
+			}
 
-					if ( vec3d != null )
+			/* SHIELD */
+			ItemStack activeItem = victim.isHandActive() ? victim.getActiveItemStack() : ItemStack.EMPTY;
+			
+			/* Blocking */
+			if ( victim.isActiveItemStackBlocking() && configWeapon )
+			{
+				Vec3d vec3d = player.getPositionVector();
+
+				if ( vec3d != null )
+				{
+					Vec3d vec3d1 = victim.getLook(1.0F);
+					Vec3d vec3d2 = vec3d.subtractReverse(new Vec3d(victim.posX, victim.posY, victim.posZ)).normalize();
+					vec3d2 = new Vec3d(vec3d2.x, 0.0D, vec3d2.z);
+
+					/* Blocked */
+					if ( vec3d2.dotProduct(vec3d1) < 0.0D )
 					{
-						Vec3d vec3d1 = victim.getLook(1.0F);
-						Vec3d vec3d2 = vec3d.subtractReverse(new Vec3d(victim.posX, victim.posY, victim.posZ)).normalize();
-						vec3d2 = new Vec3d(vec3d2.x, 0.0D, vec3d2.z);
-
-						/* Blocked */
-						if ( vec3d2.dotProduct(vec3d1) < 0.0D )
+						int disableDuration = 0;
+						
+						for ( CustomAxe axe : ConfigurationHandler.axes )
 						{
-							int disableDuration = 0;
-							
-							for ( CustomAxe axe : ConfigurationHandler.axes )
+							if ( weapon.getItem().getRegistryName().toString().contains(axe.name) )
 							{
-								if ( weapon.getItem().getRegistryName().toString().contains(axe.name) )
-								{
-									disableDuration += axe.disableDuration;
-									break;
-								}
+								disableDuration += axe.disableDuration;
+								break;
 							}
-							
-							if ( isCrit )
+						}
+						
+						if ( isCrit )
+						{
+							disableDuration *= MathHelper.clamp(damage * ConfigurationHandler.critsDisableShield, 5, 100);
+						}
+						
+						if ( disableDuration > 0 )
+						{
+							if ( victim instanceof EntityPlayer )
 							{
-								disableDuration *= MathHelper.clamp(damage * ConfigurationHandler.critsDisableShield, 5, 100);
+								((EntityPlayer) victim).getCooldownTracker().setCooldown(activeItem.getItem(), disableDuration);
 							}
-							
-							if ( disableDuration > 0 )
-							{
-								if ( victim instanceof EntityPlayer )
-								{
-									((EntityPlayer) victim).getCooldownTracker().setCooldown(activeItem.getItem(), disableDuration);
-								}
-								victim.resetActiveHand();
-								player.world.setEntityState(victim, (byte)30); /* Shield break sound */
-							}
+							victim.stopActiveHand();
+							player.world.setEntityState(victim, (byte)30); /* Shield break sound */
 						}
 					}
 				}
-				
-				EnchantmentHelper.applyThornEnchantments(victim, player);
-				EnchantmentHelper.applyArthropodEnchantments(player, victim);
+			}
+			else if ( victim.getActiveHand().equals(EnumHand.MAIN_HAND) && victim.getEntityData().hasKey("isParrying") && victim.getEntityData().getBoolean("isParrying") && configWeapon )
+			{
+				Vec3d vec3d = player.getPositionVector();
 
-				player.setLastAttackedEntity(victim);
-
-				armor += armorToughness;
-				
-				if ( armor > 1 && !isCrit && damage <= tgtHealth && player.getRNG().nextFloat() * 2.0F * damage <= (player.getRNG().nextDouble() + tgtHealthPercent) * armor )
+				if ( vec3d != null )
 				{
-					SoundHandler.playImpactArmorMetalSound(player, tgtMaxHealth, tgtHealthPercent);
+					Vec3d vec3d1 = victim.getLook(1.0F);
+					Vec3d vec3d2 = vec3d.subtractReverse(new Vec3d(victim.posX, victim.posY, victim.posZ)).normalize();
+					vec3d2 = new Vec3d(vec3d2.x, 0.0D, vec3d2.z);
+
+					/* Blocked */
+					if ( vec3d2.dotProduct(vec3d1) < 0.0D )
+					{
+						int disableDuration = 0;
+						
+						for ( CustomAxe axe : ConfigurationHandler.axes )
+						{
+							if ( weapon.getItem().getRegistryName().toString().contains(axe.name) )
+							{
+								disableDuration += axe.disableDuration;
+								break;
+							}
+						}
+						
+						if ( isCrit )
+						{
+							disableDuration += damage * ConfigurationHandler.critsDisableShield;
+						}
+						
+						if ( disableDuration > 0 )
+						{
+							if ( victim instanceof EntityPlayer )
+							{
+								((EntityPlayer) victim).getCooldownTracker().setCooldown(activeItem.getItem(), disableDuration);
+							}
+							
+							PacketHandler.instance.sendToServer(new PacketParrying(false));
+						}
+					}
 				}
 			}
-			else
-			{
-				player.world.playSound(null, player.posX, player.posY, player.posZ, SoundEvents.ENTITY_PLAYER_ATTACK_NODAMAGE, player.getSoundCategory(), 1.0F, 1.0F);
-			}
+			
+			EnchantmentHelper.applyThornEnchantments(victim, player);
+			EnchantmentHelper.applyArthropodEnchantments(player, victim);
 
-			/* DAMAGE PARTICLES */
-			if ( ConfigurationHandler.damageParticles && player.world instanceof WorldServer )
+			player.setLastAttackedEntity(victim);
+
+			armor += armorToughness;
+			
+			if ( armor > 1 && !isCrit && damage <= tgtHealth && player.getRNG().nextFloat() * 2.0F * damage <= (player.getRNG().nextDouble() + tgtHealthPercent) * armor )
 			{
-				if ( damage >= 1.0D )
-				{
-					int k = (int) (damage * 0.5D);
-					((WorldServer) player.world).spawnParticle(EnumParticleTypes.DAMAGE_INDICATOR, victim.posX, victim.posY + victim.height * 0.5F, victim.posZ, k, 0.1D, 0.0D, 0.1D, 0.2D);
-				}
+				SoundHandler.playImpactArmorMetalSound(player, tgtMaxHealth, tgtHealthPercent);
 			}
 		}
 		else
 		{
-			player.world.playSound(null, player.posX, player.posY, player.posZ, SoundEvents.ENTITY_PLAYER_ATTACK_NODAMAGE, player.getSoundCategory(), 1.0F, 0.8F + player.getRNG().nextFloat() * 0.4F);
+			player.world.playSound(null, player.posX, player.posY, player.posZ, SoundEvents.ENTITY_PLAYER_ATTACK_NODAMAGE, player.getSoundCategory(), 1.0F, 1.0F);
+		}
+
+		/* DAMAGE PARTICLES */
+		if ( ConfigurationHandler.damageParticles && player.world instanceof WorldServer )
+		{
+			if ( damage >= 1.0D )
+			{
+				int k = (int) (damage * 0.5D);
+				((WorldServer) player.world).spawnParticle(EnumParticleTypes.DAMAGE_INDICATOR, victim.posX, victim.posY + victim.height * 0.5F, victim.posZ, k, 0.1D, 0.0D, 0.1D, 0.2D);
+			}
 		}
 		
 		player.addExhaustion(0.1F);
 	}
 
-	private static void playerAttackVictimWithShield( EntityPlayer player, Entity entity, ItemShield shield )
-	{		
-		if ( entity == null || entity == player || !entity.isEntityAlive() || !entity.canBeAttackedWithItem() || entity.hitByEntity(player) )
+	private static boolean playerAttackedVictim(EntityPlayer player, EntityLivingBase victim, @Nullable MultiPartEntityPart bodyPart, float damage)
+	{
+		victim.hurtResistantTime = 0;
+		
+		boolean attacked = false;
+		
+		if ( bodyPart != null && victim instanceof IEntityMultiPart )
 		{
-			return;
+			attacked = ((IEntityMultiPart)victim).attackEntityFromPart(bodyPart, DamageSource.causePlayerDamage(player), damage);
 		}
 		
-		EntityLivingBase victim;
+		if ( !attacked )
+		{
+			attacked = victim.attackEntityFrom(DamageSource.causePlayerDamage(player), damage);
+		}
+		
+		if ( victim.hitByEntity(player) )
+		{
+			attacked = true;
+		}
+		
+		if ( attacked )
+		{
+			player.setLastAttackedEntity(victim);
+			victim.hurtResistantTime = 0;
+		}
+		
+		return attacked;
+	}
 
-		if ( entity instanceof MultiPartEntityPart )
-		{
-			IEntityMultiPart parent = ((MultiPartEntityPart)entity).parent;
-			
-			if ( parent instanceof EntityLivingBase )
-			{
-				victim = (EntityLivingBase)parent;
-			}
-			else
-			{
-				return;
-			}
-		}
-		else if ( entity instanceof EntityLivingBase )
-		{
-			victim = (EntityLivingBase)entity;
-		}
-		else
+	private static void playerAttackVictimWithShield( EntityPlayer player, Entity entity, ItemShield shield )
+	{		
+		if ( entity == null || entity == player )
 		{
 			return;
 		}
@@ -771,45 +756,83 @@ public final class Helpers
 			}
 		}
 		
-		if ( ConfigurationHandler.shieldSilverDamageMultiplier != 1.0F && ((EntityLivingBase)victim).isEntityUndead() && isSilver(getString(shield)) )
+		final EntityLivingBase victim;
+		MultiPartEntityPart bodyPart = null;
+		
+		if ( entity instanceof MultiPartEntityPart )
+		{
+			bodyPart = (MultiPartEntityPart)entity;
+
+			if ( bodyPart.parent instanceof EntityLivingBase )
+			{
+				victim = (EntityLivingBase)bodyPart.parent;
+			}
+			else
+			{
+				/* Backup if the parent is not an EntityLivingBase */
+				
+				if ( bodyPart.parent != null )
+				{
+					if ( isMetal(getString(shield)) )
+					{
+						SoundHandler.playBashMetalShieldSound(player);
+					}
+					else
+					{
+						SoundHandler.playBashWoodShieldSound(player);
+					}
+					
+					bodyPart.parent.attackEntityFromPart(bodyPart, DamageSource.causePlayerDamage(player), (float)damage);
+				}
+				
+				return;
+			}
+		}
+		else if ( entity instanceof EntityLivingBase )
+		{
+			victim = (EntityLivingBase)entity;
+			
+			if ( victim instanceof EntityArmorStand )
+			{
+				((EntityArmorStand)victim).punchCooldown = victim.world.getTotalWorldTime();
+			}
+		}
+		else /* Minecarts & Boats */
+		{
+			return;
+		}
+		
+		if ( !entity.isEntityAlive() || !entity.canBeAttackedWithItem() )
+		{
+			return;
+		}
+		
+		if ( ConfigurationHandler.shieldSilverDamageMultiplier != 1.0F && victim.isEntityUndead() && isSilver(getString(shield)) )
 		{
 			damage *= ConfigurationHandler.shieldSilverDamageMultiplier;
 			EventHandlers.playSilverArmorEffect(victim);
 		}
-		
-		victim.hurtResistantTime = 0;
-		boolean attacked = victim.attackEntityFrom(DamageSource.causePlayerDamage(player), (float) damage);
-		victim.hurtResistantTime = 0;
 				
-		if ( victim instanceof EntityLivingBase )
-		{			
-			player.onCriticalHit(victim);
-
-			if ( attacked )
-			{				
-				if ( isMetal(getString(shield)) )
-				{
-					SoundHandler.playBashMetalShieldSound(player);
-				}
-				else
-				{
-					SoundHandler.playBashWoodShieldSound(player);
-				}
-
-				if ( ConfigurationHandler.moreSweep )
-				{
-					spawnSweepHit(player, victim);
-				}
-								
-				if ( victim instanceof EntityLivingBase )
-				{
-					victim.knockBack(player, (float)(0.5D * knockbackMod), MathHelper.sin(player.rotationYaw * 0.017453292F), -MathHelper.cos(player.rotationYaw * 0.017453292F));
-				}
-				else
-				{
-					victim.addVelocity(-MathHelper.sin(player.rotationYaw * 0.017453292F) * (float)(0.5D * knockbackMod), 0.0D, MathHelper.cos(player.rotationYaw * 0.017453292F) * (float)(0.5D * knockbackMod));
-				}
+		if ( playerAttackedVictim(player, victim, bodyPart, (float)damage) )
+		{
+			if ( isMetal(getString(shield)) )
+			{
+				SoundHandler.playBashMetalShieldSound(player);
 			}
+			else
+			{
+				SoundHandler.playBashWoodShieldSound(player);
+			}
+
+			victim.knockBack(player, (float)(0.5D * knockbackMod), MathHelper.sin(player.rotationYaw * 0.017453292F), -MathHelper.cos(player.rotationYaw * 0.017453292F));
+			
+			if ( ConfigurationHandler.shieldBashingTaunts && victim instanceof EntityCreature )
+			{
+				((EntityCreature)victim).setAttackTarget(player);
+				((EntityCreature)victim).setRevengeTarget(player);
+			}
+			
+			player.onCriticalHit(victim);
 		}
 		
 		player.addExhaustion(0.1F);
@@ -820,19 +843,14 @@ public final class Helpers
 		return 0.9F + player.getRNG().nextFloat() * 0.2F;
 	}
 
-	public static final double RADIAN_TO_DEGREE = 180.0D/Math.PI;
-	
-	/* returns true if the target entity is in view of in entity, uses head rotation to calculate */
-	public static boolean isEntityInView( EntityLivingBase in, EntityLivingBase target )
-	{
-        double rotation = (Math.atan2(target.posZ - in.posZ, target.posX - in.posX) * RADIAN_TO_DEGREE + 360) % 360 - (in.rotationYawHead + 450) % 360;
-        return (rotation <= 50 && rotation >= -50) || rotation >= 310 || rotation <= -310;
-	}
-	
-	public static boolean canAttackWithOffHand( EntityPlayer player, Entity entHit )
-	{
-		return ((entHit instanceof EntityLiving) && ((EntityLiving)entHit).getAttackTarget() == player) || (ConfigurationHandler.rightClickAttackable(entHit) && !(entHit instanceof IEntityOwnable && ((IEntityOwnable) entHit).getOwner() == player));
-	}
+//	public static final double RADIAN_TO_DEGREE = 180.0D/Math.PI;
+//	
+//	/* returns true if the target entity is in view of in entity, uses head rotation to calculate */
+//	public static boolean isEntityInView( EntityLivingBase in, EntityLivingBase target )
+//	{
+//        double rotation = (Math.atan2(target.posZ - in.posZ, target.posX - in.posX) * RADIAN_TO_DEGREE + 360) % 360 - (in.rotationYawHead + 450) % 360;
+//        return (rotation <= 50 && rotation >= -50) || rotation >= 310 || rotation <= -310;
+//	}
 	
 	public static double calculateAttribute( double attribute, double additive, double multiplicative )
 	{
@@ -1880,4 +1898,56 @@ public final class Helpers
 	{
 		return player.isHandActive() && player.getItemInUseCount() > 0 && player.getActiveHand().equals(hand);
 	}
+	
+
+	/* CombatRules */
+//	if ( (armor > 0.0D || armorToughness > 0.0D) && ConfigurationHandler.warhammerArmorPiercingAdjustments && weaponName.contains("warhammer_") )
+//	{
+//		double damageAfterArmor = damage * (1.0F - (MathHelper.clamp(armor - damage / (2.0F + armorToughness / 4.0F), armor * 0.2F, 20.0F)) / 25.0F);
+//
+//		if ( damageAfterArmor < damage )
+//		{
+//			damage += damage - (damageAfterArmor * 0.8F);
+//		}
+//	}
+	
+	
+//	public void disableShield(boolean p_190777_1_)
+//    {
+//        float f = 0.25F + (float)EnchantmentHelper.getEfficiencyModifier(this) * 0.05F;
+//
+//        if (p_190777_1_)
+//        {
+//            f += 0.75F;
+//        }
+//
+//        if (this.rand.nextFloat() < f)
+//        {
+//            this.getCooldownTracker().setCooldown(this.getActiveItemStack().getItem(), 100);
+//            this.resetActiveHand();
+//            this.world.setEntityState(this, (byte)30);
+//        }
+//    }
+
+//	else if (id == 30)
+//    {
+//        this.playSound(SoundEvents.ITEM_SHIELD_BREAK, 0.8F, 0.8F + this.world.rand.nextFloat() * 0.4F);
+//    }
+
+
+/* TESTING! remove XXX */
+//	if ( player.getPositionVector() != null )
+//	{
+//		Vec3d vec3d = player.getPositionVector();
+//
+//		Vec3d vec3d1 = victim.getLook(1.0F);
+//		Vec3d vec3d2 = vec3d.subtractReverse(new Vec3d(victim.posX, victim.posY, victim.posZ)).normalize();
+//		vec3d2 = new Vec3d(vec3d2.x, 0.0D, vec3d2.z);
+//
+//		if ( vec3d2.dotProduct(vec3d1) < 0.0D )
+//		{
+//		}
+//
+//	}
+/* TESTING! remove XXX */
 }

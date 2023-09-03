@@ -438,7 +438,7 @@ public class PacketFastEquip implements IMessage
 
 		public static boolean isWeapon( ItemStack itemStack )
 		{
-			return !itemStack.isEmpty() && ConfigurationHandler.isItemWhiteList(itemStack.getItem()) && !(itemStack.getItem() instanceof ItemTool) && !(itemStack.getItem() instanceof ItemHoe);
+			return !itemStack.isEmpty() && ConfigurationHandler.isItemClassWhiteList(itemStack.getItem()) && !(itemStack.getItem() instanceof ItemTool) && !(itemStack.getItem() instanceof ItemHoe);
 		}
 		
 		public static boolean isToolOrHoe( ItemStack itemStack )

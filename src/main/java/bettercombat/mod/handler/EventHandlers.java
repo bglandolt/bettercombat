@@ -9,12 +9,21 @@ import bettercombat.mod.client.ClientProxy;
 import bettercombat.mod.enchantment.BetterCombatEnchantments;
 import bettercombat.mod.enchantment.EnchantmentLightning;
 import bettercombat.mod.enchantment.EnchantmentWebbing;
+import bettercombat.mod.network.PacketHandler;
+import bettercombat.mod.network.PacketParried;
+import bettercombat.mod.network.PacketParrying;
 import bettercombat.mod.util.BetterCombatPotions;
 import bettercombat.mod.util.ConfigurationHandler;
 import bettercombat.mod.util.ConfigurationHandler.CustomBow;
+import bettercombat.mod.util.Helpers;
 import bettercombat.mod.util.PotionAetherealized;
 import bettercombat.mod.util.Reference;
 import bettercombat.mod.util.SoundHandler;
+import net.minecraft.block.Block;
+import net.minecraft.block.BlockDirt;
+import net.minecraft.block.BlockGrass;
+import net.minecraft.block.BlockGrassPath;
+import net.minecraft.block.BlockLog;
 import net.minecraft.block.material.Material;
 import net.minecraft.block.state.IBlockState;
 import net.minecraft.enchantment.Enchantment;
@@ -27,13 +36,17 @@ import net.minecraft.entity.ai.EntityAITasks.EntityAITaskEntry;
 import net.minecraft.entity.ai.attributes.IAttribute;
 import net.minecraft.entity.ai.attributes.RangedAttribute;
 import net.minecraft.entity.player.EntityPlayer;
+import net.minecraft.entity.player.EntityPlayerMP;
 import net.minecraft.entity.projectile.EntityArrow;
 import net.minecraft.entity.projectile.EntityPotion;
 import net.minecraft.entity.projectile.EntityTippedArrow;
 import net.minecraft.init.MobEffects;
 import net.minecraft.init.PotionTypes;
 import net.minecraft.item.Item;
+import net.minecraft.item.ItemAxe;
 import net.minecraft.item.ItemBow;
+import net.minecraft.item.ItemHoe;
+import net.minecraft.item.ItemSpade;
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NBTTagList;
 import net.minecraft.potion.Potion;
@@ -45,6 +58,7 @@ import net.minecraft.util.EnumHand;
 import net.minecraft.util.EnumParticleTypes;
 import net.minecraft.util.math.AxisAlignedBB;
 import net.minecraft.util.math.BlockPos;
+import net.minecraft.util.math.MathHelper;
 import net.minecraft.util.math.Vec3d;
 import net.minecraft.world.World;
 import net.minecraft.world.WorldServer;
@@ -62,6 +76,7 @@ import net.minecraftforge.event.entity.living.PotionEvent.PotionAddedEvent;
 import net.minecraftforge.event.entity.living.PotionEvent.PotionApplicableEvent;
 import net.minecraftforge.event.entity.player.AttackEntityEvent;
 import net.minecraftforge.event.entity.player.PlayerEvent;
+import net.minecraftforge.event.entity.player.PlayerInteractEvent;
 import net.minecraftforge.fml.common.ObfuscationReflectionHelper;
 import net.minecraftforge.fml.common.eventhandler.Cancelable;
 import net.minecraftforge.fml.common.eventhandler.Event.HasResult;
@@ -81,20 +96,19 @@ public class EventHandlers
     
 	@SubscribeEvent(priority = EventPriority.HIGHEST, receiveCanceled = true)
 	public void cancelAttackEntityEvent(AttackEntityEvent event)
-	{
-		if ( event.getEntityPlayer().getCooledAttackStrength(0.0F) > 0.0F ) // !ClientProxy.EHC_INSTANCE.isMainhandAttackReady()
-		{
-			event.setCanceled(true);
-			return;
-		}
-		
+	{		
 		if ( event.getEntityPlayer().getHeldItemMainhand().isEmpty() && event.getEntityPlayer().getHeldItemOffhand().isEmpty() )
 		{
 			/* CarryOn */
 			return;
 		}
 		
-		event.setCanceled(true);
+		if ( ConfigurationHandler.isBlacklisted(event.getEntityPlayer().getHeldItemMainhand().getItem()) )
+		{
+			event.getEntityLiving().hitByEntity(event.getEntityPlayer());
+			event.setCanceled(true);
+			return;
+		}
 	}
 
 	@SubscribeEvent
@@ -472,6 +486,67 @@ public class EventHandlers
 			}
 		}
 	}
+	
+	@SubscribeEvent( priority = EventPriority.HIGHEST, receiveCanceled = true )
+    public void onRightClickBlockEvent(PlayerInteractEvent.RightClickBlock event)
+    {
+		if ( this.cancelTools(event.getEntityPlayer(), event.getEntityPlayer().getEntityWorld().getBlockState(event.getPos()).getBlock()) )
+		{
+			event.setCanceled(true);
+		}
+    }
+	
+
+	private boolean cancelTools( EntityPlayer entityPlayer, Block block )
+	{
+		if ( ConfigurationHandler.grassPathingRequiresAnimation )
+		{
+			if ( block instanceof BlockGrass )
+			{
+				if ( entityPlayer.getHeldItemMainhand().getItem() instanceof ItemSpade )
+				{
+					return true;
+				}
+				else if ( entityPlayer.getHeldItemOffhand().getItem() instanceof ItemSpade )
+				{
+					return true;
+				}
+			}
+		}
+		
+		if ( ConfigurationHandler.tillingRequiresAnimation )
+		{
+			if ( block instanceof BlockDirt || block instanceof BlockGrass || block instanceof BlockGrassPath )
+			{
+				if ( entityPlayer.getHeldItemMainhand().getItem() instanceof ItemHoe )
+				{
+					return true;
+				}
+				else if ( entityPlayer.getHeldItemOffhand().getItem() instanceof ItemHoe )
+				{
+					return true;
+				}
+			}
+		}
+		
+		if ( ConfigurationHandler.strippingBarkRequiresAnimation )
+		{
+			if ( block instanceof BlockLog )
+			{
+				if ( entityPlayer.getHeldItemMainhand().getItem() instanceof ItemAxe )
+				{
+					return true;
+				}
+				else if ( entityPlayer.getHeldItemOffhand().getItem() instanceof ItemAxe )
+				{
+					return true;
+				}
+			}
+		}
+		
+		/* Continue with right-click! */
+		return false;
+	}
 
 	/**
 	 * LivingHurtEvent is fired when an Entity is set to be hurt. <br>
@@ -535,24 +610,68 @@ public class EventHandlers
 			return;
 		}
 		
-		if ( event.getAmount() > 0.0F && this.canBlockDamageSource(event.getSource(), event.getEntityLiving()) )
+		if ( event.getAmount() > 0.0F )
         {
-			// TODO parrying
-//			if ( event.getEntityLiving() instanceof EntityPlayer )
-//			{
-//				EntityPlayer player = (EntityPlayer)event.getEntityLiving();
-//				player.getActiveHand()
-//			}
-			
-			float f = event.getEntityLiving().getMaxHealth() * 0.25F;
-			
-			if ( f > 0.0F && event.getAmount() / f > event.getEntityLiving().world.rand.nextFloat() )
+			if ( this.canParryDamageSource(event.getSource(), event.getEntityLiving()) )
 			{
-	            SoundHandler.blockMetalHeavy(event.getEntityLiving(), SoundHandler.getRandomShieldBlockVolume(), SoundHandler.getRandomImpactPitch());
+				if ( event.getEntityLiving() instanceof EntityPlayerMP && event.getSource().getTrueSource() instanceof EntityLivingBase )
+				{
+					EntityPlayerMP player = (EntityPlayerMP)event.getEntityLiving();
+					
+					if ( player.getActiveHand().equals(EnumHand.MAIN_HAND) && player.getEntityData().hasKey("isParrying") && player.getEntityData().getBoolean("isParrying") && ConfigurationHandler.isItemClassWhiteList(player.getHeldItemMainhand().getItem()) )
+					{
+						PacketHandler.instance.sendTo(new PacketParried(), player);
+						
+			            player.swingArm(EnumHand.MAIN_HAND);
+		                
+						double attackDamage = 1.0D + Helpers.getMainhandAttackDamage(player, player.getHeldItemMainhand());
+
+						/* Not Parried */
+						if ( attackDamage >= 0.0D && event.getAmount() > player.world.rand.nextInt((int)(attackDamage*ConfigurationHandler.parryChanceEffectivness)) )
+						{
+							player.getCooldownTracker().setCooldown(player.getHeldItemMainhand().getItem(), (int)(event.getAmount()*ConfigurationHandler.critsDisableShield));							
+							PacketHandler.instance.sendTo(new PacketParrying(false), player);
+						}
+						/* Parried */
+						else
+						{
+			                event.setCanceled(true);
+			                
+				            SoundHandler.playImpactArmorMetalSound(event.getEntityLiving(), SoundHandler.getRandomShieldBlockVolume(), SoundHandler.getRandomImpactPitch());
+
+							player.knockBack(event.getSource().getTrueSource(), ConfigurationHandler.parryKnockbackAmount, (double)-MathHelper.sin(player.rotationYaw * 0.017453292F), (double)(MathHelper.cos(player.rotationYaw * 0.017453292F)));
+							
+							if ( player.world instanceof WorldServer )
+							{
+								if ( event.getAmount() >= 1.0D )
+								{
+									int k = 3 + (int)(event.getAmount() * 0.5F);
+									((WorldServer) player.world).spawnParticle(EnumParticleTypes.CRIT, player.posX + (double)-MathHelper.sin(player.rotationYaw * 0.017453292F), player.posY + player.height * 0.6F, player.posZ + (double)(MathHelper.cos(player.rotationYaw * 0.017453292F)), k, 0.2D, 0.1D, 0.2D, 0.25D);
+								}
+							}
+							
+							player.getHeldItemMainhand().damageItem(1, player);
+						}
+						
+						/* Knockback the attacking entity, from the player */
+						((EntityLivingBase)event.getSource().getTrueSource()).knockBack(player, ConfigurationHandler.parryKnockbackAmount, (double)MathHelper.sin(player.rotationYaw * 0.017453292F), (double)(-MathHelper.cos(player.rotationYaw * 0.017453292F)));
+						
+			            return;
+		            }
+				}
 			}
-			else
+			else if ( this.canBlockDamageSource(event.getSource(), event.getEntityLiving()) )
 			{
-	            SoundHandler.blockMetalLight(event.getEntityLiving(), SoundHandler.getRandomShieldBlockVolume(), SoundHandler.getRandomImpactPitch());
+				float f = event.getEntityLiving().getMaxHealth() * 0.25F;
+				
+				if ( f > 0.0F && event.getAmount() / f > event.getEntityLiving().world.rand.nextFloat() )
+				{
+		            SoundHandler.blockMetalHeavy(event.getEntityLiving(), SoundHandler.getRandomShieldBlockVolume(), SoundHandler.getRandomImpactPitch());
+				}
+				else
+				{
+		            SoundHandler.blockMetalLight(event.getEntityLiving(), SoundHandler.getRandomShieldBlockVolume(), SoundHandler.getRandomImpactPitch());
+				}
 			}
         }
 	}
@@ -560,6 +679,28 @@ public class EventHandlers
 	private boolean canBlockDamageSource(DamageSource damageSourceIn, EntityLivingBase elb)
     {
         if (!damageSourceIn.isUnblockable() && elb.isActiveItemStackBlocking())
+        {
+            Vec3d vec3d = damageSourceIn.getDamageLocation();
+
+            if (vec3d != null)
+            {
+                Vec3d vec3d1 = elb.getLook(1.0F);
+                Vec3d vec3d2 = vec3d.subtractReverse(new Vec3d(elb.posX, elb.posY, elb.posZ)).normalize();
+                vec3d2 = new Vec3d(vec3d2.x, 0.0D, vec3d2.z);
+
+                if (vec3d2.dotProduct(vec3d1) < 0.0D)
+                {
+                    return true;
+                }
+            }
+        }
+
+        return false;
+    }
+	
+	private boolean canParryDamageSource(DamageSource damageSourceIn, EntityLivingBase elb)
+    {
+        if (!damageSourceIn.isUnblockable() && !damageSourceIn.isProjectile() && !damageSourceIn.isMagicDamage())
         {
             Vec3d vec3d = damageSourceIn.getDamageLocation();
 

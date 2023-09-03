@@ -1,5 +1,7 @@
 package bettercombat.mod.client;
 
+import java.util.Random;
+
 import bettercombat.mod.util.ConfigurationHandler;
 import bettercombat.mod.util.ConfigurationHandler.Animation;
 import bettercombat.mod.util.ConfigurationHandler.CustomWeapon;
@@ -43,6 +45,7 @@ public class BetterCombatHand
 			}
 		}
 		
+		this.parry = customWeapon.parry;
 		this.sweep = sweepMod;
 				
 		int cd = MathHelper.clamp(cooldownTicks, ConfigurationHandler.minimumAttackSpeedTicks, 15);
@@ -56,6 +59,8 @@ public class BetterCombatHand
 		this.mining = false;
 
 		this.customWeapon = null;
+		
+		this.parry = false;
 		this.sweep = 0;
 		
 		this.swingTimer = 0;
@@ -137,6 +142,11 @@ public class BetterCombatHand
 		return 0.0D;
 	}
 	
+	public boolean canParry()
+	{
+		return this.parry; // !ConfigurationHandler.disableParrying && 
+	}
+	
 	public int getSweep()
 	{
 		return this.sweep;
@@ -149,6 +159,8 @@ public class BetterCombatHand
 	
 	/* The custom weapon */
 	CustomWeapon customWeapon = null;
+	
+	private boolean parry = false;
 	
 	/* The weapons custom reach amount */
 	private int sweep = 0;
@@ -179,7 +191,38 @@ public class BetterCombatHand
 
 	/* Mouse held down and is mining a block */
 	private boolean mining = false;
-		
+	
+	public float moveRightVariance = 1.0F;
+	public float moveUpVariance = 1.0F;
+	public float moveCloseVariance = 1.0F;
+
+	public float rotateUpVariance = 1.0F;
+	public float rotateCounterClockwiseVariance = 1.0F;
+	public float rotateLeftVariance = 1.0F;
+	
+	private final Random rand = new Random();
+	
+	public void randomizeVariances()
+	{
+		moveRightVariance = this.randomMoveVariance();
+		moveUpVariance = this.randomMoveVariance();
+		moveCloseVariance = this.randomMoveVariance();
+
+		rotateUpVariance = this.randomRotationVariance();
+		rotateCounterClockwiseVariance = this.randomRotationVariance();
+		rotateLeftVariance = this.randomRotationVariance();
+	}
+	
+	public float randomMoveVariance()
+	{
+		return 1.06F - this.rand.nextFloat() * 0.12F;
+	}
+
+	public float randomRotationVariance()
+	{
+		return 1.03F - this.rand.nextFloat() * 0.06F;
+	}
+	
 	public void stopAttack()
 	{
 		this.swingTimer = 0;
@@ -240,6 +283,8 @@ public class BetterCombatHand
 				
 		this.swingTimestampSound = Math.round(this.swingTimer*0.8F);
 		this.swingTimestampDamage = this.swingTimestampSound-1;
+		
+		this.randomizeVariances();
 	}
 	
 	public void setStabbing( int i )
@@ -252,6 +297,8 @@ public class BetterCombatHand
 				
 		this.swingTimestampSound = Math.round(this.swingTimer*0.8F);
 		this.swingTimestampDamage = this.swingTimestampSound-1;
+		
+		this.randomizeVariances();
 	}
 	
 	public void setChopping( int i )
@@ -264,6 +311,8 @@ public class BetterCombatHand
 				
 		this.swingTimestampSound = Math.round(this.swingTimer*0.8F);
 		this.swingTimestampDamage = this.swingTimestampSound-1;
+		
+		this.randomizeVariances();
 	}
 
 	public void setPunching( int i )
@@ -288,6 +337,8 @@ public class BetterCombatHand
 		
 		this.swingTimestampSound = 8;
 		this.swingTimestampDamage = 9;
+		
+		this.randomizeVariances();
 	}
 
 	public void setShieldBashing()

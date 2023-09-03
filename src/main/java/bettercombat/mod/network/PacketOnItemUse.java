@@ -4,11 +4,18 @@ import io.netty.buffer.ByteBuf;
 import net.minecraft.block.Block;
 import net.minecraft.block.BlockAir;
 import net.minecraft.block.BlockLog;
+import net.minecraft.block.material.Material;
+import net.minecraft.block.state.IBlockState;
 import net.minecraft.entity.player.EntityPlayerMP;
+import net.minecraft.init.Blocks;
+import net.minecraft.init.SoundEvents;
+import net.minecraft.item.ItemSpade;
+import net.minecraft.item.ItemStack;
 import net.minecraft.util.EnumActionResult;
 import net.minecraft.util.EnumFacing;
 import net.minecraft.util.EnumHand;
 import net.minecraft.util.EnumParticleTypes;
+import net.minecraft.util.SoundCategory;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.WorldServer;
 import net.minecraftforge.fml.common.FMLCommonHandler;
@@ -131,10 +138,20 @@ public class PacketOnItemUse implements IMessage
 			if ( message.mainhand )
 			{
 				result = player.getHeldItemMainhand().getItem().onItemUse(player, player.world, blockPos, EnumHand.MAIN_HAND, EnumFacing.getFront(message.sideHit), 0.0F, 0.0F, 0.0F);
+				
+//				if ( player.getHeldItemMainhand().getItem() instanceof ItemSpade && result.equals(EnumActionResult.PASS) )
+//				{
+//					result = useShovelOnDirt(player, EnumFacing.getFront(message.sideHit), EnumHand.MAIN_HAND, blockPos);
+//				}
 			}
 			else
 			{
 				result = player.getHeldItemOffhand().getItem().onItemUse(player, player.world, blockPos, EnumHand.OFF_HAND, EnumFacing.getFront(message.sideHit), 0.0F, 0.0F, 0.0F);
+				
+//				if ( player.getHeldItemOffhand().getItem() instanceof ItemSpade && result.equals(EnumActionResult.PASS) )
+//				{
+//					result = useShovelOnDirt(player, EnumFacing.getFront(message.sideHit), EnumHand.OFF_HAND, blockPos);
+//				}
 			}
 		
 			if ( result.equals(EnumActionResult.SUCCESS) )
@@ -197,4 +214,37 @@ public class PacketOnItemUse implements IMessage
 		
 		}
 	}
+	
+//	public static EnumActionResult useShovelOnDirt(EntityPlayerMP player, EnumFacing facing, EnumHand hand, BlockPos pos )
+//	{
+//		ItemStack itemstack = player.getHeldItem(hand);
+//
+//        if (!player.canPlayerEdit(pos.offset(facing), facing, itemstack))
+//        {
+//            return EnumActionResult.FAIL;
+//        }
+//        else
+//        {
+//            IBlockState iblockstate = player.world.getBlockState(pos);
+//            Block block = iblockstate.getBlock();
+//
+//            if (facing != EnumFacing.DOWN && player.world.getBlockState(pos.up()).getMaterial() == Material.AIR && block == Blocks.DIRT)
+//            {
+//                IBlockState iblockstate1 = Blocks.GRASS_PATH.getDefaultState();
+//                player.world.playSound(player, pos, SoundEvents.ITEM_SHOVEL_FLATTEN, SoundCategory.BLOCKS, 1.0F, 1.0F);
+//
+//                if (!player.world.isRemote)
+//                {
+//                	player.world.setBlockState(pos, iblockstate1, 11);
+//                    itemstack.damageItem(1, player);
+//                }
+//
+//                return EnumActionResult.SUCCESS;
+//            }
+//            else
+//            {
+//                return EnumActionResult.PASS;
+//            }
+//        }
+//	}
 }

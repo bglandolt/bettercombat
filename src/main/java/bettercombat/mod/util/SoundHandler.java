@@ -688,7 +688,7 @@ public class SoundHandler
 	/*             											  EQUIP     						 					        */
 	/* -------------------------------------------------------------------------------------------------------------------- */
 	
-	public static void playEquipSoundLeft( EntityLivingBase elb, BetterCombatHand betterCombatHand, ItemStack itemStack, int cooldown )
+	public static void splayEquipSoundLeft( EntityLivingBase elb, BetterCombatHand betterCombatHand, ItemStack itemStack, int cooldown )
 	{
 		if ( !betterCombatHand.hasCustomWeapon() )
 		{
@@ -2223,8 +2223,30 @@ public class SoundHandler
 	}
 
 	private static void playImpactDefaultSound(EntityLivingBase elb, float volume, float pitch)
-	{
-		playSound(elb, SoundEvents.ENTITY_PLAYER_ATTACK_STRONG, volume, pitch);
+	{		
+		switch( elb.world.rand.nextInt(3) )
+		{
+			case 0:
+			{
+				playSound(elb, SoundEvents.ENTITY_PLAYER_ATTACK_STRONG, volume*1.5F, pitch);
+				return;
+			}
+			case 1:
+			{
+				playSound(elb, IMPACT_METAL_AXE_0, volume, pitch);
+				return;
+			}
+			case 2:
+			{
+				playSound(elb, IMPACT_METAL_AXE_6, volume, pitch);
+				return;
+			}
+			default:
+			{
+				playSound(elb, SoundEvents.ENTITY_PLAYER_ATTACK_STRONG, volume*1.5F, pitch);
+				return;
+			}
+		}
 	}
 	
 	public static void playImpactArmorMetalSound( EntityLivingBase elb, float volume, float pitch )
@@ -2239,17 +2261,23 @@ public class SoundHandler
 	
 	public static void playSound( Entity player, SoundEvent soundEvent, float volume, float pitch )
 	{
-		player.playSound(soundEvent, volume, pitch);
-
-//		try
-//		{
-//			player.playSound(soundEvent, volume, pitch);
-//			player.world.playSound(null, player.posX, player.posY, player.posZ, soundEvent, player.getSoundCategory(), volume, pitch);
-//		}
-//		catch ( Exception e )
-//		{
-//			/* Random crash on world reload. I don't care just wrap it in a try catch */
-//		}
+		try
+		{
+			player.playSound(soundEvent, volume, pitch);
+		}
+		catch ( Exception e )
+		{
+			/* Random crash on world reload. I don't care just wrap it in a try catch */
+		}
+		
+		try
+		{
+			player.world.playSound(null, player.posX, player.posY, player.posZ, soundEvent, player.getSoundCategory(), volume, pitch);
+		}
+		catch ( Exception e )
+		{
+			/* Random crash on world reload. I don't care just wrap it in a try catch */
+		}
 	}
 	
 	

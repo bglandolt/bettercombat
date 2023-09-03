@@ -4,6 +4,9 @@ import java.io.File;
 import java.util.ArrayList;
 
 import net.minecraft.entity.Entity;
+import net.minecraft.entity.EntityLiving;
+import net.minecraft.entity.IEntityOwnable;
+import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.item.Item;
 import net.minecraft.potion.Potion;
 import net.minecraft.util.math.MathHelper;
@@ -17,7 +20,7 @@ public class ConfigurationHandler
 	{
 		if ( config == null )
 		{
-			config = new Configuration(configFile, Integer.toString(10));
+			config = new Configuration(configFile, Integer.toString(11));
 			loadConfiguration();
 		}
 	}
@@ -77,13 +80,13 @@ public class ConfigurationHandler
 	public static boolean sorceryEnchantmentEnabled = true;
 	public static float sorceryPercentPerLevel = 0.1F;
 
-	/* GENERAL --------------------------------------------------------------------------------------------------------------------- */
+	/* OTHER --------------------------------------------------------------------------------------------------------------------- */
 
 	public static boolean moreSprint = true;
 	public static double inertiaOnAttack = 0.5;
 	public static boolean fastEquipHotbarOnly = false;
-	public static double extraAttackHeight = 0.5;
-	public static double extraAttackWidth = 0.05;
+	public static double extraAttackHeight = 0.75;
+	public static double extraAttackWidth = 0.25;
 	public static float nauseaAffectsMobs = 2.2F;
 	public static double miningFatigueDamageReduction = 0.0;
 	public static float silverArmorDamagesUndeadAttackers = 1.5F;
@@ -91,7 +94,6 @@ public class ConfigurationHandler
 	public static boolean tillingRequiresAnimation = true;
 	public static boolean strippingBarkRequiresAnimation = false;
 	public static boolean cancelSpartanWeaponryFatigue = true;
-	public static boolean overrideLeftAndRightClickKeybinds = true;
 
 	/* KNOCKBACK --------------------------------------------------------------------------------------------------------------------- */
 
@@ -121,6 +123,11 @@ public class ConfigurationHandler
 	private static String[] itemClassBlacklist =
 	{
 	};
+	
+	private static String[] itemBlacklist =
+	{
+
+	};
 
 	/* POTIONS --------------------------------------------------------------------------------------------------------------------- */
 
@@ -143,7 +150,8 @@ public class ConfigurationHandler
 		public static float shieldBlockSoundVolume = 1.0F;
 		public static float weaponHitSoundVolume = 1.0F;
 		public static float weaponSwingSoundVolume = 1.0F;
-		public static float weapoEquipAndSheatheSoundVolume = 1.0F;
+		public static float weaponEquipAndSheatheSoundVolume = 1.0F;
+		
 		public static String[] nonMetalList =
 		{
 			"wood", "stone", "bone", "staff", "club", "caestus"
@@ -171,8 +179,8 @@ public class ConfigurationHandler
 	/* VISUAL --------------------------------------------------------------------------------------------------------------------- */
 
 		public static boolean aetherealizedDamageParticles = true;
-		public static float breathingAnimationIntensity = 0.025F;
-		public static float breathingAnimationSpeed = 0.036F;
+		public static float breathingAnimationIntensity = 0.03F;
+		public static float breathingAnimationSpeed = 0.04F;
 		public static float cameraPitchSwing = 0.09F;
 		public static float rotationYawSwing = 0.18F;
 		public static boolean damageParticles = true;
@@ -192,9 +200,13 @@ public class ConfigurationHandler
 	/* SHIELD --------------------------------------------------------------------------------------------------------------------- */
 
 		public static double critsDisableShield = 3.0;
+		public static double parryChanceEffectivness = 3.0;
+		public static boolean enableParrying = true;
+		public static float parryKnockbackAmount = 0.5F;
 		public static boolean disableBlockingWhileAttacking = true;
 		public static boolean disableBlockingWhileShieldBashing = false;
 		public static float shieldSilverDamageMultiplier = 1.5F;
+		public static boolean shieldBashingTaunts = true;
 		
 		public static ArrayList<CustomShield> shields = new ArrayList<CustomShield>();
 	
@@ -235,28 +247,28 @@ public class ConfigurationHandler
 		public static ArrayList<CustomWeapon> weapons = new ArrayList<CustomWeapon>(); //  2h .25, blunt 0.25  stab 0, sweep 0.25, chop 0.5
 		private static String[] weaponList =
 		{
-			"[Weapon Substring=pike_]		[Sound Type=POLEARM]	[Animation=STAB]	[Property=TWOHAND]		[Sweep=0]	[Additional Reach=2.0]	[Knockback=0.2]	[Crit Chance=0.1]	[Additional Crit Damage=0.0]",
-			"[Weapon Substring=glaive_]		[Sound Type=POLEARM]	[Animation=SWEEP]	[Property=TWOHAND]		[Sweep=2]	[Additional Reach=1.0]	[Knockback=0.5]	[Crit Chance=0.1]	[Additional Crit Damage=0.0]",
-			"[Weapon Substring=spear_]		[Sound Type=POLEARM]	[Animation=STAB]	[Property=MAINHAND]		[Sweep=0]	[Additional Reach=1.0]	[Knockback=0.2]	[Crit Chance=0.1]	[Additional Crit Damage=0.0]",
-			"[Weapon Substring=lance_]		[Sound Type=POLEARM]	[Animation=STAB]	[Property=MAINHAND]		[Sweep=0]	[Additional Reach=1.0]	[Knockback=1.0]		[Crit Chance=0.1]	[Additional Crit Damage=0.0]",
-			"[Weapon Substring=halberd_]		[Sound Type=POLEARM]	[Animation=CHOP]	[Property=TWOHAND]		[Sweep=0]	[Additional Reach=1.0]	[Knockback=0.8]		[Crit Chance=0.25]	[Additional Crit Damage=0.0]",
-			"[Weapon Substring=staff]		[Sound Type=POLEARM]	[Animation=SWEEP]	[Property=TWOHAND]		[Sweep=2]	[Additional Reach=1.0]	[Knockback=1.0]		[Crit Chance=0.1]	[Additional Crit Damage=0.5]	[Potion Effect=CRIT,RECEIVE,minecraft:speed,2,160]",
-			"[Weapon Substring=warhammer_]	[Sound Type=BLUNT]		[Animation=CHOP]	[Property=VERSATILE]	[Sweep=0]	[Additional Reach=0.0]	[Knockback=1.0]	[Crit Chance=0.1]	[Additional Crit Damage=0.0]",
-			"[Weapon Substring=hammer_]		[Sound Type=BLUNT]		[Animation=CHOP]	[Property=ONEHAND]		[Sweep=0]	[Additional Reach=0.0]	[Knockback=1.5]		[Crit Chance=0.1]	[Additional Crit Damage=0.0]	[Potion Effect=CRIT,AFFLICT,minecraft:nausea,1,100]",
-			"[Weapon Substring=mace_]		[Sound Type=BLUNT]		[Animation=CHOP]	[Property=ONEHAND]		[Sweep=0]	[Additional Reach=0.0]	[Knockback=0.8]		[Crit Chance=0.1]	[Additional Crit Damage=0.0]",
-			"[Weapon Substring=club_]		[Sound Type=BLUNT]		[Animation=CHOP]	[Property=ONEHAND]		[Sweep=0]	[Additional Reach=0.0]	[Knockback=0.8]		[Crit Chance=0.1]	[Additional Crit Damage=0.0]",
-			"[Weapon Substring=caestus]		[Sound Type=BLUNT]		[Animation=STAB]	[Property=ONEHAND]		[Sweep=0]	[Additional Reach=0.0]	[Knockback=0.2]		[Crit Chance=0.1]	[Additional Crit Damage=0.0]",
-			"[Weapon Substring=greatsword_]	[Sound Type=BLADE]		[Animation=SWEEP]	[Property=TWOHAND]		[Sweep=3]	[Additional Reach=1.0]	[Knockback=0.5]	[Crit Chance=0.1]	[Additional Crit Damage=0.0]",
-			"[Weapon Substring=katana_]		[Sound Type=BLADE]		[Animation=CHOP]	[Property=VERSATILE]	[Sweep=0]	[Additional Reach=0.0]	[Knockback=0.5]	[Crit Chance=0.1]	[Additional Crit Damage=0.5]",
-			"[Weapon Substring=longsword_]	[Sound Type=BLADE]		[Animation=SWEEP]	[Property=VERSATILE]	[Sweep=1]	[Additional Reach=0.0]	[Knockback=0.5]	[Crit Chance=0.1]	[Additional Crit Damage=0.0]",
-			"[Weapon Substring=saber_]		[Sound Type=BLADE]		[Animation=SWEEP]	[Property=ONEHAND]		[Sweep=1]	[Additional Reach=0.0]	[Knockback=0.2]		[Crit Chance=0.1]	[Additional Crit Damage=0.0]",
-			"[Weapon Substring=rapier_]		[Sound Type=BLADE]		[Animation=STAB]	[Property=ONEHAND]		[Sweep=0]	[Additional Reach=0.0]	[Knockback=0.0]		[Crit Chance=0.1]	[Additional Crit Damage=0.0]	[Potion Effect=CRIT,AFFLICT,bettercombat:bleeding,1,100]",
-			"[Weapon Substring=battleaxe_]	[Sound Type=AXE]		[Animation=CHOP]	[Property=VERSATILE]	[Sweep=0]	[Additional Reach=0.0]	[Knockback=0.8]		[Crit Chance=0.25]	[Additional Crit Damage=0.0]",
-			"[Weapon Substring=_shovel]		[Sound Type=AXE]		[Animation=CHOP]	[Property=ONEHAND]		[Sweep=0]	[Additional Reach=0.0]	[Knockback=0.5]		[Crit Chance=0.05]	[Additional Crit Damage=0.0]",
-			"[Weapon Substring=_sword]		[Sound Type=BLADE]		[Animation=SWEEP]	[Property=ONEHAND]		[Sweep=1]	[Additional Reach=0.0]	[Knockback=0.2]		[Crit Chance=0.1]	[Additional Crit Damage=0.0]",
-			"[Weapon Substring=_pickaxe]		[Sound Type=AXE]		[Animation=CHOP]	[Property=ONEHAND]		[Sweep=0]	[Additional Reach=0.0]	[Knockback=0.5]		[Crit Chance=0.05]	[Additional Crit Damage=0.0]",
-			"[Weapon Substring=_axe]			[Sound Type=AXE]		[Animation=CHOP]	[Property=ONEHAND]		[Sweep=0]	[Additional Reach=0.0]	[Knockback=0.8]		[Crit Chance=0.25]	[Additional Crit Damage=0.0]",
-			"[Weapon Substring=_hoe]			[Sound Type=AXE]		[Animation=CHOP]	[Property=ONEHAND]		[Sweep=0]	[Additional Reach=0.0]	[Knockback=0.2]		[Crit Chance=0.05]	[Additional Crit Damage=0.0]"
+			 "[Weapon Substring=pike_] [Sound Type=POLEARM] [Animation=STAB] [Property=TWOHAND] [Sweep=0] [Additional Reach=2.0] [Knockback=0.2] [Crit Chance=0.1] [Additional Crit Damage=0.0] [Parry=true]",
+			 "[Weapon Substring=glaive_] [Sound Type=POLEARM] [Animation=SWEEP] [Property=TWOHAND] [Sweep=2] [Additional Reach=1.0] [Knockback=0.5] [Crit Chance=0.1] [Additional Crit Damage=0.0] [Parry=true]",
+			 "[Weapon Substring=spear_] [Sound Type=POLEARM] [Animation=STAB] [Property=MAINHAND] [Sweep=0] [Additional Reach=1.0] [Knockback=0.2] [Crit Chance=0.1] [Additional Crit Damage=0.0] [Parry=true]",
+			 "[Weapon Substring=lance_] [Sound Type=POLEARM] [Animation=STAB] [Property=MAINHAND] [Sweep=0] [Additional Reach=1.0] [Knockback=1.0] [Crit Chance=0.1] [Additional Crit Damage=0.0] [Parry=true]",
+			 "[Weapon Substring=halberd_] [Sound Type=POLEARM] [Animation=CHOP] [Property=TWOHAND] [Sweep=0] [Additional Reach=1.0] [Knockback=0.8] [Crit Chance=0.25] [Additional Crit Damage=0.0] [Parry=true]",
+			 "[Weapon Substring=staff] [Sound Type=POLEARM] [Animation=SWEEP] [Property=TWOHAND] [Sweep=2] [Additional Reach=1.0] [Knockback=1.0] [Crit Chance=0.1] [Additional Crit Damage=0.5] [Parry=true] [Potion Effect=CRIT,RECEIVE,minecraft:speed,2,160]",
+			 "[Weapon Substring=warhammer_] [Sound Type=BLUNT] [Animation=CHOP] [Property=VERSATILE] [Sweep=0] [Additional Reach=0.0] [Knockback=1.0][Crit Chance=0.1] [Additional Crit Damage=0.0] [Parry=true]",
+			 "[Weapon Substring=hammer_] [Sound Type=BLUNT] [Animation=CHOP] [Property=ONEHAND] [Sweep=0] [Additional Reach=0.0] [Knockback=1.5] [Crit Chance=0.1] [Additional Crit Damage=0.0] [Parry=true] [Potion Effect=CRIT,AFFLICT,minecraft:nausea,1,100]",
+			 "[Weapon Substring=mace_] [Sound Type=BLUNT] [Animation=CHOP] [Property=ONEHAND] [Sweep=0] [Additional Reach=0.0] [Knockback=0.8] [Crit Chance=0.1] [Additional Crit Damage=0.0] [Parry=true]",
+			 "[Weapon Substring=club_] [Sound Type=BLUNT] [Animation=CHOP] [Property=ONEHAND] [Sweep=0] [Additional Reach=0.0] [Knockback=0.8] [Crit Chance=0.1] [Additional Crit Damage=0.0] [Parry=true]",
+			 "[Weapon Substring=caestus] [Sound Type=BLUNT] [Animation=STAB] [Property=ONEHAND] [Sweep=0] [Additional Reach=0.0] [Knockback=0.2] [Crit Chance=0.1] [Additional Crit Damage=0.0] [Parry=true]",
+			 "[Weapon Substring=greatsword_] [Sound Type=BLADE] [Animation=SWEEP] [Property=TWOHAND] [Sweep=3] [Additional Reach=1.0] [Knockback=0.5][Crit Chance=0.1] [Additional Crit Damage=0.0] [Parry=true]",
+			 "[Weapon Substring=katana_] [Sound Type=BLADE] [Animation=CHOP] [Property=VERSATILE] [Sweep=0] [Additional Reach=0.0] [Knockback=0.5] [Crit Chance=0.1] [Additional Crit Damage=0.5] [Parry=true]",
+			 "[Weapon Substring=longsword_] [Sound Type=BLADE] [Animation=SWEEP] [Property=VERSATILE] [Sweep=1] [Additional Reach=0.0] [Knockback=0.5] Crit Chance=0.1] [Additional Crit Damage=0.0] [Parry=true]",
+			 "[Weapon Substring=saber_] [Sound Type=BLADE] [Animation=SWEEP] [Property=ONEHAND] [Sweep=1] [Additional Reach=0.0] [Knockback=0.2] [Crit Chance=0.1] [Additional Crit Damage=0.0] [Parry=true]",
+			 "[Weapon Substring=rapier_] [Sound Type=BLADE] [Animation=STAB] [Property=ONEHAND] [Sweep=0] [Additional Reach=0.0] [Knockback=0.0] [Crit Chance=0.1] [Additional Crit Damage=0.0] [Parry=true] [Potion Effect=CRIT,AFFLICT,bettercombat:bleeding,1,100]",
+			 "[Weapon Substring=battleaxe_] [Sound Type=AXE] [Animation=CHOP] [Property=VERSATILE] [Sweep=0] [Additional Reach=0.0] [Knockback=0.8] [Crit Chance=0.25] [Additional Crit Damage=0.0] [Parry=true]",
+			 "[Weapon Substring=_shovel] [Sound Type=AXE] [Animation=CHOP] [Property=ONEHAND] [Sweep=0] [Additional Reach=0.0] [Knockback=0.5] [Crit Chance=0.05] [Additional Crit Damage=0.0] [Parry=true]",
+			 "[Weapon Substring=_sword] [Sound Type=BLADE] [Animation=SWEEP] [Property=ONEHAND] [Sweep=1] [Additional Reach=0.0] [Knockback=0.2] [Crit Chance=0.1] [Additional Crit Damage=0.0] [Parry=true]",
+			 "[Weapon Substring=_pickaxe] [Sound Type=AXE] [Animation=CHOP] [Property=ONEHAND] [Sweep=0] [Additional Reach=0.0] [Knockback=0.5] [Crit Chance=0.05] [Additional Crit Damage=0.0] [Parry=true]",
+			 "[Weapon Substring=_axe] [Sound Type=AXE] [Animation=CHOP] [Property=ONEHAND] [Sweep=0] [Additional Reach=0.0] [Knockback=0.8] [Crit Chance=0.25] [Additional Crit Damage=0.0] [Parry=true]",
+			 "[Weapon Substring=_hoe] [Sound Type=AXE] [Animation=CHOP] [Property=ONEHAND] [Sweep=0] [Additional Reach=0.0] [Knockback=0.2] [Crit Chance=0.05] [Additional Crit Damage=0.0] [Parry=true]"
 		};
 	
 	public static class CustomAxe
@@ -305,6 +317,7 @@ public class ConfigurationHandler
 		public double knockbackMod;
 		public double critChanceMod;
 		public double additionalCritDamageMod;
+		public boolean parry;
 		
 		public CustomWeaponPotionEffect customWeaponPotionEffect = null;
 	}
@@ -398,21 +411,20 @@ public class ConfigurationHandler
 		sorceryPercentPerLevel = config.getFloat("Sorcery Damage Percentage Per Level", ENCHANTMENTS, 0.1F, 0.0F, 16.0F, "The damage multipler for the Sorcery enchantment, per level. 0.1F means a 10% increase in magic damage per level.");
 		webbingEnchantmentEnabled = config.getBoolean("Webbing Enchantment Enabled", ENCHANTMENTS, true, "Set to true to enable the Webbing enchantment.");
 		/* --------------------------------------------------------------------------------------------------------------------- */
-		String GENERAL = "General";
+		String OTHER = "Other";
 		
-		moreSprint = config.getBoolean("Attack & Sprint", GENERAL, true, "Attacking an enemy while sprinting will no longer interrupt your sprint.");
-		inertiaOnAttack = config.get(GENERAL, "Intertia on Attack", 0.5, "Multiplies the player speed by this amount when they swing a weapon. Set to 1.0 to disable.").getDouble();
-		fastEquipHotbarOnly = config.getBoolean("Fast Equip Hotbar Only", GENERAL, false, "Set to true to have Fast Equip use only items in the hotbar instead of the entire inventory.");
-		extraAttackWidth = config.get(GENERAL, "Extra Attack Width", 0.05, "How wide the hitbox will be extended for melee attacks.").getDouble();
-		extraAttackHeight = config.get(GENERAL, "Extra Attack Height", 0.5, "How high the hitbox will be extended for melee attacks").getDouble();
-		nauseaAffectsMobs = config.getFloat("Nausea Affects Mobs", GENERAL, 2.2F, 0.0F, 256.0F, "Setting to have Nausea & Blindness affect mobs. If a mob has a height equal to or less than this value, it will be affected by Blindess and Nausea potion effects, which causes them to often lose their target and stumble around. Set to 0.0F to disable.");
-		silverArmorDamagesUndeadAttackers = config.getFloat("Silver Armor Damage", GENERAL, 1.5F, 0.0F, 256.0F, "Thorns, but for undead. How much damage undead attackers will take against an entity wearing Silver armor per piece of Silver armor. Setting this to 1.5F and wearing 2 pieces of Silver armor deals 3.0F damage to undead attackers. Silver weapons get a damage bonus, so why not add a special interaction with Silver armor? Set to 0.0F to disable.");
-		grassPathingRequiresAnimation = config.getBoolean("Digging Grass Paths Requires Animation", GENERAL, true, "If set to true, shoveling grass paths requires an animation. Shovels with a faster attack speed will path land faster.");
-		tillingRequiresAnimation = config.getBoolean("Tilling Land Requires Animation", GENERAL, true, "If set to true, tilling land requires an animation. Hoes with a faster attack speed till land faster.");
-		strippingBarkRequiresAnimation = config.getBoolean("Stripping Bark Requires Animation", GENERAL, true, "If set to true, stripping bark requires an animation. Axes with a faster attack speed strip bark faster. Enable this setting if you have future MC installed which allows stripping of bark.");
-		cancelSpartanWeaponryFatigue = config.getBoolean("Cancel Spartan Weaponry Fatigue", GENERAL, true, "Set to true to disable weapon fatigue from Spartan Weaponry, this mod instead handles two-handed and versatile weapons.");
-		overrideLeftAndRightClickKeybinds = config.getBoolean("Override Left And Right Click Keybinds", GENERAL, true, "Set to true to override left and right keybinds. Use at your own risk! Setting this to false might allow players to 'cheese' extra attacks and attack while on cooldown with certain weapons from mods!");
-		
+		moreSprint = config.getBoolean("Attack & Sprint", OTHER, true, "Attacking an enemy while sprinting will no longer interrupt your sprint.");
+		inertiaOnAttack = config.get(OTHER, "Intertia on Attack", 0.5, "Multiplies the player speed by this amount when they swing a weapon. Set to 1.0 to disable.").getDouble();
+		fastEquipHotbarOnly = config.getBoolean("Fast Equip Hotbar Only", OTHER, false, "Set to true to have Fast Equip use only items in the hotbar instead of the entire inventory.");
+		extraAttackWidth = config.get(OTHER, "Extra Attack Width", 0.25, "How wide, on all directions, the hitbox will be extended for melee attacks. Increase the value of this setting to make the XZ-accuracy of attacks more forgiving. 1.0 is equal to an additional block width on XZ sides.").getDouble();
+		extraAttackHeight = config.get(OTHER, "Extra Attack Height", 0.75, "How high the hitbox will be extended for melee attacks. Increase the value of this setting to make the Y-accuracy of attacks more forgiving. 1.0 is equal to an additional block height above the entity.").getDouble();
+		nauseaAffectsMobs = config.getFloat("Nausea Affects Mobs", OTHER, 2.2F, 0.0F, 256.0F, "Setting to have Nausea & Blindness affect mobs. If a mob has a height equal to or less than this value, it will be affected by Blindess and Nausea potion effects, which causes them to often lose their target and stumble around. Set to 0.0F to disable.");
+		silverArmorDamagesUndeadAttackers = config.getFloat("Silver Armor Damage", OTHER, 1.5F, 0.0F, 256.0F, "Thorns, but for undead. How much damage undead attackers will take against an entity wearing Silver armor per piece of Silver armor. Setting this to 1.5F and wearing 2 pieces of Silver armor deals 3.0F damage to undead attackers. Silver weapons get a damage bonus, so why not add a special interaction with Silver armor? Set to 0.0F to disable.");
+		grassPathingRequiresAnimation = config.getBoolean("Digging Grass Paths Requires Animation", OTHER, true, "If set to true, shoveling grass paths requires an animation. Shovels with a faster attack speed will path land faster.");
+		tillingRequiresAnimation = config.getBoolean("Tilling Land Requires Animation", OTHER, true, "If set to true, tilling land requires an animation. Hoes with a faster attack speed till land faster.");
+		strippingBarkRequiresAnimation = config.getBoolean("Stripping Bark Requires Animation", OTHER, false, "CURRENTLY NOT WORKING. If set to true, stripping bark requires an animation. Axes with a faster attack speed strip bark faster. Enable this setting if you have future MC installed which allows stripping of bark.");
+		cancelSpartanWeaponryFatigue = config.getBoolean("Cancel Spartan Weaponry Fatigue", OTHER, true, "Set to true to disable weapon fatigue from Spartan Weaponry, this mod instead handles two-handed and versatile weapons.");
+
 		/* --------------------------------------------------------------------------------------------------------------------- */
 		String KNOCKBACK = "Knockback";
 		
@@ -420,6 +432,14 @@ public class ConfigurationHandler
 		knockUpStrengthMultiplier = config.get(KNOCKBACK, "knock Up Strength Multiplier", 0.5, "Multiply the motionY amount of knockback by this amount. Set to 0.5 by default to reduce the motionY by 50%. Does nothing if betterKnockback is disabled.").getDouble();
 		knockbackStrengthMultiplier = config.get(KNOCKBACK, "knockback Strength Multiplier", 1.0, "Multiply the motionXZ amount of knockback by this amount. This setting is pretty sensitive, and values below 0.5 have almost no visible knockback.").getDouble();
 		sprintingKnockbackAmount = config.get(KNOCKBACK, "Sprinting Knockback Amount", 0.5, "Increases the knockback of an attack when sprinting. For example, setting this to 2.0F is the same knockback amount as Knockback II.").getDouble();
+		
+		/* --------------------------------------------------------------------------------------------------------------------- */
+		String PARRYING = "Parrying";
+		
+		parryChanceEffectivness = config.get(PARRYING, "Parry Chance Effectivness", 3.0, "The attack damage of a weapon is used to calculate the chance of parrying an attack. This setting counts as a multiplier to attack damage for determining the chance to parry an attack. The higher the attack damage of the parry weapon, the higher chances of parrying. This increases the effectivness of parrying with two-handed weapons, which often have higher attack damage. This method also lets weapon material tiers scale to difficulty. Higher damage incoming attacks have a lower the chance of parried. For example, if this setting is set at 3 and the parrying weapon has 5 attack damage, an incoming attack of 9 damage has a 9/(3*5) or 60% chance of NOT being parried.").getDouble();
+		parryKnockbackAmount = config.getFloat("Parry Knockback Amount", PARRYING, 0.5F, 0.0F, 1.0F, "How far both the attacker and victim are knockbacked after a parry.");
+		enableParrying = config.getBoolean("Enable Parrying", PARRYING, true, "Set to false to disable all parrying mechanics from this mod. If enabled, you must specify which weapons can and can not parry in the Custom Weapon Tweaker config.");
+		
 		/* --------------------------------------------------------------------------------------------------------------------- */
 		String POTIONS = "Potions";
 		
@@ -440,6 +460,9 @@ public class ConfigurationHandler
 		bowStrikeSoundVolume = config.getFloat("Bow Strike Sound Volume", SOUND, 1.0F, 0.0F, 2.0F, "The volume of the 'strike' sound that plays when you land a hit.");
 		weaponSwingSoundVolume = config.getFloat("Weapon Swing Sound Volume", SOUND, 1.0F, 0.0F, 2.0F, "The volume of the sound when you swing your weapon.");
 		weaponHitSoundVolume = config.getFloat("Weapon Hit Sound Volume", SOUND, 1.0F, 0.0F, 2.0F, "The volume of the sound that plays when you land a weapon hit.");
+		weaponEquipAndSheatheSoundVolume = config.getFloat("Weapon Equip and Sheate Sound Volume", SOUND, 1.0F, 0.0F, 2.0F, "The volume of the sound that plays when you equip or sheathe a weapon.");
+		shieldBashSoundVolume = config.getFloat("Shield Bash Sound Volume", SOUND, 1.0F, 0.0F, 2.0F, "The volume of the sound that plays when you shield bash.");
+		shieldBlockSoundVolume = config.getFloat("Shield Block Sound Volume", SOUND, 1.0F, 0.0F, 2.0F, "The volume of the sound that plays when block with a shield.");
 		playArrowHitSound = config.getBoolean("Arrow Impact Sound", SOUND, true, "Arrows will make an impact sound when they hit an entity, regardless of range.");
 		nonMetalList = config.getStringList("Non Metal List", SOUND, nonMetalList, "Weapons that are considered non-metal for swinging and hitting sound purposes. If the weapon contains the string, such as 'wood' or 'stone' it will not make a metal sound.");
 		/* --------------------------------------------------------------------------------------------------------------------- */
@@ -454,7 +477,7 @@ public class ConfigurationHandler
 		showKnockbackTooltipAsTotal = config.getBoolean("Show Knockback Tooltip As Total", TOOLTIPS, true, "If set to true, display Knockback as the total weapon Knockback (1.5 Knockback), instead of additional Reach Distance (+0.5 Knockback).");
 		showReachTooltip = config.getBoolean("Show Reach Tooltip", TOOLTIPS, true, "If set to true, display Reach Distance on weapon tooltips.");
 		showReachTooltipAsTotal = config.getBoolean("Show Reach Tooltip As Total", TOOLTIPS, false, "If set to true, display Reach Distance as the total weapon Reach Distance (5.0 Reach Distance), instead of additional Reach Distance (+1.0 Reach Distance).");
-		showSweepTooltip = config.getBoolean("Show Sweep Tooltip", TOOLTIPS, false, "If set to true, display the Sweep tooltip.");		
+		showSweepTooltip = config.getBoolean("Show Sweep Tooltip", TOOLTIPS, true, "If set to true, display the Sweep tooltip.");		
 		/* --------------------------------------------------------------------------------------------------------------------- */
 		String UNARMED = "Unarmed";
 		
@@ -467,7 +490,7 @@ public class ConfigurationHandler
 		aetherealizedDamageParticles = config.getBoolean("Aetherealized Damage Particles", VISUAL, true, "Enable to have the Aetherealized potion create a ring of particles around the target when struck.");
 		breathingAnimationIntensity = config.getFloat("Breathing Animation Intensity", VISUAL, 0.025F, 0.0F, 1.0F, "How fast items move up and down for the breathing animation.");
 		breathingAnimationSpeed = config.getFloat("Breathing Animation Speed", VISUAL, 0.036F, 0.0F, 1.0F, "How far items move up and down for the breathing animation.");
-		showShieldCooldownCrosshair = config.getBoolean("Show Shield Cooldown Crosshair", GENERAL, true, "Show the shield cooldown crosshair, similar to the dual-wielding crosshairs.");
+		showShieldCooldownCrosshair = config.getBoolean("Show Shield Cooldown Crosshair", VISUAL, true, "Show the shield cooldown crosshair, similar to the dual-wielding crosshairs.");
 		cameraPitchSwing = config.getFloat("Camera Pitch Swing", VISUAL, 0.09F, 0.0F, 1.0F, "How much your camera pitch moves when you swing a weapon. May cause slight motion sickness if set too high. Set to 0.0F to disable.");
 		rotationYawSwing = config.getFloat("Rotation Yaw Swing", VISUAL, 0.18F, 0.0F, 1.0F, "How much your camera yaw moves when you swing a weapon. May cause slight motion sickness if set too high. Set to 0.0F to disable.");
 		damageParticles = config.getBoolean("Damage Particles", VISUAL, true, "Enable to show heart damage particles (this is a vanilla feature, this option is here for those who wish to disable it).");
@@ -542,6 +565,9 @@ public class ConfigurationHandler
 			+ "The [Sweep] field adds sweep to a weapon.\n"
 			+ "Set [Sweep] to 0 to disable sweep on a weapon.\n"
 			+ "Set [Sweep] to 1 to have that weapon deal 1.0 damage to sweep targets.\n"
+			+ "Set [Sweep] to 2 to have that weapon deal 25% damage to sweep targets.\n"
+			+ "Set [Sweep] to 3 to have that weapon deal 50% damage to sweep targets.\n"
+			+ "Set [Sweep] to 4 to have that weapon deal 75% damage to sweep targets.\n"
 			+ "Set [Sweep] to 5 to have that weapon deal 100% of the damage dealt to the main target to the other sweep targets.\n"
 			+ "For each level of sweep above 1, the weapon deals 25% of the main target damage to sweep targets, with a minimum of 1.0 damage.\n"
 			+ "A sweep level higher than 5 (through this config or through the Sweeping enchantmet) does not do any sweep damage, however, it still increases the sweep radius.\n\n"
@@ -552,14 +578,18 @@ public class ConfigurationHandler
 			+ "MAINHAND can only attack in the main hand. This is used for weapons such as spears, where a shield/ spear combination makes sense but dual-weilding spears does not.\n"
 			+ "TWOHAND disables the other hand when it is equipped.\n\n"
 
-			+ "The [Reach] field is the reach distance for weapons.\n"
-			+ "Setting [Reach] to 4.0 for a weapon would mean a reach distance of 4.0 blocks for that weapon.\n\n"
+			+ "The [Additional Reach] field is the reach distance for weapons.\n"
+			+ "Setting [Additional Reach] to 1.0 for a weapon would mean a reach distance of 5.0 (1.0 + base reach distance) blocks for that weapon.\n\n"
 
 			+ "The [Crit Chance] field is the critical chance for weapons.\n"
 			+ "Setting [Crit Chance] to 0.1 for a weapon would mean critical strike chance is 10%.\n\n"
 			
 			+ "The [Additional Crit Damage] field is the critical damage multiplier for weapons.\n"
 			+ "Setting [Additional Crit Damage] to 50 for a weapon would mean critical strike damage deals an additional 50% damage.\n\n"
+
+			+ "The [Parry] field enables or disables parrying.\n"
+			+ "The setting 'Disable Parrying' must be set to false in the config to allow weapons to parry.\n"
+			+ "Setting [Parry] to true allows the weapon to parry, and setting [Parry] to false disables parrying for that weapon.\n\n"
 
 			+ "The [Potion Effect] field is optional! It gives weapons a chance to apply a potion effect when you attack an entity with a weapon.\n"
 			+ "Only one potion effect is supported. The order goes for the potion effect  ->  chance, afflict/receive, resource location, power, duration.\n"
@@ -577,6 +607,8 @@ public class ConfigurationHandler
 		
 		/* --------------------------------------------------------------------------------------------------------------------- */
 		String SHIELD = "Custom Shields";
+		
+		shieldBashingTaunts = config.getBoolean("Shield Bashing Taunts", SHIELD, true, "Shield bashing an enemy taunts them, setting the attacker as the attack target.");
 		
 		disableBlockingWhileAttacking = config.getBoolean("Disable Blocking While Attacking", SHIELD, true, "Disable blocking while attacking with the mainhand.");
 
@@ -618,8 +650,9 @@ public class ConfigurationHandler
 		String BWLISTS = "White/Black Lists";
 
 		itemClassWhitelist = config.getStringList("Item Class Whitelist", BWLISTS, itemClassWhitelist, "Whitelisted item classes for attacking. If an item is added to this list, it will function as an Immersive Combat weapon. The Custom Weapons config is for editing the values and attributes of weapons. The class  net.minecraft.item.ItemSword  and anything that extends it is added by default.");
-		itemClassBlacklist = config.getStringList("Item Class Blacklist", BWLISTS, itemClassBlacklist, "Blacklisted item classes. If an item is added to this list, it will have the default left-click and right-click behavior. This setting is useful for gun mods, or items that need to have their default left-click and right-click functionality. Example config value:  com.flansmod.common.guns.ItemGun");
-		entityBlacklist = config.getStringList("Entity Blacklist", BWLISTS, entityBlacklist, "Blacklisted entity classes for attacking. You will not be able to attack any entity that extends this class! Please note that entities extending IEntityOwnable are by default blacklisted, when the entity is owned by the attacker.");
+		itemClassBlacklist = config.getStringList("Item Class Blacklist", BWLISTS, itemClassBlacklist, "Blacklisted item classes. If an item is added to this list, it will have the default left-click and right-click behavior. This setting is useful for gun mods, or items that need to have their default left-click and right-click functionality. Example config value:    com.flansmod.common.guns.ItemGun    com.mrcrayfish.guns.item.ItemGun");
+		itemBlacklist = config.getStringList("Item Blacklist", BWLISTS, itemBlacklist, "Blacklisted items. This is similar to Item Class Blacklist, however, it instead uses a resource location for specific items, such as:    mrcrayfish:gun");
+		entityBlacklist = config.getStringList("Entity Blacklist", BWLISTS, entityBlacklist, "Blacklisted entity classes for attacking with offhand or sweep. You will not be able to attack any entity that extends this class with your offhand, and they will not be hit by sweep! This is to prevent you from accidentally attacking or killing certain entities. Please note that entities extending IEntityOwnable are by default blacklisted, when the entity is owned by the attacker.");
 
 		/* --------------------------------------------------------------------------------------------------------------------- */
 
@@ -631,7 +664,7 @@ public class ConfigurationHandler
 		}
 	}
 	
-	public static void postConfig()
+	public static void postConfig() throws Exception
 	{
 		String CONFIG_REGEX = "([=]|(\\]\\s*\\[)|[\\]])";
 
@@ -650,7 +683,23 @@ public class ConfigurationHandler
 			}
 			catch ( Exception e )
 			{
-				System.out.println(e + " - WARNING, incorrect Shield Tweaker: " + s);
+				throw new Exception(
+			    	"\n\n================================================================"
+					+ "\n|                        Immersive Combat                      |"
+					+ "\n================================================================"
+					
+					+ "\n\nError:     Invalid bettercombat.cfg entry"
+					
+					+ "\n\nLocation:  Custom Shield Tweaker"
+					
+					+ "\n\nCause:     " + e.getCause()
+					
+					+ "\n\nDetails:   " + s
+					
+					+ "\n\nFix:       Remove the line listed for 'Custom Shield Tweaker' or reset your config by deleting bettercombat.cfg"
+					
+					+ "\n\n================================================================"
+					+ "\n================================================================\n\n");
 			}
 		}
 		
@@ -668,7 +717,23 @@ public class ConfigurationHandler
 			}
 			catch ( Exception e )
 			{
-				System.out.println(e + " - WARNING, incorrect Axe Tweaker: " + s);
+				throw new Exception(
+			    	"\n\n================================================================"
+					+ "\n|                        Immersive Combat                      |"
+					+ "\n================================================================"
+					
+					+ "\n\nError:     Invalid bettercombat.cfg entry"
+					
+					+ "\n\nLocation:  Custom Axe Tweaker"
+					
+					+ "\n\nCause:     " + e.getCause()
+					
+					+ "\n\nDetails:   " + s
+					
+					+ "\n\nFix:       Remove the line listed for 'Custom Axe Tweaker' or reset your config by deleting bettercombat.cfg"
+					
+					+ "\n\n================================================================"
+					+ "\n================================================================\n\n");
 			}
 		}
 		
@@ -685,17 +750,33 @@ public class ConfigurationHandler
 			}
 			catch ( Exception e )
 			{
-				System.out.println(e + " - WARNING, incorrect Sword Tweaker: " + s);
+				throw new Exception(
+			    	"\n\n================================================================"
+					+ "\n|                        Immersive Combat                      |"
+					+ "\n================================================================"
+					
+					+ "\n\nError:     Invalid bettercombat.cfg entry"
+					
+					+ "\n\nLocation:  Custom Sword Tweaker"
+					
+					+ "\n\nCause:     " + e.getCause()
+					
+					+ "\n\nDetails:   " + s
+					
+					+ "\n\nFix:       Remove the line listed for 'Custom Sword Tweaker' or reset your config by deleting bettercombat.cfg"
+					
+					+ "\n\n================================================================"
+					+ "\n================================================================\n\n");
 			}
 		}
 		
 		for ( String s : weaponList )
 		{
+			String[] list = s.split(CONFIG_REGEX);
+			CustomWeapon customWeapon = new CustomWeapon();
+			
 			try
 			{
-				String[] list = s.split(CONFIG_REGEX);
-				CustomWeapon customWeapon = new CustomWeapon();
-				
 				customWeapon.name = list[1];
 				customWeapon.soundType = SoundType.valueOf(list[3]);
 				customWeapon.animation = Animation.valueOf(list[5]);
@@ -705,48 +786,116 @@ public class ConfigurationHandler
 				customWeapon.knockbackMod = Double.parseDouble(list[13]);
 				customWeapon.critChanceMod = Double.parseDouble(list[15]);
 				customWeapon.additionalCritDamageMod = Double.parseDouble(list[17]);
+
+			}
+			catch ( Exception e )
+			{
+				throw new Exception(
+				    "\n\n================================================================"
+					+ "\n|                        Immersive Combat                      |"
+					+ "\n================================================================"
+					
+					+ "\n\nError:     Invalid bettercombat.cfg entry"
+					
+					+ "\n\nLocation:  Custom Weapon Tweaker"
+					
+					+ "\n\nCause:     " + e.getCause()
+					
+					+ "\n\nDetails:   " + s
+					
+					+ "\n\nFix:       There was an error for the line in the 'Custom Weapon Tweaker' config. Remove the line or reset your config by deleting bettercombat.cfg"
+					
+					+ "\n\n================================================================"
+					+ "\n================================================================\n\n");
+			}
+			
+			int potionEffectSplit;
+			
+			try
+			{
+				customWeapon.parry = Boolean.parseBoolean(list[19]);
 				
+				if ( !enableParrying )
+				{
+					customWeapon.parry = false;
+				}
+				
+				potionEffectSplit = 21;
+			}
+			catch ( Exception e )
+			{
+				customWeapon.parry = enableParrying;
+				potionEffectSplit = 19;
+			}
+
+			try
+			{
+				String[] potionEffectList = list[potionEffectSplit].split(",");
+
 				try
 				{
-					String[] potionEffectList = list[19].split(",");
-										
-					try
+					if ( potionEffectList != null )
 					{
-						if ( potionEffectList != null )
+						CustomWeaponPotionEffect customPotionEffect = new CustomWeaponPotionEffect();
+						
+						customPotionEffect.potionEffect = Potion.getPotionFromResourceLocation(potionEffectList[2]);
+						
+						if ( customPotionEffect.potionEffect == null )
 						{
-							CustomWeaponPotionEffect customPotionEffect = new CustomWeaponPotionEffect();
-
-							customPotionEffect.potionChance = getPotionChance(potionEffectList[0]);
-							customPotionEffect.afflict = potionEffectList[1].toLowerCase().equals("afflict");
-							customPotionEffect.potionEffect = Potion.getPotionFromResourceLocation(potionEffectList[2]);
-							
-							if ( customPotionEffect.potionEffect == null )
-							{
-								throw new NullPointerException("Incorrect Potion resource location!");
-							}
-							
-							customPotionEffect.potionPower = Integer.parseInt(potionEffectList[3]);
-							customPotionEffect.potionDuration = Integer.parseInt(potionEffectList[4]);
-
-							customWeapon.customWeaponPotionEffect = customPotionEffect;
+							throw new NullPointerException(
+							    "\n\n================================================================"
+								+ "\n|                        Immersive Combat                      |"
+								+ "\n================================================================"
+								
+								+ "\n\nError:     Invalid bettercombat.cfg entry"
+								
+								+ "\n\nLocation:  Custom Weapon Tweaker"
+								
+								+ "\n\nCause:     NullPointerException"
+								
+								+ "\n\nDetails:   " + s
+								
+								+ "\n\nFix:       The [Potion Effect] resource location listed in 'Details' for 'Custom Weapon Tweaker' does not exist, make sure it is a valid resource location!"
+								
+								+ "\n\n================================================================"
+								+ "\n================================================================\n\n");
 						}
-					}
-					catch ( Exception e )
-					{
-						System.out.println(e.getMessage() + " - WARNING, incorrect Custom Potion Effect: " + s);
+						
+						customPotionEffect.potionChance = getPotionChance(potionEffectList[0]);
+						customPotionEffect.afflict = potionEffectList[1].toLowerCase().equals("afflict");
+						customPotionEffect.potionPower = Integer.parseInt(potionEffectList[3]);
+						customPotionEffect.potionDuration = Integer.parseInt(potionEffectList[4]);
+						
+						customWeapon.customWeaponPotionEffect = customPotionEffect;
 					}
 				}
 				catch ( Exception e )
 				{
-					
+					throw new Exception(
+					    "\n\n================================================================"
+						+ "\n|                        Immersive Combat                      |"
+						+ "\n================================================================"
+						
+						+ "\n\nError:     Invalid bettercombat.cfg entry"
+						
+						+ "\n\nLocation:  Custom Weapon Tweaker"
+						
+						+ "\n\nCause:     " + e.getCause()
+						
+						+ "\n\nDetails:   " + s
+						
+						+ "\n\nThe [Potion Effect] field for the line in 'Custom Weapon Tweaker' is incorrectly set up. Remove the [Potion Effect] field, or review the [Potion Effect] information in the 'Custom Weapon Tweaker' config to set it up correctly."
+						
+						+ "\n\n================================================================"
+						+ "\n================================================================\n\n");
 				}
-				
-				weapons.add(customWeapon);
 			}
 			catch ( Exception e )
 			{
-				System.out.println(e + " - WARNING, incorrect Weapon Tweaker: " + s);
+				/* No potion effect added, continue! */
 			}
+			
+			weapons.add(customWeapon);
 		}
 		
 		for ( String s : bowList )
@@ -764,7 +913,23 @@ public class ConfigurationHandler
 			}
 			catch ( Exception e )
 			{
-				System.out.println(e + " - WARNING, incorrect Bow Damage Tweaker: " + s);
+				throw new Exception(
+				    "\n\n================================================================"
+					+ "\n|                        Immersive Combat                      |"
+					+ "\n================================================================"
+					
+					+ "\n\nError:     Invalid bettercombat.cfg entry"
+					
+					+ "\n\nLocation:  Custom Bow Tweaker"
+					
+					+ "\n\nCause:     " + e.getCause()
+					
+					+ "\n\nDetails:   " + s
+					
+					+ "\n\nFix:       Remove the line listed in 'Custom Bow Tweaker' or reset your config by deleting bettercombat.cfg"
+					
+					+ "\n\n================================================================"
+					+ "\n================================================================\n\n");
 			}
 		}
 	}
@@ -793,6 +958,7 @@ public class ConfigurationHandler
 		DEFAULT_CUSTOM_WEAPON.critChanceMod = ConfigurationHandler.baseCritPercentChance;
 		DEFAULT_CUSTOM_WEAPON.additionalCritDamageMod = 0;
 		DEFAULT_CUSTOM_WEAPON.customWeaponPotionEffect = null;
+		DEFAULT_CUSTOM_WEAPON.parry = enableParrying;
 	}
 
 	public static void createInstLists()
@@ -869,7 +1035,7 @@ public class ConfigurationHandler
 	}
 	
 	@SuppressWarnings( "rawtypes" )
-	public static boolean isItemWhiteList( Item item )
+	public static boolean isItemClassWhiteList( Item item )
 	{		
 		for ( Class clazz : itemClassWhiteArray )
 		{			
@@ -883,7 +1049,7 @@ public class ConfigurationHandler
 	}
 	
 	@SuppressWarnings( "rawtypes" )
-	public static boolean isItemBlackList( Item item )
+	private static boolean isItemClassBlackList( Item item )
 	{		
 		for ( Class clazz : itemClassBlackArray )
 		{			
@@ -894,6 +1060,24 @@ public class ConfigurationHandler
 		}
 		
 		return false;
+	}
+	
+	private static boolean isItemBlackList(Item item)
+	{
+		for ( String blackListed : itemBlacklist )
+		{			
+			if ( blackListed.equals(item.getRegistryName().toString()) )
+			{
+				return true;
+			}
+		}
+		
+		return false;
+	}
+	
+	public static boolean isBlacklisted(Item item)
+	{
+		return ( isItemClassBlackList(item) || isItemBlackList(item) );
 	}
 	
 //	public static boolean isItemBlackList( Item item )
@@ -908,8 +1092,26 @@ public class ConfigurationHandler
 //	}
 	
 	@SuppressWarnings( "rawtypes" )
-	public static boolean rightClickAttackable( Entity entity )
-	{		
+	public static boolean rightClickAttackable( EntityPlayer player, Entity entity )
+	{
+		/* If the player is under attack from the entity, return true */
+		if ( entity instanceof EntityLiving )
+		{
+			EntityLiving el = (EntityLiving)entity;
+			
+			if ( el.getAttackTarget() != null && el.getAttackTarget().equals(player) )
+			{
+				return true;
+			}
+		}
+		
+		/* If the player owns the entity, return false */
+		if ( entity instanceof IEntityOwnable && ((IEntityOwnable)entity).getOwner() != null && ((IEntityOwnable)entity).getOwner().equals(player) )
+		{
+			return false;
+		}
+		
+		/* If the entity is blacklisted, return false */
 		for ( Class clazz : entityBlackArray )
 		{			
 			if ( clazz.isInstance(entity) )
@@ -918,6 +1120,12 @@ public class ConfigurationHandler
 			}
 		}
 		
+		/* It is attackable, return true */
 		return true;
 	}
+	
+//	public static boolean canAttackWithOffHand( EntityPlayer player, Entity entHit )
+//	{
+//		return ((entHit instanceof EntityLiving) && ((EntityLiving)entHit).getAttackTarget() == player) || (ConfigurationHandler.rightClickAttackable(entHit) && !(entHit instanceof IEntityOwnable && ((IEntityOwnable) entHit).getOwner() == player));
+//	}
 }

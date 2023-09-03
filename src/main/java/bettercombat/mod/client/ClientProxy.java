@@ -29,7 +29,7 @@ public class ClientProxy extends CommonProxy
 	}
 
 	@Override
-	public void postInit( FMLPostInitializationEvent event )
+	public void postInit( FMLPostInitializationEvent event ) throws Exception
 	{
 		super.postInit(event);
 		MinecraftForge.EVENT_BUS.register(EHC_INSTANCE = new EventHandlersClient());

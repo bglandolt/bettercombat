@@ -14,7 +14,7 @@ public class CommonProxy
 //    	
 //    }
 
-	public void postInit( FMLPostInitializationEvent event )
+	public void postInit( FMLPostInitializationEvent event ) throws Exception
 	{
 		ConfigurationHandler.postConfig();
 	}
