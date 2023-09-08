@@ -4,6 +4,7 @@ import bettercombat.mod.util.ConfigurationHandler;
 import bettercombat.mod.util.ConfigurationHandler.CustomWeapon;
 import bettercombat.mod.util.ConfigurationHandler.WeaponProperty;
 import io.netty.buffer.ByteBuf;
+import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.entity.player.EntityPlayerMP;
 import net.minecraft.entity.player.InventoryPlayer;
 import net.minecraft.init.SoundEvents;
@@ -45,263 +46,138 @@ public class PacketFastEquip implements IMessage
 			FMLCommonHandler.instance().getWorldThread(ctx.netHandler).addScheduledTask(() -> handle(message, ctx));
 			return null;
 		}
-
+		
+		public static class Weapon
+		{
+			final int index;
+			final ItemStack weapon;
+			
+			Weapon( final int index, final ItemStack weapon )
+			{
+				this.index = index;
+				this.weapon = weapon;
+			}
+		}
+		
 		/* [][][][][][][][()][!] */
 		private static void handle( PacketFastEquip message, MessageContext ctx )
 		{
 			EntityPlayerMP player = ctx.getServerHandler().player;
 
 			player.world.playSound(null, player.posX, player.posY, player.posZ, SoundEvents.ITEM_ARMOR_EQUIP_IRON, player.getSoundCategory(), 1.0F, 1.0F);
-
-			int mainhandWeaponIndex = -1;
 			
-			boolean twoHanded = false;
+			ItemStack currentOffhandItem = player.inventory.offHandInventory.get(0);
 			
-			ItemStack mainhandItem = player.inventory.getCurrentItem();
-			ItemStack offhandItem = player.inventory.offHandInventory.get(0);
-			
-			/* IF MAINHAND HAS A WEAPON, */
-			if ( isWeapon(mainhandItem) )
+			/* If the OFFHAND has an invalid TWOHANDED OR MAINHAND weapon, */
+			if ( !isShield(currentOffhandItem) && isWeapon(currentOffhandItem) )
 			{
-				String mainString = mainhandItem.getItem().getRegistryName().toString();
-
+				String s = currentOffhandItem.getItem().getRegistryName().toString();
+				
 				for ( CustomWeapon weapon : ConfigurationHandler.weapons )
 				{
-					if ( mainString.contains(weapon.name) )
+					if ( s.contains(weapon.name) )
 					{
-						/* If the MAINHAND weapon is TWOHANDED, */
-						if ( weapon.property == WeaponProperty.TWOHAND )
+						/* If the OFFHAND weapon is TWOHANDED OR MAINHAND, */
+						if ( weapon.property == WeaponProperty.TWOHAND || weapon.property == WeaponProperty.MAINHAND )
 						{
-							twoHanded = true;
+							/* If the OFFHAND item can be moved to the inventory, */
+							if ( player.inventory.addItemStackToInventory(currentOffhandItem) )
+							{
+								/* Remove the OFFHAND item */
+								player.inventory.offHandInventory.remove(0);
+								currentOffhandItem = ItemStack.EMPTY;
+							}
 						}
 						
 						break;
 					}
 				}
-				
-				mainhandWeaponIndex = player.inventory.currentItem;
 			}
-			/* OTHERWISE, FIND A WEAPON */
+			
+			Weapon currentMainhandItem = new Weapon(player.inventory.currentItem, player.inventory.getCurrentItem());
+			
+			boolean twoHanded = false;
+
+			Weapon newMainhandItem = null;
+			Weapon newOffhandItem = null;
+			
+			/* -------------------------------------------------------------------- */
+			/* 								MAINHAND								*/
+			/* -------------------------------------------------------------------- */
+			if ( isWeapon(currentMainhandItem.weapon) )
+			{
+				String s = currentMainhandItem.weapon.getItem().getRegistryName().toString();
+
+				for ( CustomWeapon weapon : ConfigurationHandler.weapons )
+				{
+					if ( s.contains(weapon.name) )
+					{
+						/* If the MAINHAND weapon is TWOHANDED, */
+						if ( weapon.property == WeaponProperty.TWOHAND )
+						{
+							/* No changes */
+							return;
+						}
+						
+						break;
+					}
+				}
+			}
+			/* OTHERWISE, FIND A MAINHAND WEAPON */
 			else
 			{
-				/* HOTBAR WEAPON */
-				for ( int i = 0; i < InventoryPlayer.getHotbarSize(); i++ )
+				/* -------------------------------------------------------------------- */
+				/* 						MAINHAND | WEAPON | HOTBAR						*/
+				/* -------------------------------------------------------------------- */
+				inventorySearch: for ( int i = 0; i < InventoryPlayer.getHotbarSize(); i++ )
 				{
 					ItemStack itemStack = player.inventory.mainInventory.get(i);
 
+					if ( sameWeaponOrSlot(player, currentMainhandItem, itemStack, i) )
+					{
+						continue;
+					}
+					
 					/* If a weapon is found, */
 					if ( isWeapon(itemStack) )
 					{
-						/* Place the new weapon into [currentItem slot] */
-						player.inventory.mainInventory.set(player.inventory.currentItem, itemStack);
-						
-						/* Replace the new weapon with the old mainhand item */
-						player.inventory.mainInventory.set(i, mainhandItem);
-						
-						String mainString = itemStack.getItem().getRegistryName().toString();
+						String s = itemStack.getItem().getRegistryName().toString();
 
 						for ( CustomWeapon weapon : ConfigurationHandler.weapons )
 						{
-							if ( mainString.contains(weapon.name) )
+							if ( s.contains(weapon.name) )
 							{
 								/* If the MAINHAND weapon is TWOHANDED, */
 								if ( weapon.property == WeaponProperty.TWOHAND )
 								{
 									twoHanded = true;
 								}
-								
-								break;
+
+								newMainhandItem = new Weapon(i, itemStack);
+								break inventorySearch;
 							}
 						}
 						
-						mainhandWeaponIndex = player.inventory.currentItem;
-						
-						break;
+						if ( newMainhandItem == null )
+						{
+							newMainhandItem = new Weapon(i, itemStack);
+						}
 					}
 				}
 				
-				/* INVENTORY WEAPON */
-				if ( mainhandWeaponIndex == -1 )
+				/* -------------------------------------------------------------------- */
+				/* 						MAINHAND | WEAPON | INVENTORY					*/
+				/* -------------------------------------------------------------------- */
+				if ( newMainhandItem == null && !ConfigurationHandler.fastEquipHotbarOnly )
 				{
-					if ( !ConfigurationHandler.fastEquipHotbarOnly )
-					{
-						for ( int i = InventoryPlayer.getHotbarSize() - 1; i < player.inventory.mainInventory.size(); i++ )
-						{
-							ItemStack itemStack = player.inventory.mainInventory.get(i);
-	
-							if ( isWeapon(itemStack) )
-							{
-								/* Place the new weapon into [currentItem slot] */
-								player.inventory.mainInventory.set(player.inventory.currentItem, itemStack);
-								
-								/* Replace the new weapon with the old mainhand item */
-								player.inventory.mainInventory.set(i, mainhandItem);
-								
-								String mainString = itemStack.getItem().getRegistryName().toString();
-	
-								for ( CustomWeapon weapon : ConfigurationHandler.weapons )
-								{
-									if ( mainString.contains(weapon.name) )
-									{
-										/* If the MAINHAND weapon is TWOHANDED, */
-										if ( weapon.property == WeaponProperty.TWOHAND )
-										{
-											twoHanded = true;
-										}
-										
-										break;
-									}
-								}
-								
-								mainhandWeaponIndex = player.inventory.currentItem;
-								
-								break;
-							}
-						}
-					}
-					
-					/* FIND A MAINHAND HOE OR TOOL */
-					if ( mainhandWeaponIndex == -1 )
-					{
-						for ( int i = 0; i < InventoryPlayer.getHotbarSize(); i++ )
-						{
-							ItemStack itemStack = player.inventory.mainInventory.get(i);
-
-							/* If a weapon is found, */
-							if ( isToolOrHoe(itemStack) )
-							{
-								/* Place the new weapon into [currentItem slot] */
-								player.inventory.mainInventory.set(player.inventory.currentItem, itemStack);
-								
-								/* Replace the new weapon with the old mainhand item */
-								player.inventory.mainInventory.set(i, mainhandItem);
-								
-								String mainString = itemStack.getItem().getRegistryName().toString();
-
-								for ( CustomWeapon weapon : ConfigurationHandler.weapons )
-								{
-									if ( mainString.contains(weapon.name) )
-									{
-										/* If the MAINHAND weapon is TWOHANDED, */
-										if ( weapon.property == WeaponProperty.TWOHAND )
-										{
-											twoHanded = true;
-										}
-										
-										break;
-									}
-								}
-								
-								mainhandWeaponIndex = player.inventory.currentItem;
-								
-								break;
-							}
-						}
-						
-						if ( mainhandWeaponIndex == -1 )
-						{
-							/* Find a tool if no weapons are found */
-							for ( int i = InventoryPlayer.getHotbarSize() - 1; i < player.inventory.mainInventory.size(); i++ )
-							{
-								ItemStack itemStack = player.inventory.mainInventory.get(i);
-				
-								if ( isToolOrHoe(itemStack) )
-								{
-									/* Place the new weapon into [currentItem slot] */
-									player.inventory.mainInventory.set(player.inventory.currentItem, itemStack);
-									
-									/* Replace the new weapon with the old mainhand item */
-									player.inventory.mainInventory.set(i, mainhandItem);
-									
-									String mainString = itemStack.getItem().getRegistryName().toString();
-				
-									for ( CustomWeapon weapon : ConfigurationHandler.weapons )
-									{
-										if ( mainString.contains(weapon.name) )
-										{
-											/* If the MAINHAND weapon is TWOHANDED, */
-											if ( weapon.property == WeaponProperty.TWOHAND )
-											{
-												twoHanded = true;
-											}
-											
-											break;
-										}
-									}
-									
-									mainhandWeaponIndex = player.inventory.currentItem;
-									
-									break;
-								}
-							}
-						}
-					}
-				}
-			}
-
-			if ( offhandItem.isEmpty() )
-			{
-				/* HOTBAR SHIELD */
-				for ( int i = 0; i < InventoryPlayer.getHotbarSize(); i++ )
-				{
-					if ( i != mainhandWeaponIndex )
+					inventorySearch: for ( int i = InventoryPlayer.getHotbarSize() - 1; i < player.inventory.mainInventory.size(); i++ )
 					{
 						ItemStack itemStack = player.inventory.mainInventory.get(i);
 
-						if ( isShield(itemStack) )
+						if ( isWeapon(itemStack) )
 						{
-							player.inventory.mainInventory.set(i, offhandItem);
-							player.inventory.offHandInventory.set(0, itemStack);
-							return;
-						}
-					}
-				}
-
-				/* HOTBAR WEAPON */
-				if ( !twoHanded )
-				{
-					for ( int i = 0; i < InventoryPlayer.getHotbarSize(); i++ )
-					{
-						if ( i != mainhandWeaponIndex )
-						{
-							ItemStack itemStack = player.inventory.mainInventory.get(i);
-	
-							if ( isWeapon(itemStack) )
-							{
-								String offString = itemStack.getItem().getRegistryName().toString();
-	
-								for ( CustomWeapon weapon : ConfigurationHandler.weapons )
-								{
-									if ( offString.contains(weapon.name) )
-									{
-										if ( weapon.property != WeaponProperty.TWOHAND && weapon.property != WeaponProperty.MAINHAND )
-										{
-											player.inventory.mainInventory.set(i, offhandItem);
-											player.inventory.offHandInventory.set(0, itemStack);
-											return;
-										}
-									}
-								}
-							}
-						}
-					}
-					
-					/* HOTBAR HOE OR TOOL */
-					for ( int i = 0; i < InventoryPlayer.getHotbarSize(); i++ )
-					{
-						ItemStack itemStack = player.inventory.mainInventory.get(i);
-	
-						/* If a weapon is found, */
-						if ( isToolOrHoe(itemStack) )
-						{
-							/* Place the new weapon into [currentItem slot] */
-							player.inventory.mainInventory.set(player.inventory.currentItem, itemStack);
-							
-							/* Replace the new weapon with the old mainhand item */
-							player.inventory.mainInventory.set(i, mainhandItem);
-							
 							String mainString = itemStack.getItem().getRegistryName().toString();
-	
+
 							for ( CustomWeapon weapon : ConfigurationHandler.weapons )
 							{
 								if ( mainString.contains(weapon.name) )
@@ -312,128 +188,334 @@ public class PacketFastEquip implements IMessage
 										twoHanded = true;
 									}
 									
-									break;
+									newMainhandItem = new Weapon(i, itemStack);
+									break inventorySearch;
 								}
 							}
 							
-							mainhandWeaponIndex = player.inventory.currentItem;
+							if ( newMainhandItem == null )
+							{
+								newMainhandItem = new Weapon(i, itemStack);
+							}
+						}
+					}
+				}
+					
+				/* -------------------------------------------------------------------- */
+				/* 							MAINHAND | TOOL | HOTBAR					*/
+				/* -------------------------------------------------------------------- */
+				if ( newMainhandItem == null )
+				{
+					inventorySearch: for ( int i = 0; i < InventoryPlayer.getHotbarSize(); i++ )
+					{
+						ItemStack itemStack = player.inventory.mainInventory.get(i);
+
+						if ( sameWeaponOrSlot(player, currentMainhandItem, itemStack, i) )
+						{
+							continue;
+						}
+						
+						/* If a weapon is found, */
+						if ( isToolOrHoe(itemStack) )
+						{
+							String s = itemStack.getItem().getRegistryName().toString();
+
+							for ( CustomWeapon weapon : ConfigurationHandler.weapons )
+							{
+								if ( s.contains(weapon.name) )
+								{
+									/* If the MAINHAND weapon is TWOHANDED, */
+									if ( weapon.property == WeaponProperty.TWOHAND )
+									{
+										twoHanded = true;
+									}
+									
+									newMainhandItem = new Weapon(i, itemStack);
+									break inventorySearch;
+								}
+							}
 							
+							if ( newMainhandItem == null )
+							{
+								newMainhandItem = new Weapon(i, itemStack);
+							}
+						}
+					}
+						
+					/* -------------------------------------------------------------------- */
+					/* 							MAINHAND | TOOL | INVENTORY					*/
+					/* -------------------------------------------------------------------- */
+					if ( newMainhandItem == null && !ConfigurationHandler.fastEquipHotbarOnly )
+					{
+						/* Find a tool if no weapons are found */
+						inventorySearch: for ( int i = InventoryPlayer.getHotbarSize() - 1; i < player.inventory.mainInventory.size(); i++ )
+						{
+							ItemStack itemStack = player.inventory.mainInventory.get(i);
+			
+							if ( sameWeaponOrSlot(player, currentMainhandItem, itemStack, i) )
+							{
+								continue;
+							}
+							
+							if ( isToolOrHoe(itemStack) )
+							{
+								String s = itemStack.getItem().getRegistryName().toString();
+			
+								for ( CustomWeapon weapon : ConfigurationHandler.weapons )
+								{
+									if ( s.contains(weapon.name) )
+									{
+										/* If the MAINHAND weapon is TWOHANDED, */
+										if ( weapon.property == WeaponProperty.TWOHAND )
+										{
+											twoHanded = true;
+										}
+										
+										newMainhandItem = new Weapon(i, itemStack);
+										break inventorySearch;
+									}
+								}
+								
+								if ( newMainhandItem == null )
+								{
+									newMainhandItem = new Weapon(i, itemStack);
+								}
+							}
+						}
+					}
+				}
+			}
+			
+			if ( newMainhandItem != null )
+			{
+				player.inventory.setInventorySlotContents(currentMainhandItem.index, newMainhandItem.weapon.copy());
+				player.inventory.setInventorySlotContents(newMainhandItem.index, currentMainhandItem.weapon.copy());
+				
+				currentMainhandItem = new Weapon(player.inventory.currentItem, newMainhandItem.weapon);
+			}
+			
+			/* ------------------------------------------------------------------- */
+			/* 								 OFFHAND							   */
+			/* ------------------------------------------------------------------- */
+			if ( currentOffhandItem == null || currentOffhandItem.isEmpty() )
+			{
+				/* -------------------------------------------------------------------- */
+				/* 						OFFHAND | SHIELD | HOTBAR						*/
+				/* -------------------------------------------------------------------- */
+				for ( int i = 0; i < InventoryPlayer.getHotbarSize(); i++ )
+				{
+					ItemStack itemStack = player.inventory.mainInventory.get(i);
+
+					if ( sameWeaponOrSlot(player, currentMainhandItem, itemStack, i) )
+					{
+						continue;
+					}
+
+					if ( isShield(itemStack) )
+					{
+						newOffhandItem = new Weapon(i, itemStack);
+						break;
+					}
+				}
+
+				/* -------------------------------------------------------------------- */
+				/* 						OFFHAND | WEAPON | HOTBAR					*/
+				/* -------------------------------------------------------------------- */
+				if ( newOffhandItem == null && !twoHanded )
+				{
+					inventorySearch: for ( int i = 0; i < InventoryPlayer.getHotbarSize(); i++ )
+					{
+						ItemStack itemStack = player.inventory.mainInventory.get(i);
+
+						if ( sameWeaponOrSlot(player, currentMainhandItem, itemStack, i) )
+						{
+							continue;
+						}
+	
+						if ( isWeapon(itemStack) )
+						{
+							String s = itemStack.getItem().getRegistryName().toString();
+
+							for ( CustomWeapon weapon : ConfigurationHandler.weapons )
+							{
+								if ( s.contains(weapon.name) )
+								{
+									if ( weapon.property != WeaponProperty.TWOHAND && weapon.property != WeaponProperty.MAINHAND )
+									{
+										newOffhandItem = new Weapon(i, itemStack);
+										break inventorySearch;
+									}
+								}
+							}
+							
+							if ( newOffhandItem == null )
+							{
+								newOffhandItem = new Weapon(i, itemStack);
+							}
+						}
+					}
+				}
+				
+				/* -------------------------------------------------------------------- */
+				/* 						OFFHAND | TOOL | HOTBAR						*/
+				/* -------------------------------------------------------------------- */
+				if ( newOffhandItem == null && !twoHanded && ConfigurationHandler.fastEquipOffhandWeaponsOrShieldsOnly )
+				{
+					/* HOTBAR HOE OR TOOL */
+					inventorySearch: for ( int i = 0; i < InventoryPlayer.getHotbarSize(); i++ )
+					{
+						ItemStack itemStack = player.inventory.mainInventory.get(i);
+
+						if ( sameWeaponOrSlot(player, currentMainhandItem, itemStack, i) )
+						{
+							continue;
+						}
+	
+						if ( isToolOrHoe(itemStack) )
+						{
+							String s = itemStack.getItem().getRegistryName().toString();
+
+							for ( CustomWeapon weapon : ConfigurationHandler.weapons )
+							{
+								if ( s.contains(weapon.name) )
+								{
+									if ( weapon.property != WeaponProperty.TWOHAND && weapon.property != WeaponProperty.MAINHAND )
+									{
+										newOffhandItem = new Weapon(i, itemStack);
+										break inventorySearch;
+									}
+								}
+							}
+							
+							if ( newOffhandItem == null )
+							{
+								newOffhandItem = new Weapon(i, itemStack);
+							}
+						}
+					}
+				}
+
+				/* -------------------------------------------------------------------- */
+				/* 						OFFHAND | SHIELD | INVENTORY					*/
+				/* -------------------------------------------------------------------- */
+				if ( newOffhandItem == null && !ConfigurationHandler.fastEquipHotbarOnly )
+				{
+					/* INTENTORY SHIELD */
+					for ( int i = InventoryPlayer.getHotbarSize() - 1; i < player.inventory.mainInventory.size(); i++ )
+					{
+						ItemStack itemStack = player.inventory.mainInventory.get(i);
+
+						if ( sameWeaponOrSlot(player, currentMainhandItem, itemStack, i) )
+						{
+							continue;
+						}
+
+						if ( isShield(itemStack) )
+						{
+							newOffhandItem = new Weapon(i, itemStack);
 							break;
 						}
 					}
 				}
 
-				if ( !ConfigurationHandler.fastEquipHotbarOnly )
+				/* -------------------------------------------------------------------- */
+				/* 						OFFHAND | WEAPON | INVENTORY					*/
+				/* -------------------------------------------------------------------- */
+				if ( newOffhandItem == null && !twoHanded )
 				{
-					/* INTENTORY SHIELD */
-					for ( int i = InventoryPlayer.getHotbarSize() - 1; i < player.inventory.mainInventory.size(); i++ )
+					inventorySearch: for ( int i = InventoryPlayer.getHotbarSize() - 1; i < player.inventory.mainInventory.size(); i++ )
 					{
-						if ( i != mainhandWeaponIndex )
-						{
-							ItemStack itemStack = player.inventory.mainInventory.get(i);
+						ItemStack itemStack = player.inventory.mainInventory.get(i);
 
-							if ( isShield(itemStack) )
-							{
-								player.inventory.mainInventory.set(i, offhandItem);
-								player.inventory.offHandInventory.set(0, itemStack);
-								return;
-							}
+						if ( sameWeaponOrSlot(player, currentMainhandItem, itemStack, i) )
+						{
+							continue;
 						}
-					}
-
-					if ( !twoHanded )
-					{
-						/* INVENTORY WEAPON */
-						for ( int i = InventoryPlayer.getHotbarSize() - 1; i < player.inventory.mainInventory.size(); i++ )
+	
+						if ( isWeapon(itemStack) )
 						{
-							if ( i != mainhandWeaponIndex )
+							String s = itemStack.getItem().getRegistryName().toString();
+
+							for ( CustomWeapon weapon : ConfigurationHandler.weapons )
 							{
-								ItemStack itemStack = player.inventory.mainInventory.get(i);
-	
-								if ( isWeapon(itemStack) )
+								if ( s.contains(weapon.name) )
 								{
-									String offString = itemStack.getItem().getRegistryName().toString();
-	
-									for ( CustomWeapon weapon : ConfigurationHandler.weapons )
+									if ( weapon.property != WeaponProperty.TWOHAND && weapon.property != WeaponProperty.MAINHAND )
 									{
-										if ( offString.contains(weapon.name) )
-										{
-											if ( weapon.property != WeaponProperty.TWOHAND && weapon.property != WeaponProperty.MAINHAND )
-											{
-												player.inventory.mainInventory.set(i, offhandItem);
-												player.inventory.offHandInventory.set(0, itemStack);
-												return;
-											}
-										}
+										newOffhandItem = new Weapon(i, itemStack);
+										break inventorySearch;
 									}
 								}
 							}
-						}
-						
-						/* INVENTORY HOE OR TOOL */
-						for ( int i = 0; i < player.inventory.mainInventory.size(); i++ )
-						{
-							if ( i != mainhandWeaponIndex )
+							
+							if ( newOffhandItem == null )
 							{
-								ItemStack itemStack = player.inventory.mainInventory.get(i);
-	
-								if ( isToolOrHoe(itemStack) )
-								{
-									String offString = itemStack.getItem().getRegistryName().toString();
-	
-									for ( CustomWeapon weapon : ConfigurationHandler.weapons )
-									{
-										if ( offString.contains(weapon.name) )
-										{
-											if ( weapon.property != WeaponProperty.TWOHAND && weapon.property != WeaponProperty.MAINHAND )
-											{
-												player.inventory.mainInventory.set(i, offhandItem);
-												player.inventory.offHandInventory.set(0, itemStack);
-												return;
-											}
-										}
-									}
-								}
+								newOffhandItem = new Weapon(i, itemStack);
 							}
 						}
 					}
 				}
-			}
-			else if ( isShield(offhandItem) )
-			{
-				/* Do nothing! */
-				return;
-			}
-			/* If the OFFHAND has an invalid TWOHANDED OR MAINHAND weapon, */
-			else if ( isWeapon(offhandItem) )
-			{
-				String offString = offhandItem.getItem().getRegistryName().toString();
 				
-				for ( CustomWeapon weapon : ConfigurationHandler.weapons )
+				/* -------------------------------------------------------------------- */
+				/* 						OFFHAND | TOOL | INVENTORY						*/
+				/* -------------------------------------------------------------------- */
+				if ( newOffhandItem == null && !twoHanded && ConfigurationHandler.fastEquipOffhandWeaponsOrShieldsOnly )
 				{
-					if ( offString.contains(weapon.name) )
+					/* HOTBAR HOE OR TOOL */
+					inventorySearch: for ( int i = InventoryPlayer.getHotbarSize() - 1; i < player.inventory.mainInventory.size(); i++ )
 					{
-						/* If the OFFHAND weapon is TWOHANDED OR MAINHAND, */
-						if ( weapon.property == WeaponProperty.TWOHAND || weapon.property == WeaponProperty.MAINHAND )
+						ItemStack itemStack = player.inventory.mainInventory.get(i);
+
+						if ( sameWeaponOrSlot(player, currentMainhandItem, itemStack, i) )
 						{
-							/* Remove the weapon, as it is invalid */
-							removeOffhandItemStack(player, offhandItem);
+							continue;
 						}
-						
-						break;
+	
+						if ( isToolOrHoe(itemStack) )
+						{
+							String s = itemStack.getItem().getRegistryName().toString();
+
+							for ( CustomWeapon weapon : ConfigurationHandler.weapons )
+							{
+								if ( s.contains(weapon.name) )
+								{
+									if ( weapon.property != WeaponProperty.TWOHAND && weapon.property != WeaponProperty.MAINHAND )
+									{
+										newOffhandItem = new Weapon(i, itemStack);
+										break inventorySearch;
+									}
+								}
+							}
+							
+							if ( newOffhandItem == null )
+							{
+								newOffhandItem = new Weapon(i, itemStack);
+							}
+						}
 					}
+				}
+				
+				if ( newOffhandItem != null )
+				{
+					player.inventory.offHandInventory.set(0, newOffhandItem.weapon);
+					player.inventory.setInventorySlotContents(newOffhandItem.index, currentOffhandItem.copy());
 				}
 			}
 		}
 
-		private static void removeOffhandItemStack( EntityPlayerMP player, ItemStack itemStack )
+		private static boolean sameWeaponOrSlot( EntityPlayer player, Weapon mainhandWeapon, ItemStack itemStack, int i )
 		{
-			/* If the OFFHAND item can be moved to the inventory, */
-			if ( player.inventory.addItemStackToInventory(itemStack) )
+			if ( i == mainhandWeapon.index )
 			{
-				/* Remove the OFFHAND item */
-				player.inventory.offHandInventory.remove(0);
-			}			
+				return true;
+			}
+
+			if ( mainhandWeapon.weapon == itemStack )
+			{
+				return true;
+			}
+			
+			return false;
 		}
 
 		public static boolean isWeapon( ItemStack itemStack )

@@ -112,6 +112,11 @@ public class SoundHandler
 	public static SoundEvent IMPACT_PUNCH_4;
 	public static SoundEvent IMPACT_PUNCH_5;
 	
+	/*               PUNCH               */
+
+	public static SoundEvent IMPACT_ORGANIC_0;
+	public static SoundEvent IMPACT_ORGANIC_1;
+	
 	/* --------------------------------- */
 	/*                SWING              */
 	/* --------------------------------- */
@@ -343,6 +348,11 @@ public class SoundHandler
 		IMPACT_PUNCH_3 = registerSound("player.impact_punch_3");
 		IMPACT_PUNCH_4 = registerSound("player.impact_punch_4");
 		IMPACT_PUNCH_5 = registerSound("player.impact_punch_5");
+		
+		/*               ORGANIC               */
+
+		IMPACT_ORGANIC_0 = registerSound("player.impact_organic_0");
+		IMPACT_ORGANIC_1 = registerSound("player.impact_organic_1");
 		
 		/* --------------------------------- */
 		/*                SWING              */
@@ -627,7 +637,7 @@ public class SoundHandler
 	
 	private static void swingWoodenShield( EntityLivingBase elb, float volume, float pitch )
 	{
-		switch( elb.world.rand.nextInt(3) )
+		switch ( elb.world.rand.nextInt(3) )
 		{
 			case 0:
 			{
@@ -654,7 +664,7 @@ public class SoundHandler
 
 	private static void swingMetalShield( EntityLivingBase elb, float volume, float pitch )
 	{
-		switch( elb.world.rand.nextInt(4) )
+		switch ( elb.world.rand.nextInt(4) )
 		{
 			case 0:
 			{
@@ -688,14 +698,14 @@ public class SoundHandler
 	/*             											  EQUIP     						 					        */
 	/* -------------------------------------------------------------------------------------------------------------------- */
 	
-	public static void splayEquipSoundLeft( EntityLivingBase elb, BetterCombatHand betterCombatHand, ItemStack itemStack, int cooldown )
+	public static void playEquipSoundLeft( EntityLivingBase elb, BetterCombatHand betterCombatHand, ItemStack itemStack, int cooldown )
 	{
 		if ( !betterCombatHand.hasCustomWeapon() )
 		{
 			return;
 		}		
 		
-		float volume = getRandomSwingVolume();
+		float volume = getRandomEquipAndSheatheVolume();
 		float pitch = getSwingPitch(cooldown);
 		
 		if ( Helpers.isMetal(itemStack) )
@@ -734,7 +744,7 @@ public class SoundHandler
 			return;
 		}
 
-		float volume = getRandomSwingVolume();
+		float volume = getRandomEquipAndSheatheVolume();
 		float pitch = getSwingPitch(cooldown);
 		
 		if ( Helpers.isMetal(itemStack) )
@@ -861,14 +871,14 @@ public class SoundHandler
 		}
 		else
 		{
-			if ( animation == Animation.STAB )
-			{
-				playImpactStabSound(elb, volume, pitch);
-				return;
-			}
-			
 			if ( isMetal )
 			{
+				if ( animation == Animation.STAB )
+				{
+					playImpactStabSound(elb, volume, pitch);
+					return;
+				}
+				
 				switch ( soundType )
 				{
 					case BLADE:
@@ -893,9 +903,19 @@ public class SoundHandler
 					}
 				}
 			}
-			
-			playImpactDefaultSound(elb, volume, pitch);
-			return;
+			else
+			{
+				if ( animation == Animation.STAB )
+				{
+					playImpactDefaultPunchSound(elb, volume, pitch);
+					return;
+				}
+				else
+				{
+					playImpactDefaultOrganicSound(elb, volume, pitch);
+					return;
+				}
+			}
 		}
 	}
 	
@@ -975,7 +995,7 @@ public class SoundHandler
 
 	public static void swingMetalBladeLeft( EntityLivingBase elb, float volume, float pitch )
 	{
-		switch( elb.world.rand.nextInt(7) )
+		switch ( elb.world.rand.nextInt(7) )
 		{
 			case 0:
 			{
@@ -1022,7 +1042,7 @@ public class SoundHandler
 	
 	public static void swingMetalBladeRight( EntityLivingBase elb, float volume, float pitch )
 	{
-		switch( elb.world.rand.nextInt(7) )
+		switch ( elb.world.rand.nextInt(7) )
 		{
 			case 0:
 			{
@@ -1069,7 +1089,7 @@ public class SoundHandler
 
 	public static void swingMetalAxeLeft( EntityLivingBase elb, float volume, float pitch )
 	{
-		switch(elb.world.rand.nextInt(4) )
+		switch (elb.world.rand.nextInt(4) )
 		{
 			case 0:
 			{
@@ -1101,7 +1121,7 @@ public class SoundHandler
 	
 	public static void swingMetalAxeRight( EntityLivingBase elb, float volume, float pitch )
 	{
-		switch( elb.world.rand.nextInt(4) )
+		switch ( elb.world.rand.nextInt(4) )
 		{
 			case 0:
 			{
@@ -1133,7 +1153,7 @@ public class SoundHandler
 	
 	public static void swingMetalBluntRight( EntityLivingBase elb, float volume, float pitch )
 	{
-		switch( elb.world.rand.nextInt(4) )
+		switch ( elb.world.rand.nextInt(4) )
 		{
 			case 0:
 			{
@@ -1165,7 +1185,7 @@ public class SoundHandler
 	
 	public static void swingMetalBluntLeft( EntityLivingBase elb, float volume, float pitch )
 	{
-		switch( elb.world.rand.nextInt(4) )
+		switch ( elb.world.rand.nextInt(4) )
 		{
 			case 0:
 			{
@@ -1197,7 +1217,7 @@ public class SoundHandler
 	
 	public static void playImpactMetalBladeSound( EntityLivingBase elb, float volume, float pitch )
 	{
-		switch( elb.world.rand.nextInt(2) )
+		switch ( elb.world.rand.nextInt(2) )
 		{
 			case 0:
 			{
@@ -1219,7 +1239,7 @@ public class SoundHandler
 	
 	public static void playImpactMetalBluntSound( EntityLivingBase elb, float volume, float pitch )
 	{
-		switch( elb.world.rand.nextInt(9) )
+		switch ( elb.world.rand.nextInt(9) )
 		{
 			case 0:
 			{
@@ -1276,7 +1296,7 @@ public class SoundHandler
 	
 	public static void playImpactMetalAxeSound( EntityLivingBase elb, float volume, float pitch )
 	{
-		switch( elb.world.rand.nextInt(11) )
+		switch ( elb.world.rand.nextInt(11) )
 		{
 			case 0:
 			{
@@ -1343,7 +1363,7 @@ public class SoundHandler
 	
 	public static void playImpactMetalPunchSound( EntityLivingBase elb, float volume, float pitch )
 	{
-		switch( elb.world.rand.nextInt(6) )
+		switch ( elb.world.rand.nextInt(6) )
 		{
 			case 0:
 			{
@@ -1390,7 +1410,7 @@ public class SoundHandler
 	
 	public static void blockMetalHeavy( EntityLivingBase elb, float volume, float pitch )
 	{
-		switch( elb.world.rand.nextInt(4) )
+		switch ( elb.world.rand.nextInt(4) )
 		{
 			case 0:
 			{
@@ -1422,7 +1442,7 @@ public class SoundHandler
 	
 	public static void blockMetalLight( EntityLivingBase elb, float volume, float pitch )
 	{
-		switch( elb.world.rand.nextInt(4) )
+		switch ( elb.world.rand.nextInt(4) )
 		{
 			case 0:
 			{
@@ -1459,7 +1479,7 @@ public class SoundHandler
 	
 	public static void bashMetalShield( EntityLivingBase elb, float volume, float pitch )
 	{
-		switch( elb.world.rand.nextInt(4) )
+		switch ( elb.world.rand.nextInt(4) )
 		{
 			case 0:
 			{
@@ -1491,7 +1511,7 @@ public class SoundHandler
 	
 	public static void bashWoodShield( EntityLivingBase elb, float volume, float pitch )
 	{
-		switch( elb.world.rand.nextInt(4) )
+		switch ( elb.world.rand.nextInt(4) )
 		{
 			case 0:
 			{
@@ -1523,7 +1543,7 @@ public class SoundHandler
 	
 	public static void swing2HRight(EntityLivingBase elb, float volume, float pitch)
 	{
-		switch( elb.world.rand.nextInt(3) )
+		switch ( elb.world.rand.nextInt(3) )
 		{
 			case 0:
 			{
@@ -1550,7 +1570,7 @@ public class SoundHandler
 	
 	public static void swing2HLeft(EntityLivingBase elb, float volume, float pitch)
 	{
-		switch( elb.world.rand.nextInt(3) )
+		switch ( elb.world.rand.nextInt(3) )
 		{
 			case 0:
 			{
@@ -1579,7 +1599,7 @@ public class SoundHandler
 	{
 		/* Punch sound noise reduced */
 
-		switch( elb.world.rand.nextInt(4) )
+		switch ( elb.world.rand.nextInt(4) )
 		{
 			case 0:
 			{
@@ -1615,7 +1635,7 @@ public class SoundHandler
 		{
 			pitch += 0.1F;
 			
-			switch( elb.world.rand.nextInt(6) )
+			switch ( elb.world.rand.nextInt(6) )
 			{
 				case 0:
 				{
@@ -1658,7 +1678,7 @@ public class SoundHandler
 		{
 			pitch -= 0.1F;
 
-			switch( elb.world.rand.nextInt(2) )
+			switch ( elb.world.rand.nextInt(2) )
 			{
 				case 0:
 				{
@@ -1679,7 +1699,7 @@ public class SoundHandler
 		}
 		else
 		{
-			switch( elb.world.rand.nextInt(4) )
+			switch ( elb.world.rand.nextInt(4) )
 			{
 				case 0:
 				{
@@ -1714,7 +1734,7 @@ public class SoundHandler
 	{
 		/* This should technically never get run */
 		
-		switch( elb.world.rand.nextInt(4) )
+		switch ( elb.world.rand.nextInt(4) )
 		{
 			case 0:
 			{
@@ -1750,7 +1770,7 @@ public class SoundHandler
 		{
 			pitch += 0.1F;
 			
-			switch( elb.world.rand.nextInt(6) )
+			switch ( elb.world.rand.nextInt(6) )
 			{
 				case 0:
 				{
@@ -1793,7 +1813,7 @@ public class SoundHandler
 		{
 			pitch -= 0.1F;
 
-			switch( elb.world.rand.nextInt(2) )
+			switch ( elb.world.rand.nextInt(2) )
 			{
 				case 0:
 				{
@@ -1814,7 +1834,7 @@ public class SoundHandler
 		}
 		else
 		{
-			switch( elb.world.rand.nextInt(4) )
+			switch ( elb.world.rand.nextInt(4) )
 			{
 				case 0:
 				{
@@ -1847,7 +1867,7 @@ public class SoundHandler
 
 	public static void playImpactPunchSound( EntityLivingBase elb, float volume, float pitch )
 	{
-		switch( elb.world.rand.nextInt(6) )
+		switch ( elb.world.rand.nextInt(6) )
 		{
 			case 0:
 			{
@@ -1888,7 +1908,7 @@ public class SoundHandler
 	
 	public static void playImpactArmorBladeSound( EntityLivingBase elb, float volume, float pitch )
 	{
-		switch( elb.world.rand.nextInt(2) )
+		switch ( elb.world.rand.nextInt(2) )
 		{
 			case 0:
 			{
@@ -1910,7 +1930,7 @@ public class SoundHandler
 	
 	private static void playEquipBladeLeftSound( EntityLivingBase elb, float volume, float pitch )
 	{
-		switch( elb.world.rand.nextInt(4) )
+		switch ( elb.world.rand.nextInt(4) )
 		{
 			case 0:
 			{
@@ -1942,7 +1962,7 @@ public class SoundHandler
 	
 	private static void playEquipAxeLeftSound( EntityLivingBase elb, float volume, float pitch )
 	{
-		switch( elb.world.rand.nextInt(4) )
+		switch ( elb.world.rand.nextInt(4) )
 		{
 			case 0:
 			{
@@ -1969,7 +1989,7 @@ public class SoundHandler
 	
 	private static void playEquipOtherLeftSound( EntityLivingBase elb, float volume, float pitch )
 	{
-		switch( elb.world.rand.nextInt(4) )
+		switch ( elb.world.rand.nextInt(4) )
 		{
 			case 0:
 			{
@@ -1991,7 +2011,7 @@ public class SoundHandler
 	
 	private static void playEquipAxeRightSound( EntityLivingBase elb, float volume, float pitch )
 	{
-		switch( elb.world.rand.nextInt(4) )
+		switch ( elb.world.rand.nextInt(4) )
 		{
 			case 0:
 			{
@@ -2018,7 +2038,7 @@ public class SoundHandler
 	
 	private static void playEquipOtherRightSound( EntityLivingBase elb, float volume, float pitch )
 	{
-		switch( elb.world.rand.nextInt(4) )
+		switch ( elb.world.rand.nextInt(4) )
 		{
 			case 0:
 			{
@@ -2040,7 +2060,7 @@ public class SoundHandler
 
 	private static void playEquipBladeRightSound( EntityLivingBase elb, float volume, float pitch )
 	{
-		switch( elb.world.rand.nextInt(4) )
+		switch ( elb.world.rand.nextInt(4) )
 		{
 			case 0:
 			{
@@ -2072,7 +2092,7 @@ public class SoundHandler
 	
 	private static void playSheatheBladeLeftSound( EntityLivingBase elb, float volume, float pitch )
 	{
-		switch( elb.world.rand.nextInt(3) )
+		switch ( elb.world.rand.nextInt(3) )
 		{
 			case 0:
 			{
@@ -2099,7 +2119,7 @@ public class SoundHandler
 	
 	private static void playSheatheBladeRightSound( EntityLivingBase elb, float volume, float pitch )
 	{
-		switch( elb.world.rand.nextInt(3) )
+		switch ( elb.world.rand.nextInt(3) )
 		{
 			case 0:
 			{
@@ -2126,7 +2146,7 @@ public class SoundHandler
 	
 	private static void playSheatheAxeLeftSound( EntityLivingBase elb, float volume, float pitch )
 	{
-		switch( elb.world.rand.nextInt(2) )
+		switch ( elb.world.rand.nextInt(2) )
 		{
 			case 0:
 			{
@@ -2148,7 +2168,7 @@ public class SoundHandler
 	
 	private static void playSheatheAxeRightSound( EntityLivingBase elb, float volume, float pitch )
 	{
-		switch( elb.world.rand.nextInt(2) )
+		switch ( elb.world.rand.nextInt(2) )
 		{
 			case 0:
 			{
@@ -2170,7 +2190,7 @@ public class SoundHandler
 	
 	private static void playSheatheOtherLeftSound( EntityLivingBase elb, float volume, float pitch )
 	{
-		switch( elb.world.rand.nextInt(3) )
+		switch ( elb.world.rand.nextInt(3) )
 		{
 			case 0:
 			{
@@ -2197,7 +2217,7 @@ public class SoundHandler
 	
 	private static void playSheatheOtherRightSound( EntityLivingBase elb, float volume, float pitch )
 	{
-		switch( elb.world.rand.nextInt(2) )
+		switch ( elb.world.rand.nextInt(2) )
 		{
 			case 0:
 			{
@@ -2221,32 +2241,34 @@ public class SoundHandler
 			}
 		}
 	}
+	
+	private static void playImpactDefaultPunchSound(EntityLivingBase elb, float volume, float pitch)
+	{
+		playSound(elb, SoundEvents.ENTITY_PLAYER_ATTACK_STRONG, volume*1.5F, pitch);
+	}
 
-	private static void playImpactDefaultSound(EntityLivingBase elb, float volume, float pitch)
-	{		
-		switch( elb.world.rand.nextInt(3) )
-		{
-			case 0:
-			{
-				playSound(elb, SoundEvents.ENTITY_PLAYER_ATTACK_STRONG, volume*1.5F, pitch);
-				return;
-			}
-			case 1:
-			{
-				playSound(elb, IMPACT_METAL_AXE_0, volume, pitch);
-				return;
-			}
-			case 2:
-			{
-				playSound(elb, IMPACT_METAL_AXE_6, volume, pitch);
-				return;
-			}
-			default:
-			{
-				playSound(elb, SoundEvents.ENTITY_PLAYER_ATTACK_STRONG, volume*1.5F, pitch);
-				return;
-			}
-		}
+	private static void playImpactDefaultOrganicSound(EntityLivingBase elb, float volume, float pitch)
+	{
+		playSound(elb, SoundEvents.ENTITY_PLAYER_ATTACK_SWEEP, volume, pitch);
+
+//		switch ( elb.world.rand.nextInt(2) )
+//		{
+//			case 0:
+//			{
+//				playSound(elb, IMPACT_ORGANIC_0, volume, pitch);
+//				return;
+//			}
+//			case 1:
+//			{
+//				playSound(elb, IMPACT_ORGANIC_1, volume, pitch);
+//				return;
+//			}
+//			default:
+//			{
+//				playSound(elb, IMPACT_ORGANIC_0, volume, pitch);
+//				return;
+//			}
+//		}
 	}
 	
 	public static void playImpactArmorMetalSound( EntityLivingBase elb, float volume, float pitch )
@@ -2325,6 +2347,16 @@ public class SoundHandler
 	{
 		return (0.9F + Helpers.rand.nextFloat() * 0.2F);
 	}
+		
+	public static float getSwingPitch( float f )
+	{
+		return 0.75F + ( (12.5F + (float)ConfigurationHandler.addedSwingTickCooldown) / f ) * 0.25F;
+	}
+	
+	public static float getEquipAndSheathePitch( float f )
+	{
+		return 0.8F + ( (12.5F + (float)ConfigurationHandler.addedSwingTickCooldown) / f ) * 0.2F;
+	}
 	
 	public static float getRandomShieldBlockVolume()
 	{
@@ -2341,11 +2373,6 @@ public class SoundHandler
 		return ConfigurationHandler.weaponSwingSoundVolume * (0.7F + Helpers.rand.nextFloat() * 0.1F);
 	}
 	
-	public static float getSwingPitch( float f )
-	{
-		return 0.75F + ( (12.5F + (float)ConfigurationHandler.addedSwingTickCooldown) / f ) * 0.25F;
-	}
-	
 	private static float getRandomImpactVolume()
 	{
 		return ConfigurationHandler.weaponHitSoundVolume * (0.7F + Helpers.rand.nextFloat() * 0.1F);
@@ -2353,11 +2380,6 @@ public class SoundHandler
 	
 	public static float getRandomEquipAndSheatheVolume()
 	{
-		return ConfigurationHandler.weapoEquipAndSheatheSoundVolume * (0.7F + Helpers.rand.nextFloat() * 0.1F);
-	}
-	
-	public static float getEquipAndSheathePitch( float f )
-	{
-		return 0.8F + ( (12.5F + (float)ConfigurationHandler.addedSwingTickCooldown) / f ) * 0.2F;
+		return ConfigurationHandler.weaponEquipAndSheatheSoundVolume * (0.7F + Helpers.rand.nextFloat() * 0.1F);
 	}
 }

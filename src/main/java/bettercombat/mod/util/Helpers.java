@@ -157,7 +157,7 @@ public final class Helpers
 		int fireAspect 				= EnchantmentHelper.getFireAspectModifier(player);
 		int sweepAmount 			= 0;
 		
-		double critChance 			= ConfigurationHandler.baseCritPercentChance;
+		double critChance 			= player.getEntityAttribute(EventHandlers.CRIT_CHANCE).getAttributeValue();
 		double critDamage			= player.getEntityAttribute(EventHandlers.CRIT_DAMAGE).getAttributeValue();
 		double additionalReach		= 0.0D;
 		double enchantmentModifier 	= 0.0D;
@@ -204,7 +204,7 @@ public final class Helpers
 					
 					sweepAmount += s.sweepMod;
 					knockbackMod += s.knockbackMod;
-					critChance = s.critChanceMod;
+					critChance += s.critChanceMod - player.getEntityAttribute(EventHandlers.CRIT_CHANCE).getBaseValue();
 					critDamage += s.additionalCritDamageMod;
 					additionalReach = s.additionalReachMod;
 					
@@ -221,7 +221,7 @@ public final class Helpers
 			{
 				sweepAmount += ConfigurationHandler.DEFAULT_CUSTOM_WEAPON.sweepMod;
 				knockbackMod += ConfigurationHandler.DEFAULT_CUSTOM_WEAPON.knockbackMod;
-				critChance = ConfigurationHandler.DEFAULT_CUSTOM_WEAPON.critChanceMod;
+				critChance += ConfigurationHandler.DEFAULT_CUSTOM_WEAPON.critChanceMod - player.getEntityAttribute(EventHandlers.CRIT_CHANCE).getBaseValue();
 				critDamage += ConfigurationHandler.DEFAULT_CUSTOM_WEAPON.additionalCritDamageMod;
 				additionalReach = ConfigurationHandler.DEFAULT_CUSTOM_WEAPON.additionalReachMod;
 				
@@ -237,8 +237,6 @@ public final class Helpers
 			isMetal = false;
 			configWeapon = false;
 		}
-		
-		critChance += player.getEntityAttribute(EventHandlers.CRIT_CHANCE).getAttributeValue() - ConfigurationHandler.baseCritPercentChance;
 		
 		float tgtHealth = 0.0F;
 		float tgtMaxHealth = 0.0F;
@@ -412,14 +410,14 @@ public final class Helpers
 			victim.setFire(fireAspect * 4);
 		}
 
-		enchantmentModifier = EnchantmentHelper.getModifierForCreature(weapon, victim.getCreatureAttribute());
+		damage += EnchantmentHelper.getModifierForCreature(weapon, victim.getCreatureAttribute());
 
 		if ( ConfigurationHandler.baseCritPercentChance < 0.0F )
 		{
 			/* Vanilla crit */
-			isCrit = ((player.fallDistance > 0.0F && !player.onGround)) && !player.isOnLadder() && !player.isInWater() && !player.isRiding() && !player.isPotionActive(MobEffects.BLINDNESS);
+			isCrit = player.fallDistance > 0.0F && !player.onGround && !player.isOnLadder() && !player.isInWater() && !player.isRiding() && !player.isPotionActive(MobEffects.BLINDNESS);
 		}
-		else
+		else if ( !isCrit )
 		{
 			if ( (player.fallDistance > 0.0D && !player.onGround) && !player.isOnLadder() && !player.isInWater() && !player.isPotionActive(MobEffects.BLINDNESS) )
 			{
@@ -445,11 +443,9 @@ public final class Helpers
 			}
 		}
 
-		damage += enchantmentModifier;
-
-		if ( ConfigurationHandler.miningFatigueDamageReduction > 0.0F && player.isPotionActive(MobEffects.MINING_FATIGUE) )
+		if ( ConfigurationHandler.miningFatigueDamageReduction > 0.0F && player.isPotionActive(MobEffects.MINING_FATIGUE) && damage > ConfigurationHandler.baseAttackDamage )
 		{
-			damage = MathHelper.clamp(damage - damage * ConfigurationHandler.miningFatigueDamageReduction * (player.getActivePotionEffect(MobEffects.MINING_FATIGUE).getAmplifier() + 1), ConfigurationHandler.baseAttackDamage, damage);
+			damage = MathHelper.clamp(damage - (damage * (ConfigurationHandler.miningFatigueDamageReduction * (player.getActivePotionEffect(MobEffects.MINING_FATIGUE).getAmplifier()+1.0D))), ConfigurationHandler.baseAttackDamage, damage);
 		}
 		
 		if ( !ConfigurationHandler.moreSprint )

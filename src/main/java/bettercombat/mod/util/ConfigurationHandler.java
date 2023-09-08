@@ -85,6 +85,7 @@ public class ConfigurationHandler
 	public static boolean moreSprint = true;
 	public static double inertiaOnAttack = 0.5;
 	public static boolean fastEquipHotbarOnly = false;
+	public static boolean fastEquipOffhandWeaponsOrShieldsOnly = true;
 	public static double extraAttackHeight = 0.75;
 	public static double extraAttackWidth = 0.25;
 	public static float nauseaAffectsMobs = 2.2F;
@@ -238,8 +239,8 @@ public class ConfigurationHandler
 		public static ArrayList<CustomSword> swords = new ArrayList<CustomSword>();
 		private static String[] swordList =
 		{
-				"[Sword Substring=golden_sword]		[Additional Attack Speed=0.4]",
-				"[Sword Substring=wooden_sword]		[Additional Attack Speed=0.4]"
+				"[Sword Substring=golden_sword]		[Additional Attack Speed=0.2]",
+				"[Sword Substring=wooden_sword]		[Additional Attack Speed=0.1]"
 		};
 		
 	/* WEAPONS --------------------------------------------------------------------------------------------------------------------- */
@@ -415,7 +416,8 @@ public class ConfigurationHandler
 		
 		moreSprint = config.getBoolean("Attack & Sprint", OTHER, true, "Attacking an enemy while sprinting will no longer interrupt your sprint.");
 		inertiaOnAttack = config.get(OTHER, "Intertia on Attack", 0.5, "Multiplies the player speed by this amount when they swing a weapon. Set to 1.0 to disable.").getDouble();
-		fastEquipHotbarOnly = config.getBoolean("Fast Equip Hotbar Only", OTHER, false, "Set to true to have Fast Equip use only items in the hotbar instead of the entire inventory.");
+		fastEquipHotbarOnly = config.getBoolean("Fast Equip Hotbar Only", OTHER, false, "Set to true to have Fast Equip use only items in the hotbar instead of the entire inventory. The Fast Equip keybind is set to X, check the minecraft keybind settings to change this.");
+		fastEquipOffhandWeaponsOrShieldsOnly = config.getBoolean("Fast Equip Offhand Weapons Or Shields Only", OTHER, false, "Set to true to have Fast Equip only find weapons or shields, and not tools, for the offhand. Tools will still be found and equipped in the mainhand if no weapons are found. The Fast Equip keybind is set to X, check the minecraft keybind settings to change this.");
 		extraAttackWidth = config.get(OTHER, "Extra Attack Width", 0.25, "How wide, on all directions, the hitbox will be extended for melee attacks. Increase the value of this setting to make the XZ-accuracy of attacks more forgiving. 1.0 is equal to an additional block width on XZ sides.").getDouble();
 		extraAttackHeight = config.get(OTHER, "Extra Attack Height", 0.75, "How high the hitbox will be extended for melee attacks. Increase the value of this setting to make the Y-accuracy of attacks more forgiving. 1.0 is equal to an additional block height above the entity.").getDouble();
 		nauseaAffectsMobs = config.getFloat("Nausea Affects Mobs", OTHER, 2.2F, 0.0F, 256.0F, "Setting to have Nausea & Blindness affect mobs. If a mob has a height equal to or less than this value, it will be affected by Blindess and Nausea potion effects, which causes them to often lose their target and stumble around. Set to 0.0F to disable.");

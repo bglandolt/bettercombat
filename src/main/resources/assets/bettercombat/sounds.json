@@ -1448,5 +1448,25 @@
         "stream": false
       }
     ]
+  },
+  "player.impact_organic_0": {
+    "category": "player",
+    "subtitle": "player.weapon",
+    "sounds": [
+      {
+        "name": "bettercombat:player/impact_organic_0",
+        "stream": false
+      }
+    ]
+  },
+  "player.impact_organic_1": {
+    "category": "player",
+    "subtitle": "player.weapon",
+    "sounds": [
+      {
+        "name": "bettercombat:player/impact_organic_1",
+        "stream": false
+      }
+    ]
   }
 }

@@ -193,13 +193,13 @@ public class EventHandlers
 	}
 	
 	/* For whatever reason I cannot get this to work correctly on player respawn/ join world/ whatever so
-	 * I am just going to add it to all these events and wrap this bitch in a try catch and say fuck it */
+	 * I am just going to add it to all these events and wrap this ***** in a try catch and say **** it */
 	public void registerCritAttributes( EntityPlayer player )
 	{
 		try
 		{
-			player.getAttributeMap().registerAttribute(CRIT_CHANCE);
-		  	player.getAttributeMap().registerAttribute(CRIT_DAMAGE);
+			player.getAttributeMap().registerAttribute(CRIT_CHANCE).setBaseValue(ConfigurationHandler.baseCritPercentChance);
+		  	player.getAttributeMap().registerAttribute(CRIT_DAMAGE).setBaseValue(ConfigurationHandler.baseCritPercentDamage);
 		}
 		catch ( Exception e )
 		{

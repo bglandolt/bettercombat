@@ -127,9 +127,9 @@ public class EventHandlersClient
 	 */
 
 	public boolean overwriteLeftClick(boolean checkBlocks)
-	{
+	{		
 		/* If the left click counter is less greater than 0 */
-		if ( Reflections.getLeftClickCounter(this.mc) > 0 )
+		if ( Reflections.getLeftClickCounter(this.mc) > 0 && !this.mc.player.isCreative() )
 		{
 			/* Cancel left-click! */
 			return true;
@@ -393,14 +393,13 @@ public class EventHandlersClient
 			}
 
 		}
-		else if (this.mc.objectMouseOver != null)
+		else if ( this.mc.objectMouseOver != null )
 		{
 			mov = this.mc.objectMouseOver;
 
 			/* If the MAINHAND item can interact with that block, */
-			if (this.toolCanInteractWithBlock(this.itemStackMainhand.getItem()))
+			if ( mov.typeOfHit.equals(Type.BLOCK) && mov.getBlockPos() != null && mov.getBlockPos() != BlockPos.ORIGIN && this.toolCanInteractWithBlock(this.itemStackMainhand.getItem()))
 			{
-
 				if (this.itemStackMainhand.getItem().onItemUse(this.mc.player, this.mc.player.world, mov.getBlockPos(), EnumHand.MAIN_HAND, mov.sideHit, 0.0F, 0.0F, 0.0F) == EnumActionResult.SUCCESS)
 				{
 					/* HIT! Send a packet that uses the item on the block! */
@@ -485,14 +484,13 @@ public class EventHandlersClient
 			}
 
 		}
-		else if (this.mc.objectMouseOver != null)
+		else if ( this.mc.objectMouseOver != null )
 		{
 			mov = this.mc.objectMouseOver;
 
-			if (this.toolCanInteractWithBlock(this.itemStackOffhand.getItem()))
+			if ( this.toolCanInteractWithBlock(this.itemStackOffhand.getItem()) )
 			{
-
-				if (this.itemStackOffhand.getItem().onItemUse(this.mc.player, this.mc.player.world, mov.getBlockPos(), EnumHand.OFF_HAND, mov.sideHit, 0.0F, 0.0F, 0.0F) == EnumActionResult.SUCCESS)
+				if ( mov.typeOfHit.equals(Type.BLOCK) && mov.getBlockPos() != null && mov.getBlockPos() != BlockPos.ORIGIN && this.itemStackOffhand.getItem().onItemUse(this.mc.player, this.mc.player.world, mov.getBlockPos(), EnumHand.OFF_HAND, mov.sideHit, 0.0F, 0.0F, 0.0F) == EnumActionResult.SUCCESS)
 				{
 					PacketHandler.instance.sendToServer(new PacketOnItemUse(mov.getBlockPos().getX(), mov.getBlockPos().getY(), mov.getBlockPos().getZ(), false, mov.sideHit));
 					return;
@@ -620,7 +618,6 @@ public class EventHandlersClient
 
 		/* Check to see if the ItemStacks have changed */
 		this.checkItemstacksChanged(false);
-		
 
 		RayTraceResult mov = mc.objectMouseOver;
 
@@ -637,12 +634,10 @@ public class EventHandlersClient
 		}
 
 		/*
-		 * If the MAINHAND has a TWOHAND weapon, prevent placing blocks, but use the
-		 * item
+		 * If the MAINHAND has a TWOHAND weapon, prevent placing blocks, but use the item
 		 */
 		if (this.itemStackMainhand.getItemUseAction() == EnumAction.NONE && this.betterCombatMainhand.getWeaponProperty() == WeaponProperty.TWOHAND)
 		{
-
 			/* Only use the MAINHAND */
 			if (this.rightClickMouse(EnumHand.MAIN_HAND))
 			{
@@ -695,11 +690,9 @@ public class EventHandlersClient
 		/* If the MAINHAND has an action, OR if the OFFHAND has an action, */
 		if (this.itemStackMainhand.getItemUseAction() != EnumAction.NONE || this.itemStackOffhand.getItemUseAction() != EnumAction.NONE)
 		{
-
 			/* If the OFFHAND can block */
 			if (this.itemStackOffhand.getItemUseAction() == EnumAction.BLOCK)
 			{
-
 				if (ConfigurationHandler.disableBlockingWhileAttacking && !this.isMainhandAttackReady())
 				{
 					this.sendStopActiveHandPacket();
@@ -998,13 +991,17 @@ public class EventHandlersClient
 
 	private boolean rightClickMouse(EnumHand enumhand)
 	{
-
+		if ( Reflections.getRightClickDelayTimer(this.mc) > 0 )
+		{
+			return false;
+		}
+		
 		if (!this.mc.playerController.getIsHittingBlock())
 		{
+			Reflections.setRightClickDelayTimer(this.mc, 4);
 
 			if (!this.mc.player.isRowingBoat())
 			{
-
 				if (this.mc.objectMouseOver == null)
 				{
 					return false;
@@ -1014,7 +1011,6 @@ public class EventHandlersClient
 
 				if (this.mc.objectMouseOver != null)
 				{
-
 					switch (this.mc.objectMouseOver.typeOfHit)
 					{
 						case ENTITY:
@@ -1268,7 +1264,7 @@ public class EventHandlersClient
 			/* Lets the player hold down right-click */
 			if ( this.mc.gameSettings.keyBindUseItem.isPressed() || this.mc.gameSettings.keyBindUseItem.isKeyDown() )
 			{				
-				if ( !this.mc.player.isHandActive() ) // Reflections.getRightClickDelayTimer(this.mc) <= 0
+				if ( !this.mc.player.isHandActive() )
 				{
 					this.overwriteRightClick();
 				}

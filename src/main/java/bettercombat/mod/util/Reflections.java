@@ -308,6 +308,24 @@ public class Reflections
 		}
 	}
 	
+	public static void setRightClickDelayTimer( Minecraft minecraft, int i )
+	{
+		try
+		{
+			if ( rightClickDelayTimer == null )
+			{
+				rightClickDelayTimer = Minecraft.class.getDeclaredField(getName(RCDT_SRG, RCDT_MCP));
+				rightClickDelayTimer.setAccessible(true);
+			}
+
+			rightClickDelayTimer.setInt(minecraft, i);
+		}
+		catch ( Exception ex )
+		{
+			throw new RuntimeException(ex);
+		}
+	}
+	
 	public static int getLeftClickCounter( Minecraft minecraft )
 	{
 		try
