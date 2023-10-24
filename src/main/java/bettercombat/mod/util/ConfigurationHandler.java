@@ -170,6 +170,7 @@ public class ConfigurationHandler
 		public static boolean showReachTooltip = true;
 		public static boolean showReachTooltipAsTotal = false;
 		public static boolean showSweepTooltip = true;
+//		public static boolean removeRedundantSpartanWeaponryTooltips = true;
 		
 	/* UNARMED --------------------------------------------------------------------------------------------------------------------- */
 
@@ -245,7 +246,7 @@ public class ConfigurationHandler
 		
 	/* WEAPONS --------------------------------------------------------------------------------------------------------------------- */
 
-		public static ArrayList<CustomWeapon> weapons = new ArrayList<CustomWeapon>(); //  2h .25, blunt 0.25  stab 0, sweep 0.25, chop 0.5
+		public static ArrayList<CustomWeapon> weapons = new ArrayList<CustomWeapon>();
 		private static String[] weaponList =
 		{
 			 "[Weapon Substring=pike_] [Sound Type=POLEARM] [Animation=STAB] [Property=TWOHAND] [Sweep=0] [Additional Reach=2.0] [Knockback=0.2] [Crit Chance=0.1] [Additional Crit Damage=0.0] [Parry=true]",
@@ -477,9 +478,11 @@ public class ConfigurationHandler
 		showPotionEffectTooltip = config.getBoolean("Show Potion Effect Tooltip", TOOLTIPS, true, "If set to true, display custom Potion Effects on weapon tooltips.");
 		showKnockbackTooltip = config.getBoolean("Show Knockback Tooltip", TOOLTIPS, true, "If set to true, display Knockback amount on weapon tooltips.");
 		showKnockbackTooltipAsTotal = config.getBoolean("Show Knockback Tooltip As Total", TOOLTIPS, true, "If set to true, display Knockback as the total weapon Knockback (1.5 Knockback), instead of additional Reach Distance (+0.5 Knockback).");
-		showReachTooltip = config.getBoolean("Show Reach Tooltip", TOOLTIPS, true, "If set to true, display Reach Distance on weapon tooltips.");
+		showReachTooltip = config.getBoolean("Show Reach Tooltip", TOOLTIPS, true, "If set to true, display Reach Distance on weapon tooltips. For advanced modpack makers, if another mod is adding Reach Distance on a weapon, I recommend blanking out the fields you want gone in the lang file of that mod using Resource Loader.");
 		showReachTooltipAsTotal = config.getBoolean("Show Reach Tooltip As Total", TOOLTIPS, false, "If set to true, display Reach Distance as the total weapon Reach Distance (5.0 Reach Distance), instead of additional Reach Distance (+1.0 Reach Distance).");
-		showSweepTooltip = config.getBoolean("Show Sweep Tooltip", TOOLTIPS, true, "If set to true, display the Sweep tooltip.");		
+		showSweepTooltip = config.getBoolean("Show Sweep Tooltip", TOOLTIPS, true, "If set to true, display the Sweep tooltip. For advanced modpack makers, if another mod is adding Reach Distance on a weapon, I recommend blanking out the fields you want gone in the lang file of that mod using Resource Loader.");
+//		removeRedundantSpartanWeaponryTooltips = config.getBoolean("Remove Redundant Spartan Weaponry Tooltips", TOOLTIPS, true, "If set to true, tooltips from Spartan Weaponry (such as Two-Handed, Reach, and Sweep) will be removed. These Spartan Weaponry tooltips are instead added through this mod and the Custom Weapon config setting.");
+		
 		/* --------------------------------------------------------------------------------------------------------------------- */
 		String UNARMED = "Unarmed";
 		
@@ -652,8 +655,8 @@ public class ConfigurationHandler
 		String BWLISTS = "White/Black Lists";
 
 		itemClassWhitelist = config.getStringList("Item Class Whitelist", BWLISTS, itemClassWhitelist, "Whitelisted item classes for attacking. If an item is added to this list, it will function as an Immersive Combat weapon. The Custom Weapons config is for editing the values and attributes of weapons. The class  net.minecraft.item.ItemSword  and anything that extends it is added by default.");
-		itemClassBlacklist = config.getStringList("Item Class Blacklist", BWLISTS, itemClassBlacklist, "Blacklisted item classes. If an item is added to this list, it will have the default left-click and right-click behavior. This setting is useful for gun mods, or items that need to have their default left-click and right-click functionality. Example config value:    com.flansmod.common.guns.ItemGun    com.mrcrayfish.guns.item.ItemGun");
-		itemBlacklist = config.getStringList("Item Blacklist", BWLISTS, itemBlacklist, "Blacklisted items. This is similar to Item Class Blacklist, however, it instead uses a resource location for specific items, such as:    mrcrayfish:gun");
+		itemClassBlacklist = config.getStringList("Item Class Blacklist", BWLISTS, itemClassBlacklist, "Blacklisted item classes (Advanced setting; requires you to look through the source code of the mod that you are trying to add the class from). If an item is added to this list, it will have the default left-click and right-click behavior. This setting is useful for gun mods, or items that need to have their default left-click and right-click functionality. Example config value:    com.flansmod.common.guns.ItemGun    com.mrcrayfish.guns.item.ItemGun    techguns.items.guns.GenericGun");
+		itemBlacklist = config.getStringList("Item Blacklist", BWLISTS, itemBlacklist, "Blacklisted items (Simple setting; use CraftTweaker to get the syntax of the item in your hand. The command is: /ct hand). This is similar to Item Class Blacklist, however, it instead uses a resource location for specific items, such as:    mrcrayfish:gun");
 		entityBlacklist = config.getStringList("Entity Blacklist", BWLISTS, entityBlacklist, "Blacklisted entity classes for attacking with offhand or sweep. You will not be able to attack any entity that extends this class with your offhand, and they will not be hit by sweep! This is to prevent you from accidentally attacking or killing certain entities. Please note that entities extending IEntityOwnable are by default blacklisted, when the entity is owned by the attacker.");
 
 		/* --------------------------------------------------------------------------------------------------------------------- */

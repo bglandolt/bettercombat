@@ -8,6 +8,7 @@ import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.entity.player.EntityPlayerMP;
 import net.minecraft.entity.player.InventoryPlayer;
 import net.minecraft.init.SoundEvents;
+import net.minecraft.item.ItemAxe;
 import net.minecraft.item.ItemHoe;
 import net.minecraft.item.ItemShield;
 import net.minecraft.item.ItemStack;
@@ -84,7 +85,7 @@ public class PacketFastEquip implements IMessage
 							if ( player.inventory.addItemStackToInventory(currentOffhandItem) )
 							{
 								/* Remove the OFFHAND item */
-								player.inventory.offHandInventory.remove(0);
+								player.inventory.offHandInventory.set(0, ItemStack.EMPTY);
 								currentOffhandItem = ItemStack.EMPTY;
 							}
 						}
@@ -157,11 +158,6 @@ public class PacketFastEquip implements IMessage
 								break inventorySearch;
 							}
 						}
-						
-						if ( newMainhandItem == null )
-						{
-							newMainhandItem = new Weapon(i, itemStack);
-						}
 					}
 				}
 				
@@ -191,11 +187,6 @@ public class PacketFastEquip implements IMessage
 									newMainhandItem = new Weapon(i, itemStack);
 									break inventorySearch;
 								}
-							}
-							
-							if ( newMainhandItem == null )
-							{
-								newMainhandItem = new Weapon(i, itemStack);
 							}
 						}
 					}
@@ -234,11 +225,6 @@ public class PacketFastEquip implements IMessage
 									break inventorySearch;
 								}
 							}
-							
-							if ( newMainhandItem == null )
-							{
-								newMainhandItem = new Weapon(i, itemStack);
-							}
 						}
 					}
 						
@@ -274,11 +260,6 @@ public class PacketFastEquip implements IMessage
 										newMainhandItem = new Weapon(i, itemStack);
 										break inventorySearch;
 									}
-								}
-								
-								if ( newMainhandItem == null )
-								{
-									newMainhandItem = new Weapon(i, itemStack);
 								}
 							}
 						}
@@ -347,11 +328,6 @@ public class PacketFastEquip implements IMessage
 									}
 								}
 							}
-							
-							if ( newOffhandItem == null )
-							{
-								newOffhandItem = new Weapon(i, itemStack);
-							}
 						}
 					}
 				}
@@ -385,11 +361,6 @@ public class PacketFastEquip implements IMessage
 										break inventorySearch;
 									}
 								}
-							}
-							
-							if ( newOffhandItem == null )
-							{
-								newOffhandItem = new Weapon(i, itemStack);
 							}
 						}
 					}
@@ -447,11 +418,6 @@ public class PacketFastEquip implements IMessage
 									}
 								}
 							}
-							
-							if ( newOffhandItem == null )
-							{
-								newOffhandItem = new Weapon(i, itemStack);
-							}
 						}
 					}
 				}
@@ -486,11 +452,6 @@ public class PacketFastEquip implements IMessage
 									}
 								}
 							}
-							
-							if ( newOffhandItem == null )
-							{
-								newOffhandItem = new Weapon(i, itemStack);
-							}
 						}
 					}
 				}
@@ -520,12 +481,12 @@ public class PacketFastEquip implements IMessage
 
 		public static boolean isWeapon( ItemStack itemStack )
 		{
-			return !itemStack.isEmpty() && ConfigurationHandler.isItemClassWhiteList(itemStack.getItem()) && !(itemStack.getItem() instanceof ItemTool) && !(itemStack.getItem() instanceof ItemHoe);
+			return !itemStack.isEmpty() && ConfigurationHandler.isItemClassWhiteList(itemStack.getItem()) && !isToolOrHoe(itemStack);
 		}
 		
 		public static boolean isToolOrHoe( ItemStack itemStack )
 		{
-			return !itemStack.isEmpty() && (itemStack.getItem() instanceof ItemTool) || itemStack.getItem() instanceof ItemHoe;
+			return !itemStack.isEmpty() && ( (itemStack.getItem() instanceof ItemTool && !(itemStack.getItem() instanceof ItemAxe)) || itemStack.getItem() instanceof ItemHoe );
 		}
 
 		public static boolean isShield( ItemStack itemStack )

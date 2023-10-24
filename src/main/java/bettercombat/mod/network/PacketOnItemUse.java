@@ -4,13 +4,8 @@ import io.netty.buffer.ByteBuf;
 import net.minecraft.block.Block;
 import net.minecraft.block.BlockAir;
 import net.minecraft.block.BlockLog;
-import net.minecraft.block.material.Material;
-import net.minecraft.block.state.IBlockState;
 import net.minecraft.entity.player.EntityPlayerMP;
-import net.minecraft.init.Blocks;
 import net.minecraft.init.SoundEvents;
-import net.minecraft.item.ItemSpade;
-import net.minecraft.item.ItemStack;
 import net.minecraft.util.EnumActionResult;
 import net.minecraft.util.EnumFacing;
 import net.minecraft.util.EnumHand;
@@ -170,6 +165,8 @@ public class PacketOnItemUse implements IMessage
 			        {
 			            ((WorldServer)player.world).spawnParticle(EnumParticleTypes.BLOCK_DUST, message.x, message.y, message.z, 32, 1.0D, 1.0D, 1.0D, 0.02D, Block.getStateId(block.getDefaultState()));
 			        }
+					
+					player.world.playSound(null, blockPos, SoundEvents.BLOCK_WOOD_BREAK, SoundCategory.BLOCKS, 1.0F, 1.0F);
 				}
 				else
 				{
@@ -177,6 +174,8 @@ public class PacketOnItemUse implements IMessage
 			        {
 			            ((WorldServer)player.world).spawnParticle(EnumParticleTypes.BLOCK_DUST, message.x+0.3D, message.y+1.0D, message.z+0.3D, 16, 0.4D, 0.1D, 0.4D, 0.015D, Block.getStateId(block.getDefaultState()));
 			        }
+			        
+					player.world.playSound(null, blockPos, SoundEvents.BLOCK_GRASS_BREAK, SoundCategory.BLOCKS, 1.0F, 1.0F);
 				}
 			}
 			

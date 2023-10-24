@@ -139,18 +139,18 @@ public class AnimationHandler
         {
 			if ( ClientProxy.EHC_INSTANCE.mc.player.isSprinting() && this.equippedProgressMainhand != -1.0F && !this.isMainhandAttacking() )
 			{
-				if ( this.mainhandSprintingTimer < 30 )
+				if ( this.mainhandSprintingTimer < 20 )
 				{
-					this.mainhandSprintingTimer += 3;
+					this.mainhandSprintingTimer += 2;
 				}
 			}
 			else if ( this.mainhandSprintingTimer > 0 )
 			{
-				this.mainhandSprintingTimer -= 3;
+				this.mainhandSprintingTimer -= 2;
 				
 				if ( this.mainhandSprintingTimer > 0 && this.isMainhandAttacking() )
 				{
-					this.mainhandSprintingTimer -= 3;
+					this.mainhandSprintingTimer -= 2;
 				}
 			}
 			
@@ -221,18 +221,18 @@ public class AnimationHandler
         {
 			if ( ClientProxy.EHC_INSTANCE.mc.player.isSprinting() && this.equippedProgressOffhand != -1.0F && !this.isOffhandAttacking() )
 			{
-				if ( this.offhandSprintingTimer < 30 )
+				if ( this.offhandSprintingTimer < 20 )
 				{
-					this.offhandSprintingTimer += 3;
+					this.offhandSprintingTimer += 2;
 				}
 			}
 			else if ( this.offhandSprintingTimer > 0 )
 			{
-				this.offhandSprintingTimer -= 3;
+				this.offhandSprintingTimer -= 2;
 				
 				if ( this.offhandSprintingTimer > 0 && this.isOffhandAttacking() )
 				{
-					this.offhandSprintingTimer -= 3;
+					this.offhandSprintingTimer -= 2;
 				}
 			}
 			
@@ -306,6 +306,7 @@ public class AnimationHandler
 		{
 			this.mainhandEnergy = 1.0F + (event.getPartialTicks() - ClientProxy.EHC_INSTANCE.betterCombatMainhand.getSwingTimer() - 0.5F) * ClientProxy.EHC_INSTANCE.betterCombatMainhand.getSwingTimerIncrement();
 			
+			/* Mining */
 			if ( ClientProxy.EHC_INSTANCE.betterCombatMainhand.isMining() )
     		{
 				Item tool = ClientProxy.EHC_INSTANCE.itemStackMainhand.getItem();
@@ -321,9 +322,9 @@ public class AnimationHandler
 				}
 				else if ( tool instanceof ItemSpade )
 				{
-					if ( this.mainhandSprintingTimer < 30 )
+					if ( this.mainhandSprintingTimer < 20 )
 					{
-						this.mainhandSprintingTimer += 6;
+						this.mainhandSprintingTimer += 4;
 					}
 					
 					GlStateManager.rotate(-this.mainhandSprintingTimer*4.0F,1.0F,0.0F,0.0F); /* Chopping rotation */

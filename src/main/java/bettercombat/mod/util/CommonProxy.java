@@ -14,9 +14,23 @@ public class CommonProxy
 //    	
 //    }
 
+    public static Class<?> partEntityClass = null;
+
 	public void postInit( FMLPostInitializationEvent event ) throws Exception
 	{
 		ConfigurationHandler.postConfig();
+		
+		if ( partEntityClass == null )
+		{
+        	try
+			{
+				partEntityClass = Class.forName("net.ilexiconn.llibrary.server.entity.multipart.PartEntity");
+			}
+			catch ( ClassNotFoundException e )
+			{
+
+			}
+		}
 	}
 
 	public void init(FMLInitializationEvent event)

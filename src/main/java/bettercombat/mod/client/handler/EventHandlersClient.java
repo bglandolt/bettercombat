@@ -1,8 +1,12 @@
 package bettercombat.mod.client.handler;
 
+import java.lang.reflect.Field;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+
+import javax.annotation.Nullable;
 
 import bettercombat.mod.client.BetterCombatHand;
 import bettercombat.mod.client.ClientProxy;
@@ -15,6 +19,7 @@ import bettercombat.mod.network.PacketOnItemUse;
 import bettercombat.mod.network.PacketParrying;
 import bettercombat.mod.network.PacketShieldBash;
 import bettercombat.mod.network.PacketStopActiveHand;
+import bettercombat.mod.util.CommonProxy;
 import bettercombat.mod.util.ConfigurationHandler;
 import bettercombat.mod.util.ConfigurationHandler.CustomShield;
 import bettercombat.mod.util.ConfigurationHandler.CustomSword;
@@ -34,6 +39,7 @@ import net.minecraft.client.entity.EntityPlayerSP;
 import net.minecraft.client.resources.I18n;
 import net.minecraft.client.settings.KeyBinding;
 import net.minecraft.entity.Entity;
+import net.minecraft.entity.EntityLiving;
 import net.minecraft.entity.monster.IMob;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.entity.player.EntityPlayerMP;
@@ -105,31 +111,13 @@ public class EventHandlersClient
 	 */
 	public int                    mainhandAttackCooldown = ConfigurationHandler.minimumAttackSpeedTicks;
 
-//	private boolean keyBindAttackIsKeyDown = false;
-//	private boolean keyBindUseItemIsKeyDown = false;
-
-	/*
-	 * =============================================================================
-	 * =========================================================================
-	 */
-	/*
-	 * =============================================================================
-	 * =========================================================================
-	 */
-	/* LEFT CLICK - MAIN HAND */
-	/*
-	 * =============================================================================
-	 * =========================================================================
-	 */
-	/*
-	 * =============================================================================
-	 * =========================================================================
-	 */
-
+	public static final String EMPTY = EMPTY;
+	public static final String BLANK_SPACE = " ";
+	
 	public boolean overwriteLeftClick(boolean checkBlocks)
 	{		
 		/* If the left click counter is less greater than 0 */
-		if ( Reflections.getLeftClickCounter(this.mc) > 0 && !this.mc.player.isCreative() )
+		if ( Reflections.getLeftClickCounter(this.mc) > 0 && !this.mc.playerController.isInCreativeMode() )
 		{
 			/* Cancel left-click! */
 			return true;
@@ -213,18 +201,18 @@ public class EventHandlersClient
 			/* Cancel left-click, as the player has an active item and should not attack! */
 			return true;
 		}
-
-		/* If this left-click should check blocks, */
-		if ( checkBlocks )
+		
+		/* If this left-click should check blocks, and there is no entity being targeted */
+		if ( checkBlocks && !this.mainhandMouseoverHasEntity() )
 		{
-			RayTraceResult mov = mc.objectMouseOver;
+			RayTraceResult mov = this.mc.objectMouseOver;
 
 			if ( mov == null )
 			{
 				/* Cancel left-click! mov should not be null */
 				return true;
 			}
-			
+						
 			/* If a the target is a block, */
 			if ( mov.typeOfHit == RayTraceResult.Type.BLOCK )
 			{
@@ -239,16 +227,15 @@ public class EventHandlersClient
 
 				Block block = player.world.getBlockState(pos).getBlock();
 
-				/* If the block is a PLANT, */
-				if ( (block instanceof IPlantable || block instanceof IShearable) && this.itemStackMainhand.getItem() instanceof ItemHoe )
+				/* If the block is a PLANT, and the player has weapon in the MAINHAND */
+				if ( ( block instanceof IPlantable || block instanceof IShearable ) && this.betterCombatMainhand.hasCustomWeapon() )
 				{
-					/* Continue with left-click, using the HOE on the PLANT! */
-					return false;
+					/* Continue... */
 				}
 				else
 				{
 					/* MINING! Continue with left-click! */
-					return mining();
+					return this.mining();
 				}
 			}
 		}
@@ -302,128 +289,93 @@ public class EventHandlersClient
 		return false;
 	}
 
-//	private void leftClickMouse()
-//    {
-//        //if (this.mc.leftClickCounter <= 0)
-//        {
-//            if (this.mc.objectMouseOver == null)
-//            {
-////                LOGGER.error("Null returned as 'hitResult', this shouldn't happen!");
-////
-////                if (this.mc.playerController.isNotCreative())
-////                {
-////                    this.mc.leftClickCounter = 10;
-////                }
-//            }
-//            else if (!this.mc.player.isRowingBoat())
-//            {
-//                switch (this.mc.objectMouseOver.typeOfHit)
-//                {
-//                    case ENTITY:
-//                        this.mc.playerController.attackEntity(this.mc.player, this.mc.objectMouseOver.entityHit);
-//                        break;
-//                    case BLOCK:
-//                        BlockPos blockpos = this.mc.objectMouseOver.getBlockPos();
-//
-//                        if (!this.mc.world.isAirBlock(blockpos))
-//                        {
-//                            this.mc.playerController.clickBlock(blockpos, this.mc.objectMouseOver.sideHit);
-//                            break;
-//                        }
-//
-//                    case MISS:
-//
-////                        if (this.mc.playerController.isNotCreative())
-////                        {
-////                            this.mc.leftClickCounter = 10;
-////                        }
-//
-//                        this.mc.player.resetCooldown();
-//                        net.minecraftforge.common.ForgeHooks.onEmptyLeftClick(this.mc.player);
-//                }
-//
-//                this.mc.player.swingArm(EnumHand.MAIN_HAND);
-//            }
-//        }
-//    }
-
-	/*
-	 * =============================================================================
-	 * =========================================================================
-	 */
-	/*
-	 * =============================================================================
-	 * =========================================================================
-	 */
-	/* ATTACK - MAIN HAND */
-	/*
-	 * =============================================================================
-	 * =========================================================================
-	 */
-	/*
-	 * =============================================================================
-	 * =========================================================================
-	 */
-
 	public void mainhandAttack()
 	{
-		RayTraceResult mov = this.getMainhandMouseover();
-
-		/* If, the MOV is valid, */
-		if (mov != null)
+		if ( this.mc.objectMouseOver != null )
 		{
-			/* If the MOV is targeting a block, */
-			if (mov.typeOfHit == Type.BLOCK && mov.getBlockPos() != null && mov.getBlockPos() != BlockPos.ORIGIN)
-			{
-
-				if (this.swingThroughGrass(mov.getBlockPos()))
-				{
-					/* Get a new MOV after the grass or plant has been broken */
-					mov = this.getMainhandMouseover();
-				}
-
-			}
-
-			/* If the MOV is targeting an entity AND if it is a player, can it be PVPd */
-			if (mov.entityHit != null && this.canPVP(mov.entityHit, this.mc.player))
-			{
-				/* HIT! Send an attack packet with a target! */
-				PacketHandler.instance.sendToServer(new PacketMainhandAttack(mov.entityHit.getEntityId()));
-				return;
-			}
-
-		}
-		else if ( this.mc.objectMouseOver != null )
-		{
-			mov = this.mc.objectMouseOver;
-
 			/* If the MAINHAND item can interact with that block, */
-			if ( mov.typeOfHit.equals(Type.BLOCK) && mov.getBlockPos() != null && mov.getBlockPos() != BlockPos.ORIGIN && this.toolCanInteractWithBlock(this.itemStackMainhand.getItem()))
+			if ( this.mc.objectMouseOver.typeOfHit == Type.BLOCK && this.mc.objectMouseOver.getBlockPos() != null && this.mc.objectMouseOver.getBlockPos() != BlockPos.ORIGIN )
 			{
-				if (this.itemStackMainhand.getItem().onItemUse(this.mc.player, this.mc.player.world, mov.getBlockPos(), EnumHand.MAIN_HAND, mov.sideHit, 0.0F, 0.0F, 0.0F) == EnumActionResult.SUCCESS)
+				if ( this.toolCanInteractWithBlock(this.itemStackMainhand.getItem()) && this.itemStackMainhand.getItem().onItemUse(this.mc.player, this.mc.player.world, this.mc.objectMouseOver.getBlockPos(), EnumHand.MAIN_HAND, this.mc.objectMouseOver.sideHit, 0.0F, 0.0F, 0.0F) == EnumActionResult.SUCCESS )
 				{
 					/* HIT! Send a packet that uses the item on the block! */
-					PacketHandler.instance.sendToServer(new PacketOnItemUse(mov.getBlockPos().getX(), mov.getBlockPos().getY(), mov.getBlockPos().getZ(), true, mov.sideHit));
+					PacketHandler.instance.sendToServer(new PacketOnItemUse(this.mc.objectMouseOver.getBlockPos().getX(), this.mc.objectMouseOver.getBlockPos().getY(), this.mc.objectMouseOver.getBlockPos().getZ(), true, this.mc.objectMouseOver.sideHit));
 					return;
 				}
-
+				else
+				{
+					this.swingThroughGrass(this.mc.objectMouseOver.getBlockPos());
+				}
 			}
-
 		}
+		
+		RayTraceResult mov = this.getMainhandMouseover();
+
+		/* If, the MOV is not null AND has an entity AND if it is a player, can it be PVPd */
+		if ( mov != null && mov.entityHit != null && this.canPVP(mov.entityHit, this.mc.player) )
+		{
+			if ( this.checkParent(mov.entityHit) )
+			{
+				mov.entityHit = this.getParent(mov.entityHit);
+			}
+			
+			/* HIT! Send an attack packet with a target! */
+			PacketHandler.instance.sendToServer(new PacketMainhandAttack(mov.entityHit.getEntityId()));
+			return;
+		}
+		else 
 
 		/* MISS! Send an attack packet with NO target! */
 		PacketHandler.instance.sendToServer(new PacketMainhandAttack());
 		return;
 	}
+	    
+    public boolean checkParent(Entity entity)
+    {
+    	if ( CommonProxy.partEntityClass != null )
+    	{
+		    /* mov.entityHit is an instance of the PartEntity or its subclass */
+        	return CommonProxy.partEntityClass.isInstance(entity);
+    	}
+    	
+    	return false;
+    }
+
+	public EntityLiving getParent(Object partEntity)
+    {
+        try
+        {
+            Field field = CommonProxy.partEntityClass.getDeclaredField("parent");
+
+            field.setAccessible(true);
+
+            Object fieldValue = field.get(partEntity);
+
+            return (EntityLiving)fieldValue;
+        }
+        catch (Exception e)
+        {
+        	
+        }
+        
+		return null;
+    }
 
 	private boolean toolCanInteractWithBlock(Item item)
 	{
 		return (ConfigurationHandler.tillingRequiresAnimation && item instanceof ItemHoe) || (ConfigurationHandler.grassPathingRequiresAnimation && item instanceof ItemSpade) || (ConfigurationHandler.strippingBarkRequiresAnimation && item instanceof ItemAxe);
 	}
 
-	private RayTraceResult getMainhandMouseover()
+	/* Returns null if there is no mouseover entity */
+	private @Nullable RayTraceResult getMainhandMouseover()
 	{
 		return this.getMouseOverExtended(this.mc.player, Helpers.getMainhandReach(this.mc.player, this.betterCombatMainhand.getAdditionalReach()), this.getExtraSweepWidth(this.betterCombatMainhand.getSweep()));
+	}
+	
+	/* Returns true if there is a mouseover entity */
+	private boolean mainhandMouseoverHasEntity()
+	{
+		return this.getMouseOverExtended(this.mc.player, Helpers.getMainhandReach(this.mc.player, this.betterCombatMainhand.getAdditionalReach()), this.getExtraSweepWidth(this.betterCombatMainhand.getSweep()) + 1.0F) != null;
 	}
 
 	public float getExtraSweepWidth(int sweep)
@@ -448,58 +400,51 @@ public class EventHandlersClient
 	 * =============================================================================
 	 * =========================================================================
 	 */
-
+	
 	public void offhandAttack()
 	{
-		RayTraceResult mov = this.getOffhandMouseover();
-
-		if (mov != null)
+		if ( this.mc.objectMouseOver != null )
 		{
-
-			if (mov.typeOfHit == Type.BLOCK && mov.getBlockPos() != null && mov.getBlockPos() != BlockPos.ORIGIN)
+			/* If the OFFHAND item can interact with that block, */
+			if ( this.mc.objectMouseOver.typeOfHit == Type.BLOCK && this.mc.objectMouseOver.getBlockPos() != null && this.mc.objectMouseOver.getBlockPos() != BlockPos.ORIGIN )
 			{
-
-				if (this.swingThroughGrass(mov.getBlockPos()))
+				if ( this.toolCanInteractWithBlock(this.itemStackOffhand.getItem()) && this.itemStackOffhand.getItem().onItemUse(this.mc.player, this.mc.player.world, this.mc.objectMouseOver.getBlockPos(), EnumHand.OFF_HAND, this.mc.objectMouseOver.sideHit, 0.0F, 0.0F, 0.0F) == EnumActionResult.SUCCESS )
 				{
-					/* Get a new MOV after the grass or plant has been broken */
-					mov = this.getOffhandMouseover();
-				}
-
-			}
-
-			if (mov != null && mov.entityHit != null && this.canPVP(mov.entityHit, this.mc.player) && ConfigurationHandler.rightClickAttackable(this.mc.player, mov.entityHit))
-			{
-
-				if (this.itemStackOffhand.getItem() instanceof ItemShield)
-				{
-					PacketHandler.instance.sendToServer(new PacketShieldBash(mov.entityHit.getEntityId()));
+					/* HIT! Send a packet that uses the item on the block! */
+					PacketHandler.instance.sendToServer(new PacketOnItemUse(this.mc.objectMouseOver.getBlockPos().getX(), this.mc.objectMouseOver.getBlockPos().getY(), this.mc.objectMouseOver.getBlockPos().getZ(), false, this.mc.objectMouseOver.sideHit));
 					return;
 				}
 				else
 				{
-					PacketHandler.instance.sendToServer(new PacketOffhandAttack(mov.entityHit.getEntityId()));
-					return;
+					this.swingThroughGrass(this.mc.objectMouseOver.getBlockPos());
 				}
-
 			}
-
 		}
-		else if ( this.mc.objectMouseOver != null )
+		
+		RayTraceResult mov = this.getOffhandMouseover();
+		
+		/* If, the MOV is not null AND has an entity AND if it is a player, can it be PVPd */
+		if ( mov != null && mov.entityHit != null && this.canPVP(mov.entityHit, this.mc.player) && ConfigurationHandler.rightClickAttackable(this.mc.player, mov.entityHit) )
 		{
-			mov = this.mc.objectMouseOver;
-
-			if ( this.toolCanInteractWithBlock(this.itemStackOffhand.getItem()) )
+			if ( this.checkParent(mov.entityHit) )
 			{
-				if ( mov.typeOfHit.equals(Type.BLOCK) && mov.getBlockPos() != null && mov.getBlockPos() != BlockPos.ORIGIN && this.itemStackOffhand.getItem().onItemUse(this.mc.player, this.mc.player.world, mov.getBlockPos(), EnumHand.OFF_HAND, mov.sideHit, 0.0F, 0.0F, 0.0F) == EnumActionResult.SUCCESS)
-				{
-					PacketHandler.instance.sendToServer(new PacketOnItemUse(mov.getBlockPos().getX(), mov.getBlockPos().getY(), mov.getBlockPos().getZ(), false, mov.sideHit));
-					return;
-				}
-
+				mov.entityHit = this.getParent(mov.entityHit);
 			}
-
+			
+			if ( this.itemStackOffhand.getItem() instanceof ItemShield )
+			{
+				/* HIT! Send an shield bash packet with a target! */
+				PacketHandler.instance.sendToServer(new PacketShieldBash(mov.entityHit.getEntityId()));
+				return;
+			}
+			else
+			{
+				/* HIT! Send an attack packet with a target! */
+				PacketHandler.instance.sendToServer(new PacketOffhandAttack(mov.entityHit.getEntityId()));
+				return;
+			}
 		}
-
+		
 		if (this.itemStackOffhand.getItem() instanceof ItemShield)
 		{
 			PacketHandler.instance.sendToServer(new PacketShieldBash());
@@ -510,12 +455,18 @@ public class EventHandlersClient
 			PacketHandler.instance.sendToServer(new PacketOffhandAttack());
 			return;
 		}
-
 	}
 
-	private RayTraceResult getOffhandMouseover()
+	/* Returns null if there is no mouseover entity */
+	private @Nullable RayTraceResult getOffhandMouseover()
 	{
 		return getMouseOverExtended(this.mc.player, Helpers.getOffhandReach(this.mc.player, this.betterCombatOffhand.getAdditionalReach(), this.itemStackOffhand, this.itemStackMainhand), this.getExtraSweepWidth(this.betterCombatOffhand.getSweep()));
+	}
+	
+	/* Returns true if there is a mouseover entity */
+	private boolean offhandMouseoverHasEntity()
+	{
+		return getMouseOverExtended(this.mc.player, Helpers.getOffhandReach(this.mc.player, this.betterCombatOffhand.getAdditionalReach(), this.itemStackOffhand, this.itemStackMainhand), this.getExtraSweepWidth(this.betterCombatOffhand.getSweep()) + 1.0F) != null;
 	}
 
 	/*
@@ -538,7 +489,6 @@ public class EventHandlersClient
 
 	private boolean swingThroughGrass(BlockPos pos)
 	{
-
 		if (pos == null)
 		{
 			return false;
@@ -557,7 +507,7 @@ public class EventHandlersClient
 				pos = pos.up();
 				block = this.mc.player.world.getBlockState(pos).getBlock();
 
-				if (pos != null && (block instanceof IPlantable || block instanceof IShearable))
+				if (pos != null && (block instanceof IPlantable) ) // || block instanceof IShearable))
 				{
 					PacketHandler.instance.sendToServer(new PacketBreakBlock(pos.getX(), pos.getY(), pos.getZ()));
 				}
@@ -574,32 +524,6 @@ public class EventHandlersClient
 
 		return false;
 	}
-
-	/*
-	 * =============================================================================
-	 * =========================================================================
-	 */
-	/*
-	 * =============================================================================
-	 * =========================================================================
-	 */
-	/* RIGHT CLICK - MAIN HAND */
-	/*
-	 * =============================================================================
-	 * =========================================================================
-	 */
-	/*
-	 * =============================================================================
-	 * =========================================================================
-	 */
-
-//	if ( !this.rightClickMouse(EnumHand.MAIN_HAND) && this.rightClickMouse(EnumHand.OFF_HAND) )
-//	{
-//		if ( this.itemStackMainhand.useItemRightClick(this.mc.player.world, this.mc.player, EnumHand.MAIN_HAND).getType() == EnumActionResult.FAIL )
-//		{
-//			this.itemStackMainhand.useItemRightClick(this.mc.player.world, this.mc.player, EnumHand.MAIN_HAND);
-//		}
-//	}
 
 	/*
 	 * Return TRUE to overwrite/cancel the default click Return FALSE to use the
@@ -619,7 +543,7 @@ public class EventHandlersClient
 		/* Check to see if the ItemStacks have changed */
 		this.checkItemstacksChanged(false);
 
-		RayTraceResult mov = mc.objectMouseOver;
+		RayTraceResult mov = this.mc.objectMouseOver;
 
 		if ( mov == null )
 		{
@@ -632,30 +556,31 @@ public class EventHandlersClient
 			/* Continue with left-click! */
 			return false;
 		}
-
+		
 		/*
 		 * If the MAINHAND has a TWOHAND weapon, prevent placing blocks, but use the item
 		 */
-		if (this.itemStackMainhand.getItemUseAction() == EnumAction.NONE && this.betterCombatMainhand.getWeaponProperty() == WeaponProperty.TWOHAND)
+		if ( this.betterCombatMainhand.getWeaponProperty() == WeaponProperty.TWOHAND )
 		{
-			/* Only use the MAINHAND */
-			if (this.rightClickMouse(EnumHand.MAIN_HAND))
-			{
-				/* Cancel right-click! */
-				return true;
+			if ( this.itemStackMainhand.getItemUseAction() == EnumAction.NONE )
+			{			
+				/* Only use the MAINHAND */
+				if ( this.rightClickMouse(EnumHand.MAIN_HAND) )
+				{
+					
+				}
+				else if ( this.canParry(false) )
+				{
+					this.parrying = true;
+				}
 			}
-			else if (this.canParry(false))
-			{
-				this.parrying = true;
-
-				/* Continue with right-click! */
-				return false;
-			}
-
+			
+			Reflections.setRightClickDelayTimer(this.mc, 2);
+			
 			/* Cancel right-click! */
 			return true;
 		}
-
+		
 		/* If the OFFHAND has a TWOHAND or MAINHAND weapon, */
 		if (this.betterCombatOffhand.getWeaponProperty() == WeaponProperty.TWOHAND || this.betterCombatOffhand.getWeaponProperty() == WeaponProperty.MAINHAND)
 		{
@@ -677,16 +602,35 @@ public class EventHandlersClient
 					/* Cancel right-click! */
 					return true;
 				}
-
 			}
 
-			/* Only use the MAINHAND item */
-			this.rightClickMouse(EnumHand.MAIN_HAND);
-
+			if ( this.itemStackMainhand.getItemUseAction() == EnumAction.NONE )
+			{			
+				/* Only use the MAINHAND */
+				if ( this.rightClickMouse(EnumHand.MAIN_HAND) )
+				{
+					
+				}
+				else if ( this.canParry(false) )
+				{
+					this.parrying = true;
+				}
+			}
+			else
+			{
+				if ( this.rightClickMouse(EnumHand.MAIN_HAND) )
+				{
+					/* Cancel right-click, but use the item still! */
+					return true;
+				}
+			}
+			
+			Reflections.setRightClickDelayTimer(this.mc, 2);
+			
 			/* Cancel right-click! */
 			return true;
 		}
-
+		
 		/* If the MAINHAND has an action, OR if the OFFHAND has an action, */
 		if (this.itemStackMainhand.getItemUseAction() != EnumAction.NONE || this.itemStackOffhand.getItemUseAction() != EnumAction.NONE)
 		{
@@ -697,15 +641,14 @@ public class EventHandlersClient
 				{
 					this.sendStopActiveHandPacket();
 				}
-
 			}
 
 			/* Continue with right-click and use item! */
 			return false;
 		}
 
-		/* If targeting a block, */
-		if ( mov.typeOfHit == RayTraceResult.Type.BLOCK )
+		/* If targeting a block, and not targeting any entity */
+		if ( mov.typeOfHit == RayTraceResult.Type.BLOCK && !this.offhandMouseoverHasEntity() )
 		{
 			BlockPos pos = mov.getBlockPos();
 
@@ -719,10 +662,13 @@ public class EventHandlersClient
 			Block block = this.mc.player.world.getBlockState(pos).getBlock();
 
 			/* If the block is a PLANT and the MAINHAND OR OFFHAND has a HOE, */
-			if ( (block instanceof IPlantable || block instanceof IShearable) && (this.itemStackMainhand.getItem() instanceof ItemHoe || this.itemStackOffhand.getItem() instanceof ItemHoe) )
+			if ( (block instanceof IPlantable || block instanceof IShearable) && (this.betterCombatOffhand.hasCustomWeapon() || (this.itemStackMainhand.getItem() instanceof ItemHoe || this.itemStackOffhand.getItem() instanceof ItemHoe) ) )
 			{
-				/* Continue with right-click, using the HOE on the PLANT! */
-				return false;
+				if ( this.itemStackMainhand.getItem() instanceof ItemHoe || this.itemStackOffhand.getItem() instanceof ItemHoe )
+				{
+					/* Due to other mods, continue with right-click, using the HOE on the PLANT! */
+					return false;
+				}
 			}
 			/*
 			 * Otherwise, if the player can interact with any hand,
@@ -751,8 +697,8 @@ public class EventHandlersClient
 			}
 
 		}
-		/* Otherwise, if there is no entity hit and there are no weapons */
-		else if ( mov.entityHit == null && !this.betterCombatMainhand.hasCustomWeapon() && !this.betterCombatOffhand.hasCustomWeapon() )
+		/* Otherwise, if there are no equipped weapons */
+		else if ( !this.betterCombatMainhand.hasCustomWeapon() && !this.betterCombatOffhand.hasCustomWeapon() )
 		{
 			/* Continue with right-click! */
 			return false;
@@ -963,7 +909,6 @@ public class EventHandlersClient
 	/* Initiate the right click attack, prepares offhandAttack */
 	private boolean rightClick(EntityPlayerSP player)
 	{
-
 		if (this.betterCombatOffhand.hasCustomWeapon())
 		{
 			/*
@@ -991,22 +936,19 @@ public class EventHandlersClient
 
 	private boolean rightClickMouse(EnumHand enumhand)
 	{
+		// System.out.println("rclick 1");
+
 		if ( Reflections.getRightClickDelayTimer(this.mc) > 0 )
 		{
-			return false;
+			return true;
 		}
 		
+		// System.out.println("rclick 2");
+
 		if (!this.mc.playerController.getIsHittingBlock())
 		{
-			Reflections.setRightClickDelayTimer(this.mc, 4);
-
 			if (!this.mc.player.isRowingBoat())
 			{
-				if (this.mc.objectMouseOver == null)
-				{
-					return false;
-				}
-
 				ItemStack itemstack = this.mc.player.getHeldItem(enumhand);
 
 				if (this.mc.objectMouseOver != null)
@@ -1018,11 +960,15 @@ public class EventHandlersClient
 
 							if (this.mc.playerController.interactWithEntity(this.mc.player, this.mc.objectMouseOver.entityHit, this.mc.objectMouseOver, enumhand) == EnumActionResult.SUCCESS)
 							{
+								// System.out.println("interactWithEntity");
+								Reflections.setRightClickDelayTimer(this.mc, 4);
 								return true;
 							}
 
 							if (this.mc.playerController.interactWithEntity(this.mc.player, this.mc.objectMouseOver.entityHit, enumhand) == EnumActionResult.SUCCESS)
 							{
+								// System.out.println("interactWithEntity 2");
+								Reflections.setRightClickDelayTimer(this.mc, 4);
 								return true;
 							}
 
@@ -1040,6 +986,8 @@ public class EventHandlersClient
 
 								if (this.toolCanInteractWithBlock(itemstack.getItem()))
 								{
+									// System.out.println("toolCanInteractWithBlock");
+
 									return false;
 								}
 								else
@@ -1053,9 +1001,14 @@ public class EventHandlersClient
 
 									if (!itemstack.isEmpty() && (itemstack.getCount() != i || this.mc.playerController.isInCreativeMode()))
 									{
+										// System.out.println("resetEquippedProgress");
+
 										this.mc.entityRenderer.itemRenderer.resetEquippedProgress(enumhand);
 									}
 
+									// System.out.println("processRightClickBlock");
+
+									Reflections.setRightClickDelayTimer(this.mc, 4);
 									return true;
 								}
 
@@ -1074,18 +1027,26 @@ public class EventHandlersClient
 				if (itemstack.isEmpty() && (this.mc.objectMouseOver == null || this.mc.objectMouseOver.typeOfHit == RayTraceResult.Type.MISS))
 				{
 					net.minecraftforge.common.ForgeHooks.onEmptyClick(this.mc.player, enumhand);
+					
+					// System.out.println("onEmptyClick");
+					Reflections.setRightClickDelayTimer(this.mc, 4);
 					return true;
 				}
 
 				if (!itemstack.isEmpty() && this.mc.playerController.processRightClick(this.mc.player, this.mc.world, enumhand) == EnumActionResult.SUCCESS)
 				{
 					this.mc.entityRenderer.itemRenderer.resetEquippedProgress(enumhand);
+					
+					// System.out.println("processRightClick");
+					Reflections.setRightClickDelayTimer(this.mc, 4);
 					return true;
 				}
 
 			}
 
 		}
+
+		// System.out.println("false");
 
 		return false;
 	}
@@ -1135,6 +1096,11 @@ public class EventHandlersClient
 				event.setResult(Result.DENY);
 				event.setCanceled(true);
 				
+				if ( Reflections.getRightClickDelayTimer(this.mc) <= 0 )
+				{
+					Reflections.setRightClickDelayTimer(this.mc, 4);
+				}
+				
 				/* Sets this.mc.gameSettings.keyBindUseItem.isKeyDown() to true */
 				KeyBinding.setKeyBindState(rightClick.getKeyCode(), true);
 			}
@@ -1152,9 +1118,6 @@ public class EventHandlersClient
 				
 				/* Sets this.mc.gameSettings.keyBindAttack.isKeyDown() to true */
 				KeyBinding.setKeyBindState(leftClick.getKeyCode(), true);
-				
-				/* When the player left-clicks, set startedMining to false */
-				this.startedMining = false;
 			}
 		}
 	}
@@ -1180,8 +1143,16 @@ public class EventHandlersClient
 				*/
 				
 				/* Cancel the vanilla right-click! */
+				if ( this.overwriteRightClick() )
+				{
+					if ( Reflections.getRightClickDelayTimer(this.mc) <= 0 )
+					{
+						Reflections.setRightClickDelayTimer(this.mc, 4);
+					}
+				}
+				
 				event.setResult(Result.DENY);
-				this.overwriteRightClick();
+				// Reflections.setRightClickDelayTimer(this.mc, 4); XXX
 			}
 		}
 
@@ -1198,8 +1169,9 @@ public class EventHandlersClient
 				
 				/* Cancel the vanilla left-click attack!
 				 * This stops the player from changing their keybind to bypass the MouseEvent to use a vanilla attack! */
+				this.overwriteLeftClick(true);
+				
 				event.setResult(Result.DENY);
-				this.overwriteLeftClick(false);
 			}
 		}
 	}
@@ -1259,6 +1231,11 @@ public class EventHandlersClient
 			if ( this.mc.gameSettings.keyBindAttack.isPressed() || this.mc.gameSettings.keyBindAttack.isKeyDown() )
 			{
 				this.overwriteLeftClick(true);
+			}
+			else
+			{
+				/* When the player left-clicks, set startedMining to false */
+				this.startedMining = false;
 			}
 
 			/* Lets the player hold down right-click */
@@ -1333,6 +1310,12 @@ public class EventHandlersClient
 			else if (this.betterCombatMainhand.equipSoundTimer > 0 && --this.betterCombatMainhand.equipSoundTimer <= 0)
 			{
 				this.mainhandEquipSound();
+				
+				/* Disable the offhand equip sound so they do not play at the same time, as it sounds off */
+				if ( this.betterCombatOffhand.equipSoundTimer == 1 )
+				{
+					this.betterCombatOffhand.equipSoundTimer = -1;
+				}
 			}
 
 			if (this.betterCombatOffhand.getSwingTimer() > 0)
@@ -1365,7 +1348,10 @@ public class EventHandlersClient
 			}
 			else if (this.betterCombatOffhand.equipSoundTimer > 0 && --this.betterCombatOffhand.equipSoundTimer <= 0)
 			{
-				this.offhandEquipSound();
+				if ( this.betterCombatOffhand.getWeaponProperty() != WeaponProperty.TWOHAND && this.betterCombatOffhand.getWeaponProperty() != WeaponProperty.MAINHAND )
+				{
+					this.offhandEquipSound();
+				}
 			}
 
 			if (this.mainhandCooldown > 0)
@@ -1415,25 +1401,28 @@ public class EventHandlersClient
 
 	public boolean checkItemstacksChanged(boolean force)
 	{
-		if (this.checkItemstackChangedOffhand(force))
+		boolean flag = false;
+		
+		if ( this.checkItemstackChangedOffhand(force) )
 		{
 			Reflections.unpressKey(this.mc.gameSettings.keyBindUseItem);
-
-			if (this.checkItemstackChangedMainhand(force))
+			
+			if ( this.checkItemstackChangedMainhand(force) )
 			{
 				Reflections.unpressKey(this.mc.gameSettings.keyBindAttack);
 			}
 
-			return true;
+			flag = true;
 		}
 
-		if (this.checkItemstackChangedMainhand(force))
+		if ( this.checkItemstackChangedMainhand(force) )
 		{
 			Reflections.unpressKey(this.mc.gameSettings.keyBindAttack);
-			return true;
+			
+			flag = true;
 		}
 
-		return false;
+		return flag;
 	}
 	
 //	public boolean checkItemstacksChanged(boolean force)
@@ -1452,7 +1441,7 @@ public class EventHandlersClient
 		if (force || !ItemStack.areItemsEqualIgnoreDurability(this.itemStackMainhand, this.mc.player.getHeldItemMainhand()) || !ItemStack.areItemStackTagsEqual(this.itemStackMainhand, this.mc.player.getHeldItemMainhand()))
 		{
 
-			if (!force && this.betterCombatMainhand.equipSoundTimer <= 0 && this.betterCombatMainhand.hasCustomWeapon())
+			if (!force && this.betterCombatMainhand.equipSoundTimer <= 0 && this.betterCombatOffhand.equipSoundTimer >= 0 && this.betterCombatMainhand.hasCustomWeapon())
 			{
 				SoundHandler.playSheatheSoundRight(this.mc.player, this.betterCombatMainhand, this.itemStackMainhand, this.mainhandAttackCooldown, Helpers.isMetal(this.itemStackMainhand));
 			}
@@ -1493,6 +1482,7 @@ public class EventHandlersClient
 			this.resetMainhandCooldown(this.mc.player);
 
 			this.parrying = false;
+			PacketHandler.instance.sendToServer(new PacketParrying(false));
 
 			this.betterCombatMainhand.resetBetterCombatWeapon();
 
@@ -1542,6 +1532,9 @@ public class EventHandlersClient
 			if (!force && this.betterCombatOffhand.equipSoundTimer <= 0 && this.betterCombatOffhand.hasCustomWeapon())
 			{
 				SoundHandler.playSheatheSoundLeft(this.mc.player, this.betterCombatOffhand, this.itemStackOffhand, this.offhandAttackCooldown, Helpers.isMetal(this.itemStackOffhand));
+				
+				/* Set the offhand equip sound to disabled so they do not play at the same time, as it sounds off */
+				this.betterCombatOffhand.equipSoundTimer = -1;
 			}
 
 			/* Swap */
@@ -1551,7 +1544,8 @@ public class EventHandlersClient
 
 			this.resetOffhandCooldown(this.mc.player);
 
-			this.parrying = false;
+//			this.parrying = false;
+//			PacketHandler.instance.sendToServer(new PacketParrying(false));
 
 			this.betterCombatOffhand.resetBetterCombatWeapon();
 
@@ -1657,7 +1651,7 @@ public class EventHandlersClient
 	{
 		this.mainhandAttackCooldown = Helpers.getMainhandCooldown(player, this.itemStackMainhand, this.itemStackOffhand);
 
-		// this.mc.player.sendChatMessage(""+this.mainhandAttackCooldown);
+		// this.mc.player.sendChatMessage(EMPTY+this.mainhandAttackCooldown);
 
 		if (this.mainhandAttackCooldown < ConfigurationHandler.minimumAttackSpeedTicks)
 		{
@@ -1673,7 +1667,7 @@ public class EventHandlersClient
 	{
 		this.offhandAttackCooldown = Helpers.getOffhandCooldown(player, this.itemStackOffhand, this.itemStackMainhand);
 
-		// this.mc.player.sendChatMessage(""+this.offhandAttackCooldown);
+		// this.mc.player.sendChatMessage(EMPTY+this.offhandAttackCooldown);
 
 		if (this.offhandAttackCooldown < ConfigurationHandler.minimumAttackSpeedTicks)
 		{
@@ -1725,11 +1719,11 @@ public class EventHandlersClient
 
 				if (event.getItemStack().getItem().equals(s.shield))
 				{
-					event.getToolTip().add("");
+					event.getToolTip().add(EMPTY);
 					event.getToolTip().add(I18n.format("bettercombat.info.property.offhand.text"));
-					event.getToolTip().add(" " + I18n.format("bettercombat.info.attribute.color") + s.damage + I18n.format("bettercombat.info.bash.damage.text"));
-					event.getToolTip().add(" " + I18n.format("bettercombat.info.attribute.color") + s.knockback + I18n.format("bettercombat.info.bash.knockback.text"));
-					event.getToolTip().add(" " + I18n.format("bettercombat.info.attribute.color") + s.cooldown + I18n.format("bettercombat.info.bash.cooldown.text"));
+					event.getToolTip().add(BLANK_SPACE + I18n.format("bettercombat.info.attribute.color") + s.damage + I18n.format("bettercombat.info.bash.damage.text"));
+					event.getToolTip().add(BLANK_SPACE + I18n.format("bettercombat.info.attribute.color") + s.knockback + I18n.format("bettercombat.info.bash.knockback.text"));
+					event.getToolTip().add(BLANK_SPACE + I18n.format("bettercombat.info.attribute.color") + s.cooldown + I18n.format("bettercombat.info.bash.cooldown.text"));
 					return;
 				}
 
@@ -1742,25 +1736,12 @@ public class EventHandlersClient
 	@SubscribeEvent(priority = EventPriority.LOWEST, receiveCanceled = true)
 	public void itemTooltipEventLow(ItemTooltipEvent event)
 	{
+		this.removeDuplicateBlankTooltips(event);
 
-		if (ConfigurationHandler.isItemClassWhiteList(event.getItemStack().getItem()))
-		{
-
-			for (CustomWeapon s : ConfigurationHandler.weapons)
-			{
-
-				if (Helpers.getString(event.getItemStack()).contains(s.name))
-				{
-					this.updateBetterCombatTooltipLow(s, event);
-					return;
-				}
-
-			}
-
-			this.updateBetterCombatTooltipLow(ConfigurationHandler.DEFAULT_CUSTOM_WEAPON, event);
-			return;
-		}
-
+//		if ( ConfigurationHandler.isItemClassWhiteList(event.getItemStack().getItem()) )
+//		{
+//			
+//		}
 	}
 
 	public static final String attackSpeedString   = I18n.format("attribute.name.generic.attackSpeed");
@@ -1768,68 +1749,163 @@ public class EventHandlersClient
 
 	public static final String ATTACK_SPEED_REGEX  = "(([0-9]+\\.*[0-9]*)( *" + attackSpeedString + "))";
 	public static final String ATTACK_DAMAGE_REGEX = "(([0-9]+\\.*[0-9]*)( *" + attackDamageString + "))";
-
-	private void updateBetterCombatTooltipLow(CustomWeapon s, ItemTooltipEvent event)
+	
+//	public final String twoHandedString = this.getTwoHandedString();
+//	
+//	private String getTwoHandedString()
+//	{
+//		String tooltip = I18n.format("tooltip.spartanweaponry:two_handed");
+//		
+//		try
+//		{
+//			return (tooltip.substring(0, tooltip.indexOf(BLANK_SPACE)).concat("I"));
+//		}
+//		catch ( Exception e )
+//		{
+//			return tooltip;
+//		}
+//	}
+//	
+//	public final String sweepString = I18n.format("tooltip.spartanweaponry:sweep_damage");
+//	public final String sweepDescString = I18n.format("tooltip.spartanweaponry:sweep_damage.desc");
+//	public final String reachString = I18n.format("tooltip.spartanweaponry:reach");
+//	public final String reachDescString = I18n.format("tooltip.spartanweaponry:reach.desc");
+//
+//
+	
+	private void removeDuplicateBlankTooltips(ItemTooltipEvent event)
 	{
-		String twoHandedString = I18n.format("tooltip.Customweaponry:two_handed");
-		int twoHandedStringIndex = -1;
+	    List<String> nonBlankTooltips = new ArrayList<>();
 
-		String sweepString = I18n.format("tooltip.Customweaponry:sweep_damage");
-		int sweepStringIndex = -1;
+	    boolean flag = false;
+	    
+	    for ( String tag : event.getToolTip() )
+	    {
+	        if ( tag.isEmpty() )
+	        {
+	        	if ( !flag )
+    	        {
+    	            nonBlankTooltips.add(tag);
+    	        }
+	        	
+	        	flag = true;
+	        }
+	        else
+	        {
+	            nonBlankTooltips.add(tag);
+	        }
+	    }
 
-		String reachString = I18n.format("tooltip.Customweaponry:reach");
-		int reachStringIndex = -1;
-
-		int qualityToolsMainhandIndex = -1;
-
-		int i = 0;
-
-		for (String tag : event.getToolTip())
-		{
-
-			if (twoHandedStringIndex < 0 && tag.contains(twoHandedString))
-			{
-				twoHandedStringIndex = i;
-			}
-			else if (reachStringIndex < 0 && tag.contains(reachString))
-			{
-				reachStringIndex = i;
-			}
-			else if (sweepStringIndex < 0 && tag.contains(sweepString))
-			{
-				sweepStringIndex = i;
-			}
-
-			i++;
-		}
-
-		i = 0;
-
-		/* REMOVE WEAPONRY FATIGUE TAG */
-		if (twoHandedStringIndex >= 0)
-		{
-			event.getToolTip().remove(twoHandedStringIndex - i++);
-		}
-
-		/* REMOVE QUALITYTOOLS WHEN IN MAIN HAND TAG */
-		if (qualityToolsMainhandIndex >= 0)
-		{
-			event.getToolTip().remove(qualityToolsMainhandIndex - i++);
-		}
-
-		/* REMOVE Custom REACH */
-		if (reachStringIndex >= 0)
-		{
-			event.getToolTip().remove(reachStringIndex - i++);
-		}
-
-		/* REMOVE Custom SWEEP */
-		if (sweepStringIndex >= 0)
-		{
-			event.getToolTip().remove(reachStringIndex - i++);
-		}
-
+	    event.getToolTip().clear();
+	    event.getToolTip().addAll(nonBlankTooltips);
 	}
+	
+//	private void updateBetterCombatTooltipLow(ItemTooltipEvent event)
+//	{
+//		if ( !ConfigurationHandler.removeRedundantSpartanWeaponryTooltips )
+//		{
+//			return;
+//		}
+//		
+//		int twoHandedStringIndex = -1;
+//		
+//		String twoHandedDescString = I18n.format("tooltip.spartanweaponry:two_handed.desc");
+//		int twoHandedDescStringIndex = -1;
+//
+//		
+//		int sweepStringIndex = -1;
+//		
+//		int sweepDescStringIndex = -1;
+//
+//		
+//		int reachStringIndex = -1;
+//		
+//		int reachDescStringIndex = -1;
+//
+////			String qualityToolsMainhand = I18n.format(BLANK_SPACE);
+////			int qualityToolsMainhandIndex = -1;
+//
+//		int i = 0;
+//
+//		for (String tag : event.getToolTip())
+//		{
+//			try{event.getEntityPlayer().sendMessage(new TextComponentString(tag));}catch(Exception e ){}
+//			
+//			if (twoHandedStringIndex < 0 && tag.contains(twoHandedString))
+//			{
+//				twoHandedStringIndex = i;
+//			}
+//			else if (twoHandedDescStringIndex < 0 && tag.contains(twoHandedDescString))
+//			{
+//				twoHandedDescStringIndex = i;
+//			}
+//			else if (reachStringIndex < 0 && tag.contains(reachString))
+//			{
+//				reachStringIndex = i;
+//			}
+//			else if (reachDescStringIndex < 0 && tag.contains(reachDescString))
+//			{
+//				reachDescStringIndex = i;
+//			}
+//			else if (sweepStringIndex < 0 && tag.contains(sweepString))
+//			{
+//				sweepStringIndex = i;
+//			}
+//			else if (sweepDescStringIndex < 0 && tag.contains(sweepDescString))
+//			{
+//				sweepDescStringIndex = i;
+//			}
+//
+//			i++;
+//		}
+//
+//		i = 0;
+//		
+////			/* REMOVE QUALITYTOOLS WHEN IN MAIN HAND TAG */
+////			if (qualityToolsMainhandIndex >= 0)
+////			{
+////				event.getToolTip().remove(qualityToolsMainhandIndex - i++);
+////			}
+//		
+//
+//		/* REMOVE WEAPONRY TWO-HANDED TAG */
+//		if (twoHandedStringIndex >= 0)
+//		{
+//			event.getToolTip().remove(twoHandedStringIndex - i++);
+//		}
+//		
+//		/* REMOVE WEAPONRY TWO-HANDED DESCRIPTION */
+//		if (twoHandedDescStringIndex >= 0)
+//		{
+//			event.getToolTip().remove(twoHandedDescStringIndex - i++);
+//		}
+//		
+//
+//		/* REMOVE CUSTOM REACH TAG */
+//		if (reachStringIndex >= 0)
+//		{
+//			event.getToolTip().remove(reachStringIndex - i++);
+//		}
+//		
+//		/* REMOVE CUSTOM REACH DESCRIPTION */
+//		if (reachDescStringIndex >= 0)
+//		{
+//			event.getToolTip().remove(reachDescStringIndex - i++);
+//		}
+//		
+//
+//		/* REMOVE CUSTOM SWEEP TAG */
+//		if (sweepStringIndex >= 0)
+//		{
+//			event.getToolTip().remove(reachStringIndex - i++);
+//		}
+//
+//		/* REMOVE CUSTOM SWEEP DESCRIPTION */
+//		if (sweepDescStringIndex >= 0)
+//		{
+//			event.getToolTip().remove(reachDescStringIndex - i++);
+//		}
+//	}
 
 	private void updateBetterCombatTooltipHigh(CustomWeapon s, ItemTooltipEvent event)
 	{
@@ -1847,7 +1923,7 @@ public class EventHandlersClient
 
 			if (ConfigurationHandler.showKnockbackTooltipAsTotal)
 			{
-				event.getToolTip().add(" " + I18n.format("bettercombat.info.attribute.color") + s.knockbackMod + I18n.format("bettercombat.info.knockback.text"));
+				event.getToolTip().add(BLANK_SPACE + I18n.format("bettercombat.info.attribute.color") + s.knockbackMod + I18n.format("bettercombat.info.knockback.text"));
 			}
 
 		}
@@ -1858,18 +1934,18 @@ public class EventHandlersClient
 
 			if (ConfigurationHandler.showReachTooltipAsTotal)
 			{
-				event.getToolTip().add(" " + I18n.format("bettercombat.info.attribute.color") + (s.additionalReachMod + Helpers.getBaseReach(this.mc.player)) + I18n.format("bettercombat.info.reachDistance.text"));
+				event.getToolTip().add(BLANK_SPACE + I18n.format("bettercombat.info.attribute.color") + (s.additionalReachMod + Helpers.getBaseReach(this.mc.player)) + I18n.format("bettercombat.info.reachDistance.text"));
 			}
 
 		}
 
 		/* Crit Chance */
-		if (ConfigurationHandler.showCritChanceTooltip)
+		if (ConfigurationHandler.showCritChanceTooltip && ConfigurationHandler.baseCritPercentChance >= 0.0D )
 		{
 
 			if (ConfigurationHandler.showCritChanceTooltipAsTotal)
 			{
-				event.getToolTip().add(" " + I18n.format("bettercombat.info.attribute.color") + (int) (s.critChanceMod * 100) + "%" + I18n.format("bettercombat.info.critChance.text"));
+				event.getToolTip().add(BLANK_SPACE + I18n.format("bettercombat.info.attribute.color") + (int) (s.critChanceMod * 100) + "%" + I18n.format("bettercombat.info.critChance.text"));
 			}
 
 		}
@@ -1880,7 +1956,7 @@ public class EventHandlersClient
 
 			if (ConfigurationHandler.showCritDamageTooltipAsTotal)
 			{
-				event.getToolTip().add(" " + I18n.format("bettercombat.info.attribute.color") + (int) ((s.additionalCritDamageMod + ConfigurationHandler.baseCritPercentDamage) * 100) + "%" + I18n.format("bettercombat.info.critDamage.text"));
+				event.getToolTip().add(BLANK_SPACE + I18n.format("bettercombat.info.attribute.color") + (int) ((s.additionalCritDamageMod + ConfigurationHandler.baseCritPercentDamage) * 100) + "%" + I18n.format("bettercombat.info.critDamage.text"));
 			}
 
 		}
@@ -1932,7 +2008,7 @@ public class EventHandlersClient
 								if (matcher.find())
 								{
 									formattedAttackSpeed = true;
-									event.getToolTip().set(i, " " + I18n.format("bettercombat.info.attribute.color") + String.format("%.1f", (sword.attackSpeed + Double.parseDouble(matcher.group(2)))) + " " + attackSpeedString);
+									event.getToolTip().set(i, BLANK_SPACE + I18n.format("bettercombat.info.attribute.color") + String.format("%.1f", (sword.attackSpeed + Double.parseDouble(matcher.group(2)))) + BLANK_SPACE + attackSpeedString);
 								}
 
 							}
@@ -2021,7 +2097,9 @@ public class EventHandlersClient
 			if (!ConfigurationHandler.showKnockbackTooltipAsTotal && s.knockbackMod != ConfigurationHandler.baseKnockback)
 			{
 				if (!flag)
-					event.getToolTip().add("");
+				{
+					event.getToolTip().add(EMPTY);
+				}
 				event.getToolTip().add((s.knockbackMod > ConfigurationHandler.baseKnockback ? I18n.format("bettercombat.info.positive.color") : I18n.format("bettercombat.info.negative.color")) + (s.knockbackMod - ConfigurationHandler.baseKnockback) + I18n.format("bettercombat.info.knockback.text"));
 				flag = true;
 			}
@@ -2034,20 +2112,24 @@ public class EventHandlersClient
 			if ( !ConfigurationHandler.showReachTooltipAsTotal && s.additionalReachMod != 0.0D )
 			{
 				if (!flag)
-					event.getToolTip().add("");
+				{
+					event.getToolTip().add(EMPTY);
+				}
 				event.getToolTip().add((s.additionalReachMod > 0.0D ? I18n.format("bettercombat.info.positive.color") : I18n.format("bettercombat.info.negative.color")) + s.additionalReachMod + I18n.format("bettercombat.info.reachDistance.text"));
 				flag = true;
 			}
 
 		}
 
-		if (ConfigurationHandler.showCritChanceTooltip)
+		if (ConfigurationHandler.showCritChanceTooltip && ConfigurationHandler.baseCritPercentChance >= 0.0D )
 		{
 
 			if (!ConfigurationHandler.showCritChanceTooltipAsTotal && s.critChanceMod != ConfigurationHandler.baseCritPercentChance)
 			{
 				if (!flag)
-					event.getToolTip().add("");
+				{
+					event.getToolTip().add(EMPTY);
+				}
 				event.getToolTip().add((s.critChanceMod > 0.0F ? I18n.format("bettercombat.info.positive.color") : I18n.format("bettercombat.info.negative.color")) + (int) ((s.critChanceMod - ConfigurationHandler.baseCritPercentChance) * 100) + "%" + I18n.format("bettercombat.info.critChance.text"));
 				flag = true;
 			}
@@ -2060,7 +2142,9 @@ public class EventHandlersClient
 			if (!ConfigurationHandler.showCritDamageTooltipAsTotal && s.additionalCritDamageMod != 0)
 			{
 				if (!flag)
-					event.getToolTip().add("");
+				{
+					event.getToolTip().add(EMPTY);
+				}
 				event.getToolTip().add((s.additionalCritDamageMod > 0.0F ? I18n.format("bettercombat.info.positive.color") : I18n.format("bettercombat.info.negative.color")) + (int) (s.additionalCritDamageMod * 100) + "%" + I18n.format("bettercombat.info.critDamage.text"));
 				flag = true;
 			}
@@ -2069,14 +2153,14 @@ public class EventHandlersClient
 
 		if (ConfigurationHandler.showSweepTooltip && s.sweepMod > 0)
 		{
-			event.getToolTip().add("");
+			event.getToolTip().add(EMPTY);
 			event.getToolTip().add(I18n.format("bettercombat.info.sweep.text") + Helpers.integerToRoman(s.sweepMod));
 			flag = true;
 		}
 
 		if (ConfigurationHandler.showPotionEffectTooltip && s.customWeaponPotionEffect != null)
 		{
-			event.getToolTip().add("");
+			event.getToolTip().add(EMPTY);
 
 			if (s.customWeaponPotionEffect.potionChance > 0.0F)
 			{
@@ -2093,14 +2177,14 @@ public class EventHandlersClient
 
 			if (seconds % 1 == 0)
 			{
-				str = (int) seconds + I18n.format("bettercombat.info.potionEffect.second.text") + ((int) seconds == 1 ? "" : "s");
+				str = (int) seconds + I18n.format("bettercombat.info.potionEffect.second.text") + ((int) seconds == 1 ? EMPTY : "s");
 			}
 			else
 			{
 				str = seconds + I18n.format("bettercombat.info.potionEffect.second.text");
 			}
 
-			event.getToolTip().add((s.customWeaponPotionEffect.afflict ? I18n.format("bettercombat.info.potionEffect.negative.text") : I18n.format("bettercombat.info.potionEffect.positive.text")) + I18n.format(s.customWeaponPotionEffect.getPotion().getName()) + " " + Helpers.integerToRoman(s.customWeaponPotionEffect.potionPower) + (s.customWeaponPotionEffect.potionDuration > 0 ? I18n.format("bettercombat.info.potionEffect.for.text") + str : ""));
+			event.getToolTip().add((s.customWeaponPotionEffect.afflict ? I18n.format("bettercombat.info.potionEffect.negative.text") : I18n.format("bettercombat.info.potionEffect.positive.text")) + I18n.format(s.customWeaponPotionEffect.getPotion().getName()) + BLANK_SPACE + Helpers.integerToRoman(s.customWeaponPotionEffect.potionPower) + (s.customWeaponPotionEffect.potionDuration > 0 ? I18n.format("bettercombat.info.potionEffect.for.text") + str : EMPTY));
 		}
 
 	}
@@ -2114,7 +2198,7 @@ public class EventHandlersClient
 
 			if (matcher.find())
 			{
-				event.getToolTip().set(i, " " + I18n.format("bettercombat.info.attribute.color") + String.format("%.1f", (Double.parseDouble(matcher.group(2)))) + " " + s);
+				event.getToolTip().set(i, BLANK_SPACE + I18n.format("bettercombat.info.attribute.color") + String.format("%.1f", (Double.parseDouble(matcher.group(2)))) + BLANK_SPACE + s);
 			}
 
 		}
@@ -2155,7 +2239,7 @@ public class EventHandlersClient
 	}
 
 	/* EntityRenderer.getMouseOver() */
-	public RayTraceResult getMouseOverExtended(EntityPlayerSP player, double reach, float sweepWidth) // TODO
+	public RayTraceResult getMouseOverExtended(EntityPlayerSP player, double reach, float sweepWidth) // TODO /summon ender_dragon ~ ~ ~
 	{
 		if (this.mc.world == null)
 		{
@@ -2168,43 +2252,56 @@ public class EventHandlersClient
 
 		Entity pointed = null;
 		RayTraceResult pointedRayTraceResult = null;
-		double closestDistance = reach - ConfigurationHandler.extraAttackWidth - sweepWidth;
-		closestDistance *= closestDistance;
-		
-		/* List of entities within range */
-		final List<Entity> list = this.mc.world.getEntitiesWithinAABBExcludingEntity(player, player.getEntityBoundingBox().expand(lookVec.x * reach, lookVec.y * reach, lookVec.z * reach).grow(1.0D, 1.0D, 1.0D));
-		
-		for ( Entity entity : list )
+				
+		if ( this.mc.objectMouseOver != null && this.mc.objectMouseOver.entityHit != null && this.mc.objectMouseOver.hitVec != null )
 		{
-			if ( entity == player.getRidingEntity() || !entity.canBeAttackedWithItem() )
-			{
-				continue;
-			}
-			
-			if ( !isEntityInView(player, entity) )
-			{
-				continue;
-			}
-			
-			AxisAlignedBB aabb = entity.getEntityBoundingBox().grow(entity.getCollisionBorderSize() + ConfigurationHandler.extraAttackWidth + sweepWidth, ConfigurationHandler.extraAttackHeight, entity.getCollisionBorderSize() + ConfigurationHandler.extraAttackWidth + sweepWidth);
-			
-	        RayTraceResult rayTraceResult = aabb.calculateIntercept(lookEyes, lookTarget);
+			double entityDistanceSq = lookEyes.squareDistanceTo(this.mc.objectMouseOver.hitVec);
 
-			if ( rayTraceResult != null )
+			if ( entityDistanceSq <= reach*reach )
 			{
-				double entityDistanceSq = lookEyes.squareDistanceTo(rayTraceResult.hitVec);
-
-				if ( entityDistanceSq <= closestDistance || (this.mc.objectMouseOver != null && this.mc.objectMouseOver.entityHit != null && entity == this.mc.objectMouseOver.entityHit) )
+				pointed = this.mc.objectMouseOver.entityHit;
+				pointedRayTraceResult = this.mc.objectMouseOver;
+			}
+		}
+		
+		double closestDistance = reach - ConfigurationHandler.extraAttackWidth - sweepWidth; closestDistance *= closestDistance;
+		
+		if ( pointed == null )
+		{
+			/* List of entities within range */
+			final List<Entity> list = this.mc.world.getEntitiesWithinAABBExcludingEntity(player, player.getEntityBoundingBox().expand(lookVec.x * reach, lookVec.y * reach, lookVec.z * reach).grow(1.0D, 1.0D, 1.0D));
+			
+			for ( Entity entity : list )
+			{				
+				if ( entity == player.getRidingEntity() || !entity.canBeAttackedWithItem() )
 				{
-					pointed = entity;
-					pointedRayTraceResult = rayTraceResult;
-					closestDistance = entityDistanceSq;
+					continue;
 				}
-			}
+				
+				if ( !isEntityInView(player, entity) )
+				{
+					continue;
+				}
+				
+				AxisAlignedBB aabb = entity.getEntityBoundingBox().grow(entity.getCollisionBorderSize() + ConfigurationHandler.extraAttackWidth + sweepWidth, ConfigurationHandler.extraAttackHeight, entity.getCollisionBorderSize() + ConfigurationHandler.extraAttackWidth + sweepWidth);
+		        RayTraceResult rayTraceResult = aabb.calculateIntercept(lookEyes, lookTarget);
 
+				if ( rayTraceResult != null && rayTraceResult.hitVec != null )
+				{
+					double entityDistanceSq = lookEyes.squareDistanceTo(rayTraceResult.hitVec);
+
+					if ( entityDistanceSq <= closestDistance )
+					{
+						pointed = entity;
+						pointedRayTraceResult = rayTraceResult;
+						closestDistance = entityDistanceSq;
+					}
+				}
+
+			}
 		}
 
-		if ( pointed != null )
+		if ( pointed != null && pointedRayTraceResult != null )
 		{
 			/* Return the closest entity */
 			
@@ -2228,7 +2325,8 @@ public class EventHandlersClient
 			}
 			
 			/* Return ray trace block for swinging through grass */
-			// return pointedRayTraceResult = player.world.rayTraceBlocks(lookEyes, lookTarget, false, false, true);
+			/* return pointedRayTraceResult = player.world.rayTraceBlocks(lookEyes, lookTarget, false, false, true); */
+			/* However, grass is handled in EventHandlerClient */
 			
 			return null;
 		}

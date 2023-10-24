@@ -94,12 +94,20 @@ public class EventHandlers
 
 	}
     
+	/* AttackEntityEvent is responsible for calling LivingHurtEvent */
 	@SubscribeEvent(priority = EventPriority.HIGHEST, receiveCanceled = true)
 	public void cancelAttackEntityEvent(AttackEntityEvent event)
-	{		
+	{
+		/* Set the hurtResistantTime to cancel the damage, rather than completely cancelling the attack */
+		if ( event.getTarget() instanceof EntityLivingBase )
+		{
+			event.getTarget().hurtResistantTime = ((EntityLivingBase)event.getTarget()).maxHurtResistantTime;
+		}
+		
 		if ( event.getEntityPlayer().getHeldItemMainhand().isEmpty() && event.getEntityPlayer().getHeldItemOffhand().isEmpty() )
 		{
 			/* CarryOn */
+			event.getEntityLiving().hitByEntity(event.getEntityPlayer());
 			return;
 		}
 		
@@ -109,6 +117,8 @@ public class EventHandlers
 			event.setCanceled(true);
 			return;
 		}
+		
+		return;
 	}
 
 	@SubscribeEvent
@@ -604,7 +614,7 @@ public class EventHandlers
 	
 	@SubscribeEvent(priority = EventPriority.LOWEST, receiveCanceled = true)
 	public void livingAttackEvent( LivingAttackEvent event )
-	{
+	{		
 		if ( event.getEntityLiving() == null || event.getSource() == null )
 		{
 			return;
@@ -612,8 +622,9 @@ public class EventHandlers
 		
 		if ( event.getAmount() > 0.0F )
         {
-			if ( this.canParryDamageSource(event.getSource(), event.getEntityLiving()) )
+			if ( this.canParryDamageSource(event.getSource(),event.getEntityLiving()) )
 			{
+				/* Player is being attacked by an EntityLivingBase */
 				if ( event.getEntityLiving() instanceof EntityPlayerMP && event.getSource().getTrueSource() instanceof EntityLivingBase )
 				{
 					EntityPlayerMP player = (EntityPlayerMP)event.getEntityLiving();
@@ -621,11 +632,9 @@ public class EventHandlers
 					if ( player.getActiveHand().equals(EnumHand.MAIN_HAND) && player.getEntityData().hasKey("isParrying") && player.getEntityData().getBoolean("isParrying") && ConfigurationHandler.isItemClassWhiteList(player.getHeldItemMainhand().getItem()) )
 					{
 						PacketHandler.instance.sendTo(new PacketParried(), player);
-						
 			            player.swingArm(EnumHand.MAIN_HAND);
-		                
 						double attackDamage = 1.0D + Helpers.getMainhandAttackDamage(player, player.getHeldItemMainhand());
-
+						
 						/* Not Parried */
 						if ( attackDamage >= 0.0D && event.getAmount() > player.world.rand.nextInt((int)(attackDamage*ConfigurationHandler.parryChanceEffectivness)) )
 						{
@@ -659,7 +668,50 @@ public class EventHandlers
 			            return;
 		            }
 				}
+				
+//				else if ( victim.getActiveHand().equals(EnumHand.MAIN_HAND) && victim.getEntityData().hasKey("isParrying") && victim.getEntityData().getBoolean("isParrying") && configWeapon )
+//					{
+//						Vec3d vec3d = player.getPositionVector();
+		//
+//						if ( vec3d != null )
+//						{
+//							Vec3d vec3d1 = victim.getLook(1.0F);
+//							Vec3d vec3d2 = vec3d.subtractReverse(new Vec3d(victim.posX, victim.posY, victim.posZ)).normalize();
+//							vec3d2 = new Vec3d(vec3d2.x, 0.0D, vec3d2.z);
+		//
+//							/* Blocked */
+//							if ( vec3d2.dotProduct(vec3d1) < 0.0D )
+//							{
+//								int disableDuration = 0;
+//								
+//								for ( CustomAxe axe : ConfigurationHandler.axes )
+//								{
+//									if ( weapon.getItem().getRegistryName().toString().contains(axe.name) )
+//									{
+//										disableDuration += axe.disableDuration;
+//										break;
+//									}
+//								}
+//								
+//								if ( isCrit )
+//								{
+//									disableDuration += damage * ConfigurationHandler.critsDisableShield;
+//								}
+//								
+//								if ( disableDuration > 0 )
+//								{
+//									if ( victim instanceof EntityPlayer )
+//									{
+//										((EntityPlayer) victim).getCooldownTracker().setCooldown(activeItem.getItem(), disableDuration);
+//									}
+//									
+//									PacketHandler.instance.sendToServer(new PacketParrying(false));
+//								}
+//							}
+//						}
+//					}
 			}
+			/* Add sounds for blocking - ALL */
 			else if ( this.canBlockDamageSource(event.getSource(), event.getEntityLiving()) )
 			{
 				float f = event.getEntityLiving().getMaxHealth() * 0.25F;
@@ -700,11 +752,14 @@ public class EventHandlers
 	
 	private boolean canParryDamageSource(DamageSource damageSourceIn, EntityLivingBase elb)
     {
-        if (!damageSourceIn.isUnblockable() && !damageSourceIn.isProjectile() && !damageSourceIn.isMagicDamage())
+		/* getTrueSource() must be null checked before getDamageLocation() is called, as it uses damageSourceEntity which can be null */
+    	/* new Vec3d(this.damageSourceEntity.posX, this.damageSourceEntity.posY, this.damageSourceEntity.posZ) */
+		
+        if ( !damageSourceIn.isUnblockable() && !damageSourceIn.isProjectile() && !damageSourceIn.isMagicDamage() && damageSourceIn.getTrueSource() != null )
         {
             Vec3d vec3d = damageSourceIn.getDamageLocation();
 
-            if (vec3d != null)
+            if ( vec3d != null )
             {
                 Vec3d vec3d1 = elb.getLook(1.0F);
                 Vec3d vec3d2 = vec3d.subtractReverse(new Vec3d(elb.posX, elb.posY, elb.posZ)).normalize();

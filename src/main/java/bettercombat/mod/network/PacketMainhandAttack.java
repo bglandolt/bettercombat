@@ -20,7 +20,7 @@ public class PacketMainhandAttack implements IMessage
 	}
 
 	public PacketMainhandAttack( Integer parEntityId )
-	{
+	{		
 		this.entityId = parEntityId;
 	}
 

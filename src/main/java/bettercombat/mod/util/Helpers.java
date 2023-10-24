@@ -63,16 +63,18 @@ public final class Helpers
     /*																		ATTACK 																			  */
     /* ====================================================================================================================================================== */
 	
-	public static void playerAttackVictim( EntityPlayer player, Entity victim, boolean mainhandAttack )
+	public static boolean playerAttackVictim( EntityPlayer player, Entity victim, boolean mainhandAttack )
 	{
 		final ItemStack offhand = player.getHeldItemOffhand();
 		final ItemStack mainhand = player.getHeldItemMainhand();
+		
+		boolean attacked = false;
 		
 		if ( mainhandAttack ) /* MAINHAND */
 		{
 			player.setHeldItem(EnumHand.OFF_HAND, ItemStack.EMPTY);
 			
-			playerAttackVictimWithWeapon(player, victim, mainhand, offhand, true);
+			attacked = playerAttackVictimWithWeapon(player, victim, mainhand, offhand, true);
 			
 			player.setHeldItem(EnumHand.OFF_HAND, offhand);
 
@@ -106,11 +108,11 @@ public final class Helpers
 
 			if ( offhand.getItem() instanceof ItemShield )
 			{
-				playerAttackVictimWithShield(player, victim, (ItemShield)offhand.getItem());
+				attacked = playerAttackVictimWithShield(player, victim, (ItemShield)offhand.getItem());
 			}
 			else
 			{
-				playerAttackVictimWithWeapon(player, victim, mainhand, offhand, false);
+				attacked = playerAttackVictimWithWeapon(player, victim, mainhand, offhand, false);
 			}
 			
 			player.setHeldItem(EnumHand.OFF_HAND, offhand);
@@ -139,16 +141,18 @@ public final class Helpers
 				}
 			}
 		}
+		
+		return attacked;
 	}
 
 	/*
-	 * vanilla attacks are cancelled and this method is instead called
+	 * player.attackTargetEntityWithCurrentItem(victim) vanilla attacks are cancelled and this method is instead called
 	 */
-	public static void playerAttackVictimWithWeapon( EntityPlayer player, Entity entity, ItemStack mainhand, ItemStack offhand, boolean mainhandAttack )
-	{		
+	public static boolean playerAttackVictimWithWeapon( EntityPlayer player, Entity entity, ItemStack mainhand, ItemStack offhand, boolean mainhandAttack )
+	{
 		if ( entity == null || entity == player )
 		{
-			return;
+			return false;
 		}
 		
 		boolean isCrit 				= false;
@@ -171,7 +175,7 @@ public final class Helpers
 		final ItemStack weapon;
 		final boolean isMetal;
 		final boolean configWeapon;
-		
+
 		if ( mainhandAttack )
 		{
 			weapon = mainhand;
@@ -254,7 +258,6 @@ public final class Helpers
 		
 		if ( entity instanceof MultiPartEntityPart )
 		{
-
 			bodyPart = (MultiPartEntityPart)entity;
 
 			if ( bodyPart.parent instanceof EntityLivingBase )
@@ -268,10 +271,10 @@ public final class Helpers
 				if ( bodyPart.parent != null )
 				{
 					SoundHandler.playImpactSound(player, mainhand, soundType, animation, isMetal);
-					bodyPart.parent.attackEntityFromPart(bodyPart, DamageSource.causePlayerDamage(player), (float)damage);
+					return bodyPart.parent.attackEntityFromPart(bodyPart, DamageSource.causePlayerDamage(player), (float)damage);
 				}
 				
-				return;
+				return false;
 			}
 		}
 		else if ( entity instanceof EntityLivingBase )
@@ -283,18 +286,24 @@ public final class Helpers
 				((EntityArmorStand)victim).punchCooldown = victim.world.getTotalWorldTime();
 			}
 		}
-		else /* Minecarts & Boats */
+		else /* Minecarts & Boats & Quark's Totem of Holding */
 		{
-			/* Damage has to be ~2 or higher, otherwise the boats and carts will not break */
-			entity.attackEntityFrom(DamageSource.causePlayerDamage(player), damage > 2.0F ? (float)damage : 2.0F );
-			entity.hitByEntity(player);
 			player.world.playSound(null, player.posX, player.posY, player.posZ, SoundEvents.ENTITY_PLAYER_ATTACK_NODAMAGE, player.getSoundCategory(), 1.0F, 1.0F);
-			return;
+
+			entity.hitByEntity(player);
+
+			/* Damage has to be ~2 or higher, otherwise the boats and carts will not break */
+			if ( entity.attackEntityFrom(DamageSource.causePlayerDamage(player), damage > 2.0F ? (float)damage : 2.0F ) )
+			{
+				return true;
+			}
+			
+			return false;
 		}
 		
 		if ( !entity.isEntityAlive() || !entity.canBeAttackedWithItem() )
 		{
-			return;
+			return false;
 		}
 		
 		try
@@ -453,6 +462,8 @@ public final class Helpers
 			player.setSprinting(false);
 		}
 		
+		player.addExhaustion(0.1F);
+				
 		if ( playerAttackedVictim(player, victim, bodyPart, (float)damage) )
 		{
 			SoundHandler.playImpactSound(player, mainhand, soundType, animation, isMetal);
@@ -663,23 +674,24 @@ public final class Helpers
 			{
 				SoundHandler.playImpactArmorMetalSound(player, tgtMaxHealth, tgtHealthPercent);
 			}
+			
+			/* DAMAGE PARTICLES */
+			if ( ConfigurationHandler.damageParticles && player.world instanceof WorldServer )
+			{
+				if ( damage >= 1.0D )
+				{
+					int k = (int) (damage * 0.5D);
+					((WorldServer) player.world).spawnParticle(EnumParticleTypes.DAMAGE_INDICATOR, victim.posX, victim.posY + victim.height * 0.5F, victim.posZ, k, 0.1D, 0.0D, 0.1D, 0.2D);
+				}
+			}
+			
+			return true;
 		}
 		else
 		{
 			player.world.playSound(null, player.posX, player.posY, player.posZ, SoundEvents.ENTITY_PLAYER_ATTACK_NODAMAGE, player.getSoundCategory(), 1.0F, 1.0F);
+			return false;
 		}
-
-		/* DAMAGE PARTICLES */
-		if ( ConfigurationHandler.damageParticles && player.world instanceof WorldServer )
-		{
-			if ( damage >= 1.0D )
-			{
-				int k = (int) (damage * 0.5D);
-				((WorldServer) player.world).spawnParticle(EnumParticleTypes.DAMAGE_INDICATOR, victim.posX, victim.posY + victim.height * 0.5F, victim.posZ, k, 0.1D, 0.0D, 0.1D, 0.2D);
-			}
-		}
-		
-		player.addExhaustion(0.1F);
 	}
 
 	private static boolean playerAttackedVictim(EntityPlayer player, EntityLivingBase victim, @Nullable MultiPartEntityPart bodyPart, float damage)
@@ -712,11 +724,11 @@ public final class Helpers
 		return attacked;
 	}
 
-	private static void playerAttackVictimWithShield( EntityPlayer player, Entity entity, ItemShield shield )
+	private static boolean playerAttackVictimWithShield( EntityPlayer player, Entity entity, ItemShield shield )
 	{		
 		if ( entity == null || entity == player )
 		{
-			return;
+			return false;
 		}
 		
 		double knockbackMod = EnchantmentHelper.getKnockbackModifier(player);
@@ -778,10 +790,10 @@ public final class Helpers
 						SoundHandler.playBashWoodShieldSound(player);
 					}
 					
-					bodyPart.parent.attackEntityFromPart(bodyPart, DamageSource.causePlayerDamage(player), (float)damage);
+					return bodyPart.parent.attackEntityFromPart(bodyPart, DamageSource.causePlayerDamage(player), (float)damage);
 				}
 				
-				return;
+				return false;
 			}
 		}
 		else if ( entity instanceof EntityLivingBase )
@@ -793,14 +805,24 @@ public final class Helpers
 				((EntityArmorStand)victim).punchCooldown = victim.world.getTotalWorldTime();
 			}
 		}
-		else /* Minecarts & Boats */
+		else /* Minecarts & Boats & Quark's Totem of Holding */
 		{
-			return;
+			player.world.playSound(null, player.posX, player.posY, player.posZ, SoundEvents.ENTITY_PLAYER_ATTACK_NODAMAGE, player.getSoundCategory(), 1.0F, 1.0F);
+
+			entity.hitByEntity(player);
+
+			/* Damage has to be ~2 or higher, otherwise the boats and carts will not break */
+			if ( entity.attackEntityFrom(DamageSource.causePlayerDamage(player), damage > 2.0F ? (float)damage : 2.0F ) )
+			{
+				return true;
+			}
+			
+			return false;
 		}
 		
 		if ( !entity.isEntityAlive() || !entity.canBeAttackedWithItem() )
 		{
-			return;
+			return false;
 		}
 		
 		if ( ConfigurationHandler.shieldSilverDamageMultiplier != 1.0F && victim.isEntityUndead() && isSilver(getString(shield)) )
@@ -808,6 +830,8 @@ public final class Helpers
 			damage *= ConfigurationHandler.shieldSilverDamageMultiplier;
 			EventHandlers.playSilverArmorEffect(victim);
 		}
+		
+		player.addExhaustion(0.1F);
 				
 		if ( playerAttackedVictim(player, victim, bodyPart, (float)damage) )
 		{
@@ -829,9 +853,11 @@ public final class Helpers
 			}
 			
 			player.onCriticalHit(victim);
+			
+			return true;
 		}
 		
-		player.addExhaustion(0.1F);
+		return false;
 	}
 
 	private static float randomPitch(EntityPlayer player)

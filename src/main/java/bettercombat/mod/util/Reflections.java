@@ -343,6 +343,24 @@ public class Reflections
 			throw new RuntimeException(ex);
 		}
 	}
+	
+	public static void setLeftClickCounter( Minecraft minecraft, int i )
+	{
+		try
+		{
+			if ( leftClickCounter == null )
+			{
+				leftClickCounter = Minecraft.class.getDeclaredField(getName(LCC_SRG, LCC_MCP));
+				leftClickCounter.setAccessible(true);
+			}
+
+			leftClickCounter.setInt(minecraft, i);
+		}
+		catch ( Exception ex )
+		{
+			throw new RuntimeException(ex);
+		}
+	}
 
 
 	public static float getSoundPitch( EntityLivingBase living )

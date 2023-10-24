@@ -85,7 +85,7 @@ public class PacketBreakBlock implements IMessage
 			EntityPlayerMP player = ctx.getServerHandler().player;
 			
 			player.getEntityWorld().destroyBlock(new BlockPos(message.x,message.y,message.z), true);
-			player.getEntityWorld().setBlockToAir(new BlockPos(message.x,message.y,message.z));
+			// player.getEntityWorld().setBlockToAir(new BlockPos(message.x,message.y,message.z));
 		}
 	}
 }
