@@ -111,8 +111,17 @@ public class EventHandlersClient
 	 */
 	public int                    mainhandAttackCooldown = ConfigurationHandler.minimumAttackSpeedTicks;
 
-	public static final String EMPTY = EMPTY;
+	public static final String EMPTY = "";
 	public static final String BLANK_SPACE = " ";
+	public static final String SW_DASH = "- ";
+	
+	public static final String attackSpeedString   = I18n.format("attribute.name.generic.attackSpeed");
+	public static final String attackDamageString  = I18n.format("attribute.name.generic.attackDamage");
+
+	public static final String ATTACK_SPEED_REGEX  = "(([0-9]+\\.*[0-9]*)( *" + attackSpeedString + "))";
+	public static final String ATTACK_DAMAGE_REGEX = "(([0-9]+\\.*[0-9]*)( *" + attackDamageString + "))";
+	
+	public static final String mainhandString = I18n.format("item.modifiers.mainhand");
 	
 	public boolean overwriteLeftClick(boolean checkBlocks)
 	{		
@@ -616,7 +625,7 @@ public class EventHandlersClient
 					this.parrying = true;
 				}
 			}
-			else
+			else // (complete) Bugfix: If you put a "Mainhand" only weapon in the offhand, and try to eat something with your main hand (food), it doesn't work.
 			{
 				if ( this.rightClickMouse(EnumHand.MAIN_HAND) )
 				{
@@ -1736,7 +1745,7 @@ public class EventHandlersClient
 	@SubscribeEvent(priority = EventPriority.LOWEST, receiveCanceled = true)
 	public void itemTooltipEventLow(ItemTooltipEvent event)
 	{
-		this.removeDuplicateBlankTooltips(event);
+		this.removeDuplicateEmptyLines(event);
 
 //		if ( ConfigurationHandler.isItemClassWhiteList(event.getItemStack().getItem()) )
 //		{
@@ -1744,11 +1753,7 @@ public class EventHandlersClient
 //		}
 	}
 
-	public static final String attackSpeedString   = I18n.format("attribute.name.generic.attackSpeed");
-	public static final String attackDamageString  = I18n.format("attribute.name.generic.attackDamage");
 
-	public static final String ATTACK_SPEED_REGEX  = "(([0-9]+\\.*[0-9]*)( *" + attackSpeedString + "))";
-	public static final String ATTACK_DAMAGE_REGEX = "(([0-9]+\\.*[0-9]*)( *" + attackDamageString + "))";
 	
 //	public final String twoHandedString = this.getTwoHandedString();
 //	
@@ -1773,31 +1778,43 @@ public class EventHandlersClient
 //
 //
 	
-	private void removeDuplicateBlankTooltips(ItemTooltipEvent event)
+	private void removeDuplicateEmptyLines(ItemTooltipEvent event)
 	{
-	    List<String> nonBlankTooltips = new ArrayList<>();
+	    List<String> tooltips = new ArrayList<>();
 
-	    boolean flag = false;
+	    boolean previousLineIsEmpty = false;
 	    
 	    for ( String tag : event.getToolTip() )
 	    {
-	        if ( tag.isEmpty() )
+	        if ( tag.isEmpty() || tag.equals(BLANK_SPACE) )
 	        {
-	        	if ( !flag )
+	        	if ( !previousLineIsEmpty )
     	        {
-    	            nonBlankTooltips.add(tag);
+	        		tooltips.add(tag);
     	        }
 	        	
-	        	flag = true;
+	        	previousLineIsEmpty = true;
 	        }
 	        else
 	        {
-	            nonBlankTooltips.add(tag);
+	        	if ( !tag.contains(mainhandString) && !this.isEmptySWDash(tag) )
+				{
+	        		tooltips.add(tag);
+		            previousLineIsEmpty = false;
+				}
 	        }
+	        
+//			try{event.getEntityPlayer().sendMessage(new TextComponentString(tag + tag.length()));}catch(Exception e ){}
+
 	    }
 
 	    event.getToolTip().clear();
-	    event.getToolTip().addAll(nonBlankTooltips);
+	    event.getToolTip().addAll(tooltips);
+	}
+	
+	private boolean isEmptySWDash(String tag)
+	{
+		return tag.endsWith(SW_DASH);
 	}
 	
 //	private void updateBetterCombatTooltipLow(ItemTooltipEvent event)
@@ -1906,7 +1923,7 @@ public class EventHandlersClient
 //			event.getToolTip().remove(reachDescStringIndex - i++);
 //		}
 //	}
-
+	
 	private void updateBetterCombatTooltipHigh(CustomWeapon s, ItemTooltipEvent event)
 	{
 		/*
@@ -1961,32 +1978,26 @@ public class EventHandlersClient
 
 		}
 
-		String mainhandString = I18n.format("item.modifiers.mainhand");
 		int mainhandStringIndex = -1;
+//		int qualityToolsMainhandIndex = -1;
 
 		boolean formattedAttackSpeed = false;
-
 		boolean formattedAttackDamage = false;
-
-		// int qualityToolsMainhandIndex = -1;
 
 		int i = 0;
 
-		for (String tag : event.getToolTip())
+		for ( String tag : event.getToolTip() )
 		{
-
-			if (tag.contains(mainhandString))
+			if ( tag.contains(mainhandString) )
 			{
-
-				if (mainhandStringIndex < 0)
+				if ( mainhandStringIndex < 0 )
 				{
 					mainhandStringIndex = i;
 				}
-				else
-				{
-					// qualityToolsMainhandIndex = i;
-				}
-
+//				else if ( qualityToolsMainhandIndex < 0 )
+//				{
+//					qualityToolsMainhandIndex = i;
+//				}
 			}
 			else if (!formattedAttackSpeed && tag.contains(attackSpeedString))
 			{
@@ -2047,9 +2058,8 @@ public class EventHandlersClient
 		}
 
 		/* PROPERTY */
-		if (mainhandStringIndex >= 0)
+		if ( mainhandStringIndex >= 0 )
 		{
-
 			switch (s.property)
 			{
 				case ONEHAND:
@@ -2078,7 +2088,12 @@ public class EventHandlersClient
 					break;
 				}
 			}
-
+			
+			/* i = 0; */
+//			if ( qualityToolsMainhandIndex >= 0 )
+//			{
+//				event.getToolTip().remove(qualityToolsMainhandIndex /* - i++ */);
+//			}
 		}
 
 		/*
