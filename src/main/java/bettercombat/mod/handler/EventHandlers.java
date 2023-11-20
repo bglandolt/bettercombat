@@ -217,7 +217,7 @@ public class EventHandlers
 		}
 	}
 	
-	@SubscribeEvent(priority = EventPriority.LOW, receiveCanceled = true) // EntityLivingBase
+	@SubscribeEvent(priority = EventPriority.LOW, receiveCanceled = true) /* EntityLivingBase */
 	public void knockBack( LivingKnockBackEvent event )
 	{
 		if ( ConfigurationHandler.betterKnockback )
@@ -233,21 +233,21 @@ public class EventHandlers
 				
 				if ( knockbackResistance < 1.0D )
 				{
-					entityLivingBase.isAirBorne = true;
-					
 					strength *= (1.0D - knockbackResistance) * ConfigurationHandler.knockbackStrengthMultiplier;
 
-		            double d = Math.sqrt(xRatio * xRatio + zRatio * zRatio);
-		            
+					entityLivingBase.isAirBorne = true;
+					
 		            entityLivingBase.motionX *= 0.5D;
 		            entityLivingBase.motionZ *= 0.5D;
 		            
+		            double d = Math.sqrt(xRatio * xRatio + zRatio * zRatio);
+
 		            if ( d > 0.0D )
 		            {
 			            entityLivingBase.motionX -= xRatio / d * strength;
 			            entityLivingBase.motionZ -= zRatio / d * strength;
 		            }
-
+		            
 		            if ( entityLivingBase.onGround )
 		            {
 		            	entityLivingBase.motionY *= 0.5D;

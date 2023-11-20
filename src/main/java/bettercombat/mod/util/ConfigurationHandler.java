@@ -33,33 +33,45 @@ public class ConfigurationHandler
 	public static float dragonboneBowWitherDamage = 12.0F;
 	public static float harmingArrowAmplifier = 6.0F;
 	public static float healingArrowAmplifier = 6.0F;
-	public static double rangedSilverDamageMultiplier = 1.5;
+	public static double rangedSilverDamageMultiplier = 1.5D;
 	public static boolean tippedArrowFix = true;
 
 	/* ATTRIBUTES --------------------------------------------------------------------------------------------------------------------- */
 
-	public static double addedSwingTickCooldown = 0.5;
-	public static double baseAttackDamage = 1.0;
-	public static double baseAttackSpeed = 4.0;
-	public static double baseKnockback = 1.0;
-	public static double baseReachDistance = 4.0;
+	public static double addedSwingTickCooldown = 0.5D;
+	public static double baseAttackDamage = 1.0D;
+	public static double baseAttackSpeed = 4.0D;
+	public static double baseKnockback = 1.0D;
+	public static double baseReachDistance = 4.0D;
 	public static int minimumAttackSpeedTicks = 8;
 
-	/* --------------------------------------------------------------------------------------------------------------------- */
+	/* AXE --------------------------------------------------------------------------------------------------------------------- */
+	
+	public static ArrayList<CustomAxe> axes = new ArrayList<CustomAxe>();
+	
+	private static String[] axeList =
+	{
+			"[Axe Substring=battleaxe_]		[Disable Duration=90]",
+			"[Axe Substring=halberd_]		[Disable Duration=60]",
+			"[Axe Substring=_axe]			[Disable Duration=30]"
+	};
+	
+	/* BOWS --------------------------------------------------------------------------------------------------------------------- */
 
 	public static ArrayList<CustomBow> bows = new ArrayList<CustomBow>();
 
-	private static String[] bowList = {
+	private static String[] bowList =
+	{
 	    "[Bow=minecraft:bow]	[Damage Multiplier=1.00]	[Velocity=0.90]	[Ticks=0]"
 	};
 
 	/* CRITICAL --------------------------------------------------------------------------------------------------------------------- */
 
 	public static boolean autoCritOnSneakAttacks = true;
-	public static double baseCritPercentChance = 0.05;
-	public static double baseCritPercentDamage = 1.5;
-	public static double jumpCrits = 0.1;
-	public static double luckCritModifier = 0.1;
+	public static double baseCritPercentChance = 0.05D;
+	public static double baseCritPercentDamage = 1.5D;
+	public static double jumpCrits = 0.1D;
+	public static double luckCritModifier = 0.1D;
 
 	/* DUALWIELD --------------------------------------------------------------------------------------------------------------------- */
 
@@ -83,13 +95,13 @@ public class ConfigurationHandler
 	/* OTHER --------------------------------------------------------------------------------------------------------------------- */
 
 	public static boolean moreSprint = true;
-	public static double inertiaOnAttack = 0.5;
+	public static double inertiaOnAttack = 0.5D;
 	public static boolean fastEquipHotbarOnly = false;
 	public static boolean fastEquipOffhandWeaponsOrShieldsOnly = true;
-	public static double extraAttackHeight = 0.75;
-	public static double extraAttackWidth = 0.25;
+	public static double extraAttackHeight = 0.75D;
+	public static double extraAttackWidth = 0.25D;
 	public static float nauseaAffectsMobs = 2.2F;
-	public static double miningFatigueDamageReduction = 0.0;
+	public static double miningFatigueDamageReduction = 0.0D;
 	public static float silverArmorDamagesUndeadAttackers = 1.5F;
 	public static boolean grassPathingRequiresAnimation = true;
 	public static boolean tillingRequiresAnimation = true;
@@ -99,30 +111,38 @@ public class ConfigurationHandler
 	/* KNOCKBACK --------------------------------------------------------------------------------------------------------------------- */
 
 	public static boolean betterKnockback = true;
-	public static double knockUpStrengthMultiplier = 0.5;
-	public static double knockbackStrengthMultiplier = 1.0;
-	public static double sprintingKnockbackAmount = 0.5;
+	public static double knockUpStrengthMultiplier = 0.5D;
+	public static double knockbackStrengthMultiplier = 1.0D;
+	public static double sprintingKnockbackAmount = 0.5D;
 
 	/* BWLISTS --------------------------------------------------------------------------------------------------------------------- */
 
 	@SuppressWarnings("rawtypes")
 	private static ArrayList<Class> entityBlackArray = new ArrayList<Class>();
+	
 	private static String[] entityBlacklist =
 	{
 	    "net.minecraft.entity.passive.EntityHorse", "net.minecraft.entity.item.EntityArmorStand", "net.minecraft.entity.passive.EntityVillager", "net.torocraft.toroquest.entities.creatures.ICitizen"
 	};
 
+	
+	
 	@SuppressWarnings("rawtypes")
 	private static ArrayList<Class> itemClassWhiteArray = new ArrayList<Class>();
+	
 	private static String[] itemClassWhitelist =
 	{
 	    "net.minecraft.item.ItemSword", "net.minecraft.item.ItemTool", "net.minecraft.item.ItemHoe", "com.oblivioussp.spartanweaponry.item.ItemThrowingWeapon"
 	};
 	
+	
+	
 	@SuppressWarnings("rawtypes")
 	private static ArrayList<Class> itemClassBlackArray = new ArrayList<Class>();
+	
 	private static String[] itemClassBlacklist =
 	{
+		
 	};
 	
 	private static String[] itemBlacklist =
@@ -144,134 +164,126 @@ public class ConfigurationHandler
 	
 	/* SOUND --------------------------------------------------------------------------------------------------------------------- */
 	
-		public static float bowThudSoundVolume = 1.0F;
-		public static float bowStrikeSoundVolume = 1.0F;
-		public static boolean playArrowHitSound = true;
-		public static float shieldBashSoundVolume = 1.0F;
-		public static float shieldBlockSoundVolume = 1.0F;
-		public static float weaponHitSoundVolume = 1.0F;
-		public static float weaponSwingSoundVolume = 1.0F;
-		public static float weaponEquipAndSheatheSoundVolume = 1.0F;
-		
-		public static String[] nonMetalList =
-		{
-			"wood", "stone", "bone", "staff", "club", "caestus"
-		};
+	public static float bowThudSoundVolume = 1.0F;
+	public static float bowStrikeSoundVolume = 1.0F;
+	public static boolean playArrowHitSound = true;
+	public static float shieldBashSoundVolume = 1.0F;
+	public static float shieldBlockSoundVolume = 1.0F;
+	public static float weaponHitSoundVolume = 1.0F;
+	public static float weaponSwingSoundVolume = 1.0F;
+	public static float weaponEquipAndSheatheSoundVolume = 1.0F;
+	
+	public static String[] nonMetalList =
+	{
+		"wood", "stone", "bone", "staff", "club", "caestus"
+	};
 		
 	/* TOOLTIPS --------------------------------------------------------------------------------------------------------------------- */
 
-		public static boolean showCritChanceTooltip = true;
-		public static boolean showCritChanceTooltipAsTotal = true;
-		public static boolean showCritDamageTooltip = true;
-		public static boolean showCritDamageTooltipAsTotal = false;
-		public static boolean showKnockbackTooltip = true;
-		public static boolean showKnockbackTooltipAsTotal = true;
-		public static boolean showPotionEffectTooltip = true;
-		public static boolean showReachTooltip = true;
-		public static boolean showReachTooltipAsTotal = false;
-		public static boolean showSweepTooltip = true;
-//		public static boolean removeRedundantSpartanWeaponryTooltips = true;
+	public static boolean showCritChanceTooltip = true;
+	public static boolean showCritChanceTooltipAsTotal = true;
+	public static boolean showCritDamageTooltip = true;
+	public static boolean showCritDamageTooltipAsTotal = false;
+	public static boolean showKnockbackTooltip = true;
+	public static boolean showKnockbackTooltipAsTotal = true;
+	public static boolean showPotionEffectTooltip = true;
+	public static boolean showReachTooltip = true;
+	public static boolean showReachTooltipAsTotal = false;
+	public static boolean showSweepTooltip = true;
 		
 	/* UNARMED --------------------------------------------------------------------------------------------------------------------- */
 
-		public static double fistAndNonWeaponDamageReduction = 0.5;
-		public static double fistAndNonWeaponKnockbackReduction = 0.0;
-		public static double fistAndNonWeaponReachReduction = 0.5;
+	public static double fistAndNonWeaponDamageReduction = 0.5;
+	public static double fistAndNonWeaponKnockbackReduction = 0.0;
+	public static double fistAndNonWeaponReachReduction = 0.5;
 		
 	/* VISUAL --------------------------------------------------------------------------------------------------------------------- */
 
-		public static boolean aetherealizedDamageParticles = true;
-		public static float breathingAnimationIntensity = 0.03F;
-		public static float breathingAnimationSpeed = 0.04F;
-		public static float cameraPitchSwing = 0.09F;
-		public static float rotationYawSwing = 0.18F;
-		public static boolean damageParticles = true;
-		public static boolean moreSweep = true;
-		public static boolean showShieldCooldownCrosshair = true;
-
-	/* AXE --------------------------------------------------------------------------------------------------------------------- */
-	
-		public static ArrayList<CustomAxe> axes = new ArrayList<CustomAxe>();
-		private static String[] axeList =
-		{
-				"[Axe Substring=battleaxe_]		[Disable Duration=90]",
-				"[Axe Substring=halberd_]		[Disable Duration=60]",
-				"[Axe Substring=_axe]			[Disable Duration=30]"
-		};
+	public static boolean aetherealizedDamageParticles = true;
+	public static float breathingAnimationIntensity = 0.03F;
+	public static float breathingAnimationSpeed = 0.04F;
+	public static float cameraPitchSwing = 0.09F;
+	public static float rotationYawSwing = 0.18F;
+	public static boolean damageParticles = true;
+	public static boolean moreSweep = true;
+	public static boolean showShieldCooldownCrosshair = true;
 	
 	/* SHIELD --------------------------------------------------------------------------------------------------------------------- */
 
-		public static double critsDisableShield = 3.0;
-		public static double parryChanceEffectivness = 3.0;
-		public static boolean enableParrying = true;
-		public static float parryKnockbackAmount = 0.5F;
-		public static boolean disableBlockingWhileAttacking = true;
-		public static boolean disableBlockingWhileShieldBashing = false;
-		public static float shieldSilverDamageMultiplier = 1.5F;
-		public static boolean shieldBashingTaunts = true;
-		
-		public static ArrayList<CustomShield> shields = new ArrayList<CustomShield>();
+	public static double critsDisableShield = 3.0;
+	public static double parryChanceEffectivness = 3.0;
+	public static boolean enableParrying = true;
+	public static float parryKnockbackAmount = 0.5F;
+	public static boolean disableBlockingWhileAttacking = true;
+	public static boolean disableBlockingWhileShieldBashing = false;
+	public static float shieldSilverDamageMultiplier = 1.5F;
+	public static boolean shieldBashingTaunts = true;
 	
-		private static String[] shieldList = {
-		    "[Shield=minecraft:shield]						[Damage=3.0]	[Knockback=1.0]	[Cooldown=30]",
-		    "[Shield=spartanshields:shield_basic_diamond]	[Damage=7.0]	[Knockback=2.0]	[Cooldown=25]",
-		    "[Shield=spartanshields:shield_basic_gold]		[Damage=3.0]	[Knockback=1.0]	[Cooldown=10]",
-		    "[Shield=spartanshields:shield_basic_iron]		[Damage=5.0]	[Knockback=1.0]	[Cooldown=20]",
-		    "[Shield=spartanshields:shield_basic_obsidian]	[Damage=5.0]	[Knockback=1.5]	[Cooldown=50]",
-		    "[Shield=spartanshields:shield_basic_silver]		[Damage=5.0]	[Knockback=1.0]	[Cooldown=20]",
-		    "[Shield=spartanshields:shield_basic_stone]		[Damage=2.0]	[Knockback=0.5]	[Cooldown=40]",
-		    "[Shield=spartanshields:shield_basic_wood]		[Damage=1.0]	[Knockback=0.5]	[Cooldown=40]",
-		    "[Shield=spartanshields:shield_tower_diamond]	[Damage=7.0]	[Knockback=2.5]	[Cooldown=35]",
-		    "[Shield=spartanshields:shield_tower_gold]		[Damage=3.0]	[Knockback=1.5]	[Cooldown=20]",
-		    "[Shield=spartanshields:shield_tower_iron]		[Damage=5.0]	[Knockback=1.5]	[Cooldown=30]",
-		    "[Shield=spartanshields:shield_tower_obsidian]	[Damage=5.0]	[Knockback=2.0]	[Cooldown=60]",
-		    "[Shield=spartanshields:shield_tower_silver]		[Damage=5.0]	[Knockback=1.5]	[Cooldown=30]",
-		    "[Shield=spartanshields:shield_tower_stone]		[Damage=2.0]	[Knockback=1.0]	[Cooldown=50]",
-		    "[Shield=spartanshields:shield_tower_wood]		[Damage=1.0]	[Knockback=1.0]	[Cooldown=50]"
-		};
-		
-		private static String[] twoDimensionalShieldList =
-		{
-		    "shield_basic_"
-		};
+	public static ArrayList<CustomShield> shields = new ArrayList<CustomShield>();
+
+	private static String[] shieldList = {
+	    "[Shield=minecraft:shield]						[Damage=3.0]	[Knockback=1.0]	[Cooldown=30]",
+	    "[Shield=spartanshields:shield_basic_diamond]	[Damage=7.0]	[Knockback=2.0]	[Cooldown=25]",
+	    "[Shield=spartanshields:shield_basic_gold]		[Damage=3.0]	[Knockback=1.0]	[Cooldown=10]",
+	    "[Shield=spartanshields:shield_basic_iron]		[Damage=5.0]	[Knockback=1.0]	[Cooldown=20]",
+	    "[Shield=spartanshields:shield_basic_obsidian]	[Damage=5.0]	[Knockback=1.5]	[Cooldown=50]",
+	    "[Shield=spartanshields:shield_basic_silver]		[Damage=5.0]	[Knockback=1.0]	[Cooldown=20]",
+	    "[Shield=spartanshields:shield_basic_stone]		[Damage=2.0]	[Knockback=0.5]	[Cooldown=40]",
+	    "[Shield=spartanshields:shield_basic_wood]		[Damage=1.0]	[Knockback=0.5]	[Cooldown=40]",
+	    "[Shield=spartanshields:shield_tower_diamond]	[Damage=7.0]	[Knockback=2.5]	[Cooldown=35]",
+	    "[Shield=spartanshields:shield_tower_gold]		[Damage=3.0]	[Knockback=1.5]	[Cooldown=20]",
+	    "[Shield=spartanshields:shield_tower_iron]		[Damage=5.0]	[Knockback=1.5]	[Cooldown=30]",
+	    "[Shield=spartanshields:shield_tower_obsidian]	[Damage=5.0]	[Knockback=2.0]	[Cooldown=60]",
+	    "[Shield=spartanshields:shield_tower_silver]		[Damage=5.0]	[Knockback=1.5]	[Cooldown=30]",
+	    "[Shield=spartanshields:shield_tower_stone]		[Damage=2.0]	[Knockback=1.0]	[Cooldown=50]",
+	    "[Shield=spartanshields:shield_tower_wood]		[Damage=1.0]	[Knockback=1.0]	[Cooldown=50]"
+	};
+	
+	private static String[] twoDimensionalShieldList =
+	{
+	    "shield_basic_"
+	};
 	
 	/* SWORD --------------------------------------------------------------------------------------------------------------------- */
 
-		public static ArrayList<CustomSword> swords = new ArrayList<CustomSword>();
-		private static String[] swordList =
-		{
-				"[Sword Substring=golden_sword]		[Additional Attack Speed=0.2]",
-				"[Sword Substring=wooden_sword]		[Additional Attack Speed=0.1]"
-		};
+	public static ArrayList<CustomSword> swords = new ArrayList<CustomSword>();
+	
+	private static String[] swordList =
+	{
+			"[Sword Substring=golden_sword]		[Additional Attack Speed=0.2]",
+			"[Sword Substring=wooden_sword]		[Additional Attack Speed=0.1]"
+	};
 		
 	/* WEAPONS --------------------------------------------------------------------------------------------------------------------- */
 
-		public static ArrayList<CustomWeapon> weapons = new ArrayList<CustomWeapon>();
-		private static String[] weaponList =
-		{
-			 "[Weapon Substring=pike_] [Sound Type=POLEARM] [Animation=STAB] [Property=TWOHAND] [Sweep=0] [Additional Reach=2.0] [Knockback=0.2] [Crit Chance=0.1] [Additional Crit Damage=0.0] [Parry=true]",
-			 "[Weapon Substring=glaive_] [Sound Type=POLEARM] [Animation=SWEEP] [Property=TWOHAND] [Sweep=2] [Additional Reach=1.0] [Knockback=0.5] [Crit Chance=0.1] [Additional Crit Damage=0.0] [Parry=true]",
-			 "[Weapon Substring=spear_] [Sound Type=POLEARM] [Animation=STAB] [Property=MAINHAND] [Sweep=0] [Additional Reach=1.0] [Knockback=0.2] [Crit Chance=0.1] [Additional Crit Damage=0.0] [Parry=true]",
-			 "[Weapon Substring=lance_] [Sound Type=POLEARM] [Animation=STAB] [Property=MAINHAND] [Sweep=0] [Additional Reach=1.0] [Knockback=1.0] [Crit Chance=0.1] [Additional Crit Damage=0.0] [Parry=true]",
-			 "[Weapon Substring=halberd_] [Sound Type=POLEARM] [Animation=CHOP] [Property=TWOHAND] [Sweep=0] [Additional Reach=1.0] [Knockback=0.8] [Crit Chance=0.25] [Additional Crit Damage=0.0] [Parry=true]",
-			 "[Weapon Substring=staff] [Sound Type=POLEARM] [Animation=SWEEP] [Property=TWOHAND] [Sweep=2] [Additional Reach=1.0] [Knockback=1.0] [Crit Chance=0.1] [Additional Crit Damage=0.5] [Parry=true] [Potion Effect=CRIT,RECEIVE,minecraft:speed,2,160]",
-			 "[Weapon Substring=warhammer_] [Sound Type=BLUNT] [Animation=CHOP] [Property=VERSATILE] [Sweep=0] [Additional Reach=0.0] [Knockback=1.0][Crit Chance=0.1] [Additional Crit Damage=0.0] [Parry=true]",
-			 "[Weapon Substring=hammer_] [Sound Type=BLUNT] [Animation=CHOP] [Property=ONEHAND] [Sweep=0] [Additional Reach=0.0] [Knockback=1.5] [Crit Chance=0.1] [Additional Crit Damage=0.0] [Parry=true] [Potion Effect=CRIT,AFFLICT,minecraft:nausea,1,100]",
-			 "[Weapon Substring=mace_] [Sound Type=BLUNT] [Animation=CHOP] [Property=ONEHAND] [Sweep=0] [Additional Reach=0.0] [Knockback=0.8] [Crit Chance=0.1] [Additional Crit Damage=0.0] [Parry=true]",
-			 "[Weapon Substring=club_] [Sound Type=BLUNT] [Animation=CHOP] [Property=ONEHAND] [Sweep=0] [Additional Reach=0.0] [Knockback=0.8] [Crit Chance=0.1] [Additional Crit Damage=0.0] [Parry=true]",
-			 "[Weapon Substring=caestus] [Sound Type=BLUNT] [Animation=STAB] [Property=ONEHAND] [Sweep=0] [Additional Reach=0.0] [Knockback=0.2] [Crit Chance=0.1] [Additional Crit Damage=0.0] [Parry=true]",
-			 "[Weapon Substring=greatsword_] [Sound Type=BLADE] [Animation=SWEEP] [Property=TWOHAND] [Sweep=3] [Additional Reach=1.0] [Knockback=0.5][Crit Chance=0.1] [Additional Crit Damage=0.0] [Parry=true]",
-			 "[Weapon Substring=katana_] [Sound Type=BLADE] [Animation=CHOP] [Property=VERSATILE] [Sweep=0] [Additional Reach=0.0] [Knockback=0.5] [Crit Chance=0.1] [Additional Crit Damage=0.5] [Parry=true]",
-			 "[Weapon Substring=longsword_] [Sound Type=BLADE] [Animation=SWEEP] [Property=VERSATILE] [Sweep=1] [Additional Reach=0.0] [Knockback=0.5] Crit Chance=0.1] [Additional Crit Damage=0.0] [Parry=true]",
-			 "[Weapon Substring=saber_] [Sound Type=BLADE] [Animation=SWEEP] [Property=ONEHAND] [Sweep=1] [Additional Reach=0.0] [Knockback=0.2] [Crit Chance=0.1] [Additional Crit Damage=0.0] [Parry=true]",
-			 "[Weapon Substring=rapier_] [Sound Type=BLADE] [Animation=STAB] [Property=ONEHAND] [Sweep=0] [Additional Reach=0.0] [Knockback=0.0] [Crit Chance=0.1] [Additional Crit Damage=0.0] [Parry=true] [Potion Effect=CRIT,AFFLICT,bettercombat:bleeding,1,100]",
-			 "[Weapon Substring=battleaxe_] [Sound Type=AXE] [Animation=CHOP] [Property=VERSATILE] [Sweep=0] [Additional Reach=0.0] [Knockback=0.8] [Crit Chance=0.25] [Additional Crit Damage=0.0] [Parry=true]",
-			 "[Weapon Substring=_shovel] [Sound Type=AXE] [Animation=CHOP] [Property=ONEHAND] [Sweep=0] [Additional Reach=0.0] [Knockback=0.5] [Crit Chance=0.05] [Additional Crit Damage=0.0] [Parry=true]",
-			 "[Weapon Substring=_sword] [Sound Type=BLADE] [Animation=SWEEP] [Property=ONEHAND] [Sweep=1] [Additional Reach=0.0] [Knockback=0.2] [Crit Chance=0.1] [Additional Crit Damage=0.0] [Parry=true]",
-			 "[Weapon Substring=_pickaxe] [Sound Type=AXE] [Animation=CHOP] [Property=ONEHAND] [Sweep=0] [Additional Reach=0.0] [Knockback=0.5] [Crit Chance=0.05] [Additional Crit Damage=0.0] [Parry=true]",
-			 "[Weapon Substring=_axe] [Sound Type=AXE] [Animation=CHOP] [Property=ONEHAND] [Sweep=0] [Additional Reach=0.0] [Knockback=0.8] [Crit Chance=0.25] [Additional Crit Damage=0.0] [Parry=true]",
-			 "[Weapon Substring=_hoe] [Sound Type=AXE] [Animation=CHOP] [Property=ONEHAND] [Sweep=0] [Additional Reach=0.0] [Knockback=0.2] [Crit Chance=0.05] [Additional Crit Damage=0.0] [Parry=true]"
-		};
+	public static ArrayList<CustomWeapon> weapons = new ArrayList<CustomWeapon>();
+	private static String[] weaponList =
+	{
+		 "[Weapon Substring=pike_] [Sound Type=POLEARM] [Animation=STAB] [Property=TWOHAND] [Sweep=0] [Additional Reach=2.0] [Knockback=0.2] [Crit Chance=0.1] [Additional Crit Damage=0.0] [Parry=true]",
+		 "[Weapon Substring=glaive_] [Sound Type=POLEARM] [Animation=SWEEP] [Property=TWOHAND] [Sweep=2] [Additional Reach=1.0] [Knockback=0.5] [Crit Chance=0.1] [Additional Crit Damage=0.0] [Parry=true]",
+		 "[Weapon Substring=spear_] [Sound Type=POLEARM] [Animation=STAB] [Property=MAINHAND] [Sweep=0] [Additional Reach=1.0] [Knockback=0.2] [Crit Chance=0.1] [Additional Crit Damage=0.0] [Parry=true]",
+		 "[Weapon Substring=lance_] [Sound Type=POLEARM] [Animation=STAB] [Property=MAINHAND] [Sweep=0] [Additional Reach=1.0] [Knockback=1.0] [Crit Chance=0.1] [Additional Crit Damage=0.0] [Parry=true]",
+		 "[Weapon Substring=halberd_] [Sound Type=POLEARM] [Animation=CHOP] [Property=TWOHAND] [Sweep=0] [Additional Reach=1.0] [Knockback=0.8] [Crit Chance=0.25] [Additional Crit Damage=0.0] [Parry=true]",
+		 "[Weapon Substring=staff] [Sound Type=POLEARM] [Animation=SWEEP] [Property=TWOHAND] [Sweep=2] [Additional Reach=1.0] [Knockback=1.0] [Crit Chance=0.1] [Additional Crit Damage=0.5] [Parry=true] [Potion Effect=CRIT,RECEIVE,minecraft:speed,2,160]",
+		 "[Weapon Substring=warhammer_] [Sound Type=BLUNT] [Animation=CHOP] [Property=VERSATILE] [Sweep=0] [Additional Reach=0.0] [Knockback=1.0][Crit Chance=0.1] [Additional Crit Damage=0.0] [Parry=true]",
+		 "[Weapon Substring=hammer_] [Sound Type=BLUNT] [Animation=CHOP] [Property=ONEHAND] [Sweep=0] [Additional Reach=0.0] [Knockback=1.5] [Crit Chance=0.1] [Additional Crit Damage=0.0] [Parry=true] [Potion Effect=CRIT,AFFLICT,minecraft:nausea,1,100]",
+		 "[Weapon Substring=mace_] [Sound Type=BLUNT] [Animation=CHOP] [Property=ONEHAND] [Sweep=0] [Additional Reach=0.0] [Knockback=0.8] [Crit Chance=0.1] [Additional Crit Damage=0.0] [Parry=true]",
+		 "[Weapon Substring=club_] [Sound Type=BLUNT] [Animation=CHOP] [Property=ONEHAND] [Sweep=0] [Additional Reach=0.0] [Knockback=0.8] [Crit Chance=0.1] [Additional Crit Damage=0.0] [Parry=true]",
+		 "[Weapon Substring=caestus] [Sound Type=BLUNT] [Animation=STAB] [Property=ONEHAND] [Sweep=0] [Additional Reach=0.0] [Knockback=0.2] [Crit Chance=0.1] [Additional Crit Damage=0.0] [Parry=true]",
+		 "[Weapon Substring=greatsword_] [Sound Type=BLADE] [Animation=SWEEP] [Property=TWOHAND] [Sweep=3] [Additional Reach=1.0] [Knockback=0.5][Crit Chance=0.1] [Additional Crit Damage=0.0] [Parry=true]",
+		 "[Weapon Substring=katana_] [Sound Type=BLADE] [Animation=CHOP] [Property=VERSATILE] [Sweep=0] [Additional Reach=0.0] [Knockback=0.5] [Crit Chance=0.1] [Additional Crit Damage=0.5] [Parry=true]",
+		 "[Weapon Substring=longsword_] [Sound Type=BLADE] [Animation=SWEEP] [Property=VERSATILE] [Sweep=1] [Additional Reach=0.0] [Knockback=0.5] Crit Chance=0.1] [Additional Crit Damage=0.0] [Parry=true]",
+		 "[Weapon Substring=saber_] [Sound Type=BLADE] [Animation=SWEEP] [Property=ONEHAND] [Sweep=1] [Additional Reach=0.0] [Knockback=0.2] [Crit Chance=0.1] [Additional Crit Damage=0.0] [Parry=true]",
+		 "[Weapon Substring=rapier_] [Sound Type=BLADE] [Animation=STAB] [Property=ONEHAND] [Sweep=0] [Additional Reach=0.0] [Knockback=0.0] [Crit Chance=0.1] [Additional Crit Damage=0.0] [Parry=true] [Potion Effect=CRIT,AFFLICT,bettercombat:bleeding,1,100]",
+		 "[Weapon Substring=battleaxe_] [Sound Type=AXE] [Animation=CHOP] [Property=VERSATILE] [Sweep=0] [Additional Reach=0.0] [Knockback=0.8] [Crit Chance=0.25] [Additional Crit Damage=0.0] [Parry=true]",
+		 "[Weapon Substring=_shovel] [Sound Type=AXE] [Animation=CHOP] [Property=ONEHAND] [Sweep=0] [Additional Reach=0.0] [Knockback=0.5] [Crit Chance=0.05] [Additional Crit Damage=0.0] [Parry=true]",
+		 "[Weapon Substring=_sword] [Sound Type=BLADE] [Animation=SWEEP] [Property=ONEHAND] [Sweep=1] [Additional Reach=0.0] [Knockback=0.2] [Crit Chance=0.1] [Additional Crit Damage=0.0] [Parry=true]",
+		 "[Weapon Substring=_pickaxe] [Sound Type=AXE] [Animation=CHOP] [Property=ONEHAND] [Sweep=0] [Additional Reach=0.0] [Knockback=0.5] [Crit Chance=0.05] [Additional Crit Damage=0.0] [Parry=true]",
+		 "[Weapon Substring=_axe] [Sound Type=AXE] [Animation=CHOP] [Property=ONEHAND] [Sweep=0] [Additional Reach=0.0] [Knockback=0.8] [Crit Chance=0.25] [Additional Crit Damage=0.0] [Parry=true]",
+		 "[Weapon Substring=_hoe] [Sound Type=AXE] [Animation=CHOP] [Property=ONEHAND] [Sweep=0] [Additional Reach=0.0] [Knockback=0.2] [Crit Chance=0.05] [Additional Crit Damage=0.0] [Parry=true]"
+	};
+	
+	
 	
 	public static class CustomAxe
 	{
@@ -331,11 +343,6 @@ public class ConfigurationHandler
 		private Potion potionEffect;
 		public int potionPower;
 		public int potionDuration;
-		
-//		public Potion getPotion()
-//		{
-//			return Potion.getPotionFromResourceLocation(this.potionEffect);
-//		}
 		
 		public Potion getPotion()
 		{
@@ -431,7 +438,7 @@ public class ConfigurationHandler
 		/* --------------------------------------------------------------------------------------------------------------------- */
 		String KNOCKBACK = "Knockback";
 		
-		betterKnockback = config.getBoolean("Better Knockback", KNOCKBACK, true, "Enable have the KNOCKBACK_RESISTANCE attribute reduce the strength of knockback effects, rather than reducing the chance to not be knocked back. (For example: by default, a knockback_resistance of 0.5 means a 50% chance to not be knocked back from an attack. However, if this setting is true, a knockback_resistance of 0.5 means the distance or effects of being knocked back are 50% less far or powerful.");
+		betterKnockback = config.getBoolean("Better Knockback", KNOCKBACK, true, "Enable have the KNOCKBACK_RESISTANCE attribute instead reduce the strength of knockback effects, rather than reducing the chance to not be knocked back. (By default in Minecraft, a knockback_resistance of 0.6 means a 60% chance for that entity to NOT be knocked back from an attack. However, if this setting is true, a knockback_resistance of 0.6 instead means the distance/effect of being knocked back are 60% less far/powerful for that entity.");
 		knockUpStrengthMultiplier = config.get(KNOCKBACK, "knock Up Strength Multiplier", 0.5, "Multiply the motionY amount of knockback by this amount. Set to 0.5 by default to reduce the motionY by 50%. Does nothing if betterKnockback is disabled.").getDouble();
 		knockbackStrengthMultiplier = config.get(KNOCKBACK, "knockback Strength Multiplier", 1.0, "Multiply the motionXZ amount of knockback by this amount. This setting is pretty sensitive, and values below 0.5 have almost no visible knockback.").getDouble();
 		sprintingKnockbackAmount = config.get(KNOCKBACK, "Sprinting Knockback Amount", 0.5, "Increases the knockback of an attack when sprinting. For example, setting this to 2.0F is the same knockback amount as Knockback II.").getDouble();
@@ -440,7 +447,7 @@ public class ConfigurationHandler
 		String PARRYING = "Parrying";
 		
 		parryChanceEffectivness = config.get(PARRYING, "Parry Chance Effectivness", 3.0, "The attack damage of a weapon is used to calculate the chance of parrying an attack. This setting counts as a multiplier to attack damage for determining the chance to parry an attack. The higher the attack damage of the parry weapon, the higher chances of parrying. This increases the effectivness of parrying with two-handed weapons, which often have higher attack damage. This method also lets weapon material tiers scale to difficulty. Higher damage incoming attacks have a lower the chance of parried. For example, if this setting is set at 3 and the parrying weapon has 5 attack damage, an incoming attack of 9 damage has a 9/(3*5) or 60% chance of NOT being parried.").getDouble();
-		parryKnockbackAmount = config.getFloat("Parry Knockback Amount", PARRYING, 0.5F, 0.0F, 1.0F, "How far both the attacker and victim are knockbacked after a parry.");
+		parryKnockbackAmount = config.getFloat("Parry Knockback Amount", PARRYING, 0.5F, 0.0F, 1.0F, "How far both the attacker and victim are knockbacked after a parry. Setting this to 2.0F is the same knockback amount as Knockback II. This value is affected by knockbackStrengthMultiplier and knockUptrengthMultiplier when betterKnockback is enabled.");
 		enableParrying = config.getBoolean("Enable Parrying", PARRYING, true, "Set to false to disable all parrying mechanics from this mod. If enabled, you must specify which weapons can and can not parry in the Custom Weapon Tweaker config.");
 		
 		/* --------------------------------------------------------------------------------------------------------------------- */
@@ -481,7 +488,6 @@ public class ConfigurationHandler
 		showReachTooltip = config.getBoolean("Show Reach Tooltip", TOOLTIPS, true, "If set to true, display Reach Distance on weapon tooltips. For advanced modpack makers, if another mod is adding Reach Distance on a weapon, I recommend blanking out the fields you want gone in the lang file of that mod using Resource Loader.");
 		showReachTooltipAsTotal = config.getBoolean("Show Reach Tooltip As Total", TOOLTIPS, false, "If set to true, display Reach Distance as the total weapon Reach Distance (5.0 Reach Distance), instead of additional Reach Distance (+1.0 Reach Distance).");
 		showSweepTooltip = config.getBoolean("Show Sweep Tooltip", TOOLTIPS, true, "If set to true, display the Sweep tooltip. For advanced modpack makers, if another mod is adding Reach Distance on a weapon, I recommend blanking out the fields you want gone in the lang file of that mod using Resource Loader.");
-//		removeRedundantSpartanWeaponryTooltips = config.getBoolean("Remove Redundant Spartan Weaponry Tooltips", TOOLTIPS, true, "If set to true, tooltips from Spartan Weaponry (such as Two-Handed, Reach, and Sweep) will be removed. These Spartan Weaponry tooltips are instead added through this mod and the Custom Weapon config setting.");
 		
 		/* --------------------------------------------------------------------------------------------------------------------- */
 		String UNARMED = "Unarmed";
@@ -489,6 +495,7 @@ public class ConfigurationHandler
 		fistAndNonWeaponDamageReduction = config.get(UNARMED, "Unarmed & Non-Weapon Damage Reduction", 0.5, "Reduce damage from unarmed and non-weapon attacks. The damage of unarmed and non-weapons is reduced by this amount. The reason for this, is that unarmed and non-weapon attacks technically have a higher DPS than wooden tools when 'Hurt Resistant Time' is removed, so unarmed and non-weapon damage should be lowered.", 0.0, baseAttackDamage).getDouble();
 		fistAndNonWeaponKnockbackReduction = config.get(UNARMED, "Unarmed & Non-Weapon Knockback Reduction", 0.0, "Reduce the knockback from unarmed and non-weapon attacks. The knockback of unarmed and non-weapons is reduced by this amount.", 0.0, baseKnockback).getDouble();
 		fistAndNonWeaponReachReduction = config.get(UNARMED, "Unarmed & Non-Weapon Reach Reduction", 0.5, "Reduce the attack range from fists and non-weapon attacks. The range of unarmed and non-weapons is reduced by this amount.", 0.0, 4.0).getDouble();
+		
 		/* --------------------------------------------------------------------------------------------------------------------- */
 		String VISUAL = "Visual";
 

@@ -17,10 +17,12 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.settings.KeyBinding;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityLivingBase;
+import net.minecraft.item.ItemTool;
 import net.minecraft.launchwrapper.Launch;
 import net.minecraft.util.DamageSource;
 import net.minecraft.util.SoundEvent;
 
+/* https://github.com/KevyPorter/Minecraft-Forge-Utils/tree/master */
 public class Reflections
 {
 	private static Method unpressKey;
@@ -74,6 +76,29 @@ public class Reflections
 	private static Method playHurtSound;
 	private static final String PHSD_SRG = "func_184581_c";
 	private static final String PHSD_MCP = "playHurtSound";
+	
+	private static Field efficiency;
+	private static final String EFF_SRG = "field_77349_p";
+	private static final String EFF_MCP = "efficiency";
+	
+	public static Float getEfficiency( ItemTool tool )
+	{
+		try
+		{
+
+			if ( efficiency == null )
+			{
+				efficiency = ItemTool.class.getDeclaredField(getName(EFF_SRG, EFF_MCP));
+				efficiency.setAccessible(true);
+			}
+
+			return (Float) efficiency.getFloat(tool);
+		}
+		catch ( Exception ex )
+		{
+			return 4.0F;
+		}
+	}
 	
 	public static void unpressKey( KeyBinding keyBinding )
 	{

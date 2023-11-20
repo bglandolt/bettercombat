@@ -45,33 +45,13 @@ public class BetterCombatHand
 			}
 		}
 		
-		this.parry = customWeapon.parry;
+		this.canWeaponParry = customWeapon.parry;
 		this.sweep = sweepMod;
 				
 		int cd = MathHelper.clamp(cooldownTicks, ConfigurationHandler.minimumAttackSpeedTicks, 15);
 
 		this.equipTimerIncrement = 1.0F / (3.0F * (cd));
 		this.equipSoundTimer = cd / 2;
-	}
-	
-	public void resetBetterCombatWeapon()
-	{
-		this.mining = false;
-
-		this.customWeapon = null;
-		
-		this.parry = false;
-		this.sweep = 0;
-		
-		this.swingTimer = 0;
-		this.swingTimerCap = 0;
-		this.swingTimerIncrement = 0.0F;
-
-		this.equipSoundTimer = 0;
-		this.equipTimerIncrement = 0.5F;
-		
-		this.swingTimestampSound = 0;
-		this.swingTimestampDamage = 0;
 	}
 	
 	public boolean hasCustomWeapon()
@@ -142,9 +122,9 @@ public class BetterCombatHand
 		return 0.0D;
 	}
 	
-	public boolean canParry()
+	public boolean canWeaponParry()
 	{
-		return this.parry; // !ConfigurationHandler.disableParrying && 
+		return this.canWeaponParry; // !ConfigurationHandler.disablecanWeaponParrying && 
 	}
 	
 	public int getSweep()
@@ -157,40 +137,55 @@ public class BetterCombatHand
 		return this.equipTimerIncrement;
 	}
 	
+	public void resetBetterCombatWeapon()
+	{
+		this.customWeapon = null;
+		
+		this.canWeaponParry = false;
+		this.sweep = 0;
+		
+		this.swingTimer = 0;
+		this.swingTimerCap = 0;
+		this.swingTimerIncrement = 0.0F;
+
+		this.equipSoundTimer = 0;
+		this.equipTimerIncrement = 0.5F;
+		
+		this.swingTimestampSound = 0;
+		this.swingTimestampDamage = 0;
+		
+		this.mining = false;
+	}
+	
 	/* The custom weapon */
 	CustomWeapon customWeapon = null;
 	
-	private boolean parry = false;
+	private boolean canWeaponParry = false;
 	
 	/* The weapons custom reach amount */
 	private int sweep = 0;
 
 	/* How long the swing timer is in ticks, counting down to 0 */
 	private int swingTimer = 0;
-	
 	/* The value the swing timer started at in ticks */
 	private int swingTimerCap = 0;
-	
-	/* 
-	 * How long the equip sound timer is in ticks after equipping a weapon, counting down to 0,
-	 * This is only used for determining equip/sheathe sounds
-	 */
-	public int equipSoundTimer = 0;
-		
-	/* How long the equip animation is, in partial ticks */
-	private float equipTimerIncrement = 0.5F;
-	
 	/* How fast the animation counts down, in partial ticks */
 	private float swingTimerIncrement = 0.0F;
 	
+	/* How long the equip sound timer is in ticks after equipping a weapon, counting down to 0, This is only used for determining equip/sheathe sounds */
+	public int equipSoundTimer = 0;
+	/* How long the equip animation is, in partial ticks */
+	private float equipTimerIncrement = 0.5F;
+	
 	/* When the swingTimer reaches this number, make a swing sound */
 	private int swingTimestampSound = 0;
-	
 	/* When the swingTimer reaches this number, send a damage packet */
 	private int swingTimestampDamage = 0;
 
 	/* Mouse held down and is mining a block */
 	private boolean mining = false;
+	
+	
 	
 	public float moveRightVariance = 1.0F;
 	public float moveUpVariance = 1.0F;
@@ -327,13 +322,13 @@ public class BetterCombatHand
 		this.swingTimestampDamage = this.swingTimestampSound-1;
 	}
 	
-	public void startMining()
+	public void startMining( int i )
 	{
 		this.mining = true;
 		
-		this.swingTimer = 10;
+		this.swingTimer = i;
 		this.swingTimerCap = this.swingTimer;
-		this.swingTimerIncrement = 0.1F;
+		this.swingTimerIncrement = 1.0F/this.swingTimer;
 		
 		this.swingTimestampSound = 8;
 		this.swingTimestampDamage = 9;

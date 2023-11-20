@@ -54,8 +54,8 @@ public class AnimationHandler
 //    	this.offhandAnimationTicks = 0.0F;
     	
     	this.breatheTicks = 0.0F;
-    	this.mainhandSprintingTimer = 0.0F;
-    	this.offhandSprintingTimer = 0.0F;
+    	this.mainhandSprintingTimer = 0;
+    	this.offhandSprintingTimer = 0;
     	
     	this.tooClose = false;
     	this.tooCloseTimer = 0.0F;
@@ -93,8 +93,8 @@ public class AnimationHandler
 	/* Raises the weapon up and down to simulate breathing */
 	public float breatheTicks;
 	
-	public float mainhandSprintingTimer;
-	public float offhandSprintingTimer;
+	public int mainhandSprintingTimer;
+	public int offhandSprintingTimer;
 
 	public boolean tooClose;
 	/* Capped at 0.4 */
@@ -129,7 +129,6 @@ public class AnimationHandler
 //		ClientProxy.EHC_INSTANCE.mc.player.hurtTime = 0; // event.getPartialTicks(); // TODO
 //		ClientProxy.EHC_INSTANCE.mc.player.maxHurtTime = 1000; // TODO
 //		ClientProxy.EHC_INSTANCE.mc.player.attackedAtYaw = 0;
-
 //		xx = (float)ClientProxy.EHC_INSTANCE.mc.player.posX;
 //		yy = (float)ClientProxy.EHC_INSTANCE.mc.player.posY - 50;
 //		zz = (float)ClientProxy.EHC_INSTANCE.mc.player.posZ;
@@ -311,33 +310,37 @@ public class AnimationHandler
     		{
 				Item tool = ClientProxy.EHC_INSTANCE.itemStackMainhand.getItem();
 				
-				if ( ClientProxy.EHC_INSTANCE.betterCombatMainhand.getAnimation().equals(Animation.STAB) )
+				if ( tool instanceof ItemSpade )
 				{
-	        		this.animationStabMainhand();
+					if ( this.mainhandSprintingTimer < 20 )
+					{
+						this.mainhandSprintingTimer += 6;
+					}
+					
+					if ( this.mainhandSprintingTimer > 20 )
+					{
+						this.mainhandSprintingTimer = 20;
+					}
+					
+		        	GlStateManager.rotate(-this.mainhandSprintingTimer*4,1.0F,0.0F,0.0F); /* Chopping rotation */
+		        	
+		        	this.animationDiggingMainhand();
+					//this.resetEquippedProgressMainhand();
 				}
 				else if ( tool instanceof ItemAxe )
 				{
 					this.animationSweepMainhand();
-					this.resetEquippedProgressMainhand();
+					//this.resetEquippedProgressMainhand();
 				}
-				else if ( tool instanceof ItemSpade )
+				else if ( ClientProxy.EHC_INSTANCE.betterCombatMainhand.getAnimation().equals(Animation.STAB) )
 				{
-					if ( this.mainhandSprintingTimer < 20 )
-					{
-						this.mainhandSprintingTimer += 4;
-					}
-					
-					GlStateManager.rotate(-this.mainhandSprintingTimer*4.0F,1.0F,0.0F,0.0F); /* Chopping rotation */
-					GlStateManager.rotate(this.mainhandSprintingTimer*2.0F,0.0F,0.0F,1.0F);	        	
-		        	GlStateManager.translate(-this.mainhandSprintingTimer*0.05F, 0.0F, 0.0F);
-		        	
-		        	this.animationStabMainhand();
-					this.resetEquippedProgressMainhand();
+	        		this.animationStabMainhand();
+					//this.resetEquippedProgressMainhand();
 				}
 				else /* Sword, Pickaxe, Axe */
 				{
 					this.animationChopMainhand();
-					this.resetEquippedProgressMainhand();
+					//this.resetEquippedProgressMainhand();
 				}
 			}
 			else switch ( ClientProxy.EHC_INSTANCE.betterCombatMainhand.getAnimation() )
@@ -360,6 +363,7 @@ public class AnimationHandler
 	        	{
 	        		this.animationStabMainhand();
 	               	this.animationStabCameraMainhand();
+	               	/* No re-equip animation */
 	            	this.equippedProgressMainhand = 0.0F;
 	        		break;
 	        	}
@@ -420,6 +424,7 @@ public class AnimationHandler
         /* If the weapon is an axe, position it upwards */
     	if ( ClientProxy.EHC_INSTANCE.betterCombatMainhand.getAnimation().equals(Animation.CHOP) )
     	{
+        	GlStateManager.rotate(-13.0F-this.mainhandSprintingTimer,1.0F,0.0F,0.0F); /* Chopping rotation */
     		/* Position the weapon in default position */
             GlStateManager.translate(0.02F, 0.08F, 0.0F);
         	GlStateManager.rotate(-18.0F,0.0F,1.0F,0.0F);
@@ -559,6 +564,7 @@ public class AnimationHandler
 		/* If the weapon is an axe, position it upwards */
     	if ( ClientProxy.EHC_INSTANCE.betterCombatOffhand.getAnimation().equals(Animation.CHOP) )
     	{
+        	GlStateManager.rotate(-13.0F-this.offhandSprintingTimer,1.0F,0.0F,0.0F); /* Chopping rotation */
     		/* Position the weapon in default position */
             GlStateManager.translate(-0.02F, 0.08F, 0.0F);
         	GlStateManager.rotate(18.0F,0.0F,1.0F,0.0F);
@@ -959,6 +965,102 @@ public class AnimationHandler
 	}
 	
     /* ---------------------------------------------------------------------------------------------------------------------------------------- */
+	/*																	STAB ANIMATION															*/
+    /* ---------------------------------------------------------------------------------------------------------------------------------------- */
+	
+	private void animationDiggingMainhand()
+	{
+		float moveRight = 0.0F; /* +right */
+		float moveUp = 0.0F; /* +up */
+		float moveClose = 0.0F; /* +zoom */
+		
+		float rotateUp = 0.0F; /* +up */
+		float rotateCounterClockwise = 0.0F; /* +counter-clockwise */
+		float rotateLeft = 0.0F; /* +left */
+		
+	    float closeCap = (0.4F - (float)this.tooCloseTimer) * 1.25F;
+		
+		rotateUp = -clamp(this.mainhandEnergy * 400.0F, 60.0F);
+		
+		rotateCounterClockwise = clamp(this.mainhandEnergy * 88.0F, 40.0F) - this.mainhandEnergy * 10.0F;
+
+		rotateLeft = rotateCounterClockwise - clamp(this.mainhandEnergy * 25.0F, 10.0F);
+		
+		if ( this.mainhandEnergy > 0.2F )
+		{
+			if ( this.mainhandEnergy > 0.4F )
+			{
+				if ( this.mainhandEnergy > 0.8F )
+				{
+					/* (RETURN) HIGHEST | 0.8F -> 1 */
+					/* ======= */
+					float energy = (this.mainhandEnergy - 0.8F);
+					
+					/* Move +Close */
+					moveClose = -clamp(closeCap, 0.5F) + energy*2.0F;
+					
+					/* Move +Right */
+					moveRight = -0.5F + energy*2.5F;
+					
+					/* Move -Down */
+					moveUp = 0.4F * closeCap - energy*2.3F;
+					
+					//if ( this.mainhandEnergy > 0.9F )
+					{
+						energy *= energy;
+						
+						rotateUp += clampMultiplier(energy, 25.0F, 60.0F);
+						rotateCounterClockwise -= clampMultiplier(energy, 25.0F, 30.0F);
+						rotateLeft -= clampMultiplier(energy, 25.0F, 10.0F);
+					}
+				}
+				else
+				{
+					/* (HOLD) HIGH | 0.4F -> 0.8F */
+					/* ==== */
+
+					/* Stay -Away */
+					moveClose = -clamp(closeCap, 0.4F);
+					
+					/* Stay -Left */
+					moveRight = -0.5F;
+					
+					/* Stay +Up */
+					moveUp = 0.4F * closeCap;
+				}
+			}
+			else
+			{
+				/* (THRUST) LOW | 0.2F -> 0.4F */
+				/* === */
+				
+				/* Move -Away */
+				moveClose = -clamp((this.mainhandEnergy - 0.2F) * 2.0F, closeCap);
+				
+				/* Move -Left */
+				moveRight = (this.mainhandEnergy - 0.2F) * -2.5F;
+				
+				/* Move +Up */
+				moveUp = - moveRight * closeCap * 0.8F;
+			}
+		}
+		else
+		{
+			/* (READY) LOWEST | 0.0F -> 0.2F */
+			moveClose = MathHelper.sin(this.mainhandEnergy*PI*5.0F) * 0.1F;
+		}
+		
+		GlStateManager.translate(
+       	/* X */ 1.25F * moveRight * ClientProxy.EHC_INSTANCE.betterCombatMainhand.moveRightVariance,
+       	/* Y */ moveUp * ClientProxy.EHC_INSTANCE.betterCombatMainhand.moveUpVariance,
+       	/* Z */ 0.4F * moveClose * ClientProxy.EHC_INSTANCE.betterCombatMainhand.moveCloseVariance);
+       	
+    	/* - */ GlStateManager.rotate(0.4F * rotateUp * ClientProxy.EHC_INSTANCE.betterCombatMainhand.rotateUpVariance, 1.0F, 0.0F, 0.0F);
+    	/* - */ GlStateManager.rotate(0.4F * rotateCounterClockwise * ClientProxy.EHC_INSTANCE.betterCombatMainhand.rotateCounterClockwiseVariance, 0.0F, 1.0F, 0.0F);
+    	/* + */ GlStateManager.rotate(1.6F * rotateLeft * ClientProxy.EHC_INSTANCE.betterCombatMainhand.rotateLeftVariance + MathHelper.sin(this.mainhandEnergy*PI) * 0.5F, 0.0F, 0.0F, 1.0F);
+	}
+	
+	/* ---------------------------------------------------------------------------------------------------------------------------------------- */
 	/*																	STAB ANIMATION															*/
     /* ---------------------------------------------------------------------------------------------------------------------------------------- */
 	
