@@ -119,7 +119,7 @@ public class BetterCombatHand
 			return this.getCustomWeapon().additionalReachMod;
 		}
 		
-		return 0.0D;
+		return -ConfigurationHandler.fistAndNonWeaponReachReduction;
 	}
 	
 	public boolean canWeaponParry()

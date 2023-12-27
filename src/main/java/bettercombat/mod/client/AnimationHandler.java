@@ -250,7 +250,7 @@ public class AnimationHandler
 			}
     		else if ( ClientProxy.EHC_INSTANCE.itemStackOffhand.getItem() instanceof ItemShield )
     		{
-    	    	if ( Helpers.isHandActive(ClientProxy.EHC_INSTANCE.mc.player, EnumHand.OFF_HAND) )
+    	    	if ( Helpers.isHandActive(ClientProxy.EHC_INSTANCE.mc.player, EnumHand.OFF_HAND) && ( !ConfigurationHandler.disableBlockingWhileAttacking || ClientProxy.EHC_INSTANCE.isMainhandAttackReady() ) ) // && !this.isMainhandAttacking() && this.equippedProgressMainhand >= 0.0F )
     			{
 					/* Block animation takes 10 frames (3.33 ticks) */
 					if ( this.blockingTimer < 10 )
@@ -312,20 +312,22 @@ public class AnimationHandler
 				
 				if ( tool instanceof ItemSpade )
 				{
-					if ( this.mainhandSprintingTimer < 20 )
-					{
-						this.mainhandSprintingTimer += 6;
-					}
-					
-					if ( this.mainhandSprintingTimer > 20 )
-					{
-						this.mainhandSprintingTimer = 20;
-					}
-					
-		        	GlStateManager.rotate(-this.mainhandSprintingTimer*4,1.0F,0.0F,0.0F); /* Chopping rotation */
+//					if ( this.mainhandSprintingTimer < 20 )
+//					{
+//						this.mainhandSprintingTimer += 6;
+//					}
+//					
+//					if ( this.mainhandSprintingTimer > 20 )
+//					{
+//						this.mainhandSprintingTimer = 20;
+//					}
+//					
+//		        	GlStateManager.rotate(-this.mainhandSprintingTimer*2 ,1.0F,0.0F,0.0F); /* Chopping rotation */
 		        	
+		        	// this.animationChopMainhand();
+		        	// this.animationSweepMainhand();
 		        	this.animationDiggingMainhand();
-					//this.resetEquippedProgressMainhand();
+					// this.resetEquippedProgressMainhand();
 				}
 				else if ( tool instanceof ItemAxe )
 				{
@@ -424,16 +426,16 @@ public class AnimationHandler
         /* If the weapon is an axe, position it upwards */
     	if ( ClientProxy.EHC_INSTANCE.betterCombatMainhand.getAnimation().equals(Animation.CHOP) )
     	{
-        	GlStateManager.rotate(-13.0F-this.mainhandSprintingTimer,1.0F,0.0F,0.0F); /* Chopping rotation */
+        	GlStateManager.rotate(-11.0F-this.mainhandSprintingTimer,1.0F,0.0F,0.0F); /* Chopping rotation */
     		/* Position the weapon in default position */
             GlStateManager.translate(0.02F, 0.08F, 0.0F);
-        	GlStateManager.rotate(-18.0F,0.0F,1.0F,0.0F);
-        	GlStateManager.rotate(-6.0F,0.0F,0.0F,1.0F);
+        	GlStateManager.rotate(-16.0F,0.0F,1.0F,0.0F);
+        	GlStateManager.rotate(-8.0F,0.0F,0.0F,1.0F);
     	}
         /* If the weapon is a spear, rotate it accordingly */
     	else if ( ClientProxy.EHC_INSTANCE.betterCombatMainhand.getAnimation().equals(Animation.STAB) )
         {
-        	GlStateManager.rotate(-34.0F-this.mainhandSprintingTimer,1.0F,0.0F,0.0F); /* Chopping rotation */
+        	GlStateManager.rotate(-44.0F-this.mainhandSprintingTimer,1.0F,0.0F,0.0F); /* Chopping rotation */
         	GlStateManager.translate(0.0F, -this.tooCloseTimer, 0.0F);
         }
         else
@@ -564,16 +566,16 @@ public class AnimationHandler
 		/* If the weapon is an axe, position it upwards */
     	if ( ClientProxy.EHC_INSTANCE.betterCombatOffhand.getAnimation().equals(Animation.CHOP) )
     	{
-        	GlStateManager.rotate(-13.0F-this.offhandSprintingTimer,1.0F,0.0F,0.0F); /* Chopping rotation */
+        	GlStateManager.rotate(-11.0F-this.offhandSprintingTimer,1.0F,0.0F,0.0F); /* Chopping rotation */
     		/* Position the weapon in default position */
             GlStateManager.translate(-0.02F, 0.08F, 0.0F);
-        	GlStateManager.rotate(18.0F,0.0F,1.0F,0.0F);
-        	GlStateManager.rotate(6.0F,0.0F,0.0F,1.0F);
+        	GlStateManager.rotate(16.0F,0.0F,1.0F,0.0F);
+        	GlStateManager.rotate(8.0F,0.0F,0.0F,1.0F);
     	}
         /* If the weapon is a spear, rotate it accordingly */
     	else if ( ClientProxy.EHC_INSTANCE.betterCombatOffhand.getAnimation().equals(Animation.STAB) )
         {
-        	GlStateManager.rotate(-34.0F-this.offhandSprintingTimer,1.0F,0.0F,0.0F); /* Chopping rotation */
+        	GlStateManager.rotate(-44.0F-this.offhandSprintingTimer,1.0F,0.0F,0.0F); /* Chopping rotation */
         	GlStateManager.translate(0.0F, -this.tooCloseTimer, 0.0F);
         }
         else
@@ -961,10 +963,10 @@ public class AnimationHandler
 		/* Camera */
     	float rotation = MathHelper.cos(0.5F + this.offhandEnergy * 2.5F * PI);
 		ClientProxy.EHC_INSTANCE.mc.player.cameraPitch -= rotation * ConfigurationHandler.cameraPitchSwing * f;
-		ClientProxy.EHC_INSTANCE.mc.player.rotationYaw -= rotation * ConfigurationHandler.rotationYawSwing * f;
+		ClientProxy.EHC_INSTANCE.mc.player.rotationYaw += rotation * ConfigurationHandler.rotationYawSwing * f;
 	}
 	
-    /* ---------------------------------------------------------------------------------------------------------------------------------------- */
+	/* ---------------------------------------------------------------------------------------------------------------------------------------- */
 	/*																	STAB ANIMATION															*/
     /* ---------------------------------------------------------------------------------------------------------------------------------------- */
 	
@@ -978,13 +980,12 @@ public class AnimationHandler
 		float rotateCounterClockwise = 0.0F; /* +counter-clockwise */
 		float rotateLeft = 0.0F; /* +left */
 		
-	    float closeCap = (0.4F - (float)this.tooCloseTimer) * 1.25F;
+	    float closeCap = (0.5F - this.tooCloseTimer);
 		
-		rotateUp = -clamp(this.mainhandEnergy * 400.0F, 60.0F);
+		rotateUp = -clamp(this.mainhandEnergy * 240.0F, 60.0F);
 		
-		rotateCounterClockwise = clamp(this.mainhandEnergy * 88.0F, 40.0F) - this.mainhandEnergy * 10.0F;
-
-		rotateLeft = rotateCounterClockwise - clamp(this.mainhandEnergy * 25.0F, 10.0F);
+		rotateCounterClockwise = clamp(this.mainhandEnergy * 200.0F, 80.0F) - this.mainhandEnergy * 20.0F;
+		rotateLeft = clamp(this.mainhandEnergy * 100.0F, 40.0F) - this.mainhandEnergy * 20.0F;
 		
 		if ( this.mainhandEnergy > 0.2F )
 		{
@@ -997,22 +998,18 @@ public class AnimationHandler
 					float energy = (this.mainhandEnergy - 0.8F);
 					
 					/* Move +Close */
-					moveClose = -clamp(closeCap, 0.5F) + energy*2.0F;
+					moveClose = -closeCap + energy * 2.5F;
 					
 					/* Move +Right */
-					moveRight = -0.5F + energy*2.5F;
+					moveRight = moveClose;
 					
 					/* Move -Down */
-					moveUp = 0.4F * closeCap - energy*2.3F;
+					moveUp = -moveClose;
 					
-					//if ( this.mainhandEnergy > 0.9F )
-					{
-						energy *= energy;
-						
-						rotateUp += clampMultiplier(energy, 25.0F, 60.0F);
-						rotateCounterClockwise -= clampMultiplier(energy, 25.0F, 30.0F);
-						rotateLeft -= clampMultiplier(energy, 25.0F, 10.0F);
-					}
+					energy *= energy;
+					rotateUp += clampMultiplier(energy, 25.0F, 70.0F);
+					rotateCounterClockwise -= clampMultiplier(energy, 25.0F, 30.0F);
+					rotateLeft -= clampMultiplier(energy, 25.0F, 10.0F);
 				}
 				else
 				{
@@ -1020,13 +1017,13 @@ public class AnimationHandler
 					/* ==== */
 
 					/* Stay -Away */
-					moveClose = -clamp(closeCap, 0.4F);
+					moveClose = -closeCap * (this.mainhandEnergy * 0.25F + 0.9F);
 					
 					/* Stay -Left */
-					moveRight = -0.5F;
+					moveRight = moveClose;
 					
 					/* Stay +Up */
-					moveUp = 0.4F * closeCap;
+					moveUp = -moveClose;
 				}
 			}
 			else
@@ -1035,36 +1032,34 @@ public class AnimationHandler
 				/* === */
 				
 				/* Move -Away */
-				moveClose = -clamp((this.mainhandEnergy - 0.2F) * 2.0F, closeCap);
+				moveClose = (0.2F - this.mainhandEnergy) * closeCap * 5.0F;
 				
 				/* Move -Left */
-				moveRight = (this.mainhandEnergy - 0.2F) * -2.5F;
+				moveRight = moveClose;
 				
 				/* Move +Up */
-				moveUp = - moveRight * closeCap * 0.8F;
+				moveUp = -moveClose -0.25F * closeCap;
 			}
 		}
 		else
 		{
 			/* (READY) LOWEST | 0.0F -> 0.2F */
-			moveClose = MathHelper.sin(this.mainhandEnergy*PI*5.0F) * 0.1F;
+			moveClose = MathHelper.sin(this.mainhandEnergy*PI*5.0F) * 0.2F;
+			
+			moveUp = -this.mainhandEnergy * closeCap * 2.5F;
 		}
 		
 		GlStateManager.translate(
-       	/* X */ 1.25F * moveRight * ClientProxy.EHC_INSTANCE.betterCombatMainhand.moveRightVariance,
-       	/* Y */ moveUp * ClientProxy.EHC_INSTANCE.betterCombatMainhand.moveUpVariance,
-       	/* Z */ 0.4F * moveClose * ClientProxy.EHC_INSTANCE.betterCombatMainhand.moveCloseVariance);
+       	/* X */ moveRight * ClientProxy.EHC_INSTANCE.betterCombatMainhand.moveRightVariance,
+       	/* Y */ 1.25F * moveUp * ClientProxy.EHC_INSTANCE.betterCombatMainhand.moveUpVariance,
+       	/* Z */ 0.5F * moveClose * ClientProxy.EHC_INSTANCE.betterCombatMainhand.moveCloseVariance);
        	
-    	/* - */ GlStateManager.rotate(0.4F * rotateUp * ClientProxy.EHC_INSTANCE.betterCombatMainhand.rotateUpVariance, 1.0F, 0.0F, 0.0F);
-    	/* - */ GlStateManager.rotate(0.4F * rotateCounterClockwise * ClientProxy.EHC_INSTANCE.betterCombatMainhand.rotateCounterClockwiseVariance, 0.0F, 1.0F, 0.0F);
-    	/* + */ GlStateManager.rotate(1.6F * rotateLeft * ClientProxy.EHC_INSTANCE.betterCombatMainhand.rotateLeftVariance + MathHelper.sin(this.mainhandEnergy*PI) * 0.5F, 0.0F, 0.0F, 1.0F);
+    	GlStateManager.rotate(rotateUp * ClientProxy.EHC_INSTANCE.betterCombatMainhand.rotateUpVariance, 1.0F, 0.0F, 0.0F);
+    	GlStateManager.rotate(rotateCounterClockwise * ClientProxy.EHC_INSTANCE.betterCombatMainhand.rotateCounterClockwiseVariance, 0.0F, 1.0F, 0.0F);
+    	GlStateManager.rotate(rotateLeft * ClientProxy.EHC_INSTANCE.betterCombatMainhand.rotateLeftVariance, 0.0F, 0.0F, 1.0F);
 	}
 	
-	/* ---------------------------------------------------------------------------------------------------------------------------------------- */
-	/*																	STAB ANIMATION															*/
-    /* ---------------------------------------------------------------------------------------------------------------------------------------- */
-	
-	private void animationStabMainhand()
+	private void animationStabMainhand() // XXXSTAB
 	{
 		float moveRight = 0.0F; /* +right */
 		float moveUp = 0.0F; /* +up */
@@ -1074,13 +1069,12 @@ public class AnimationHandler
 		float rotateCounterClockwise = 0.0F; /* +counter-clockwise */
 		float rotateLeft = 0.0F; /* +left */
 		
-	    float closeCap = (0.4F - (float)this.tooCloseTimer) * 1.25F;
+	    float closeCap = (0.6F - this.tooCloseTimer);
 		
-		rotateUp = -clamp(this.mainhandEnergy * 400.0F, 60.0F);
+		rotateUp = -clamp(this.mainhandEnergy * 240.0F, 60.0F);
 		
-		rotateCounterClockwise = clamp(this.mainhandEnergy * 88.0F, 40.0F) - this.mainhandEnergy * 10.0F;
-
-		rotateLeft = rotateCounterClockwise - clamp(this.mainhandEnergy * 25.0F, 10.0F);
+		rotateCounterClockwise = clamp(this.mainhandEnergy * 100.0F, 40.0F) - this.mainhandEnergy * 10.0F;
+		rotateLeft = clamp(this.mainhandEnergy * 50.0F, 20.0F) - this.mainhandEnergy * 10.0F;
 		
 		if ( this.mainhandEnergy > 0.2F )
 		{
@@ -1093,22 +1087,18 @@ public class AnimationHandler
 					float energy = (this.mainhandEnergy - 0.8F);
 					
 					/* Move +Close */
-					moveClose = -clamp(closeCap, 0.5F) + energy*2.0F;
+					moveClose = -closeCap + energy * 2.5F;
 					
 					/* Move +Right */
-					moveRight = -0.5F + energy*2.5F;
+					moveRight = moveClose;
 					
 					/* Move -Down */
-					moveUp = 0.5F * closeCap*2.3F-energy*2.3F;
+					moveUp = -moveClose;
 					
-					//if ( this.mainhandEnergy > 0.9F )
-					{
-						energy *= energy;
-						
-						rotateUp += clampMultiplier(energy, 25.0F, 60.0F);
-						rotateCounterClockwise -= clampMultiplier(energy, 25.0F, 30.0F);
-						rotateLeft -= clampMultiplier(energy, 25.0F, 10.0F);
-					}
+					energy *= energy;
+					rotateUp += clampMultiplier(energy, 25.0F, 70.0F);
+					rotateCounterClockwise -= clampMultiplier(energy, 25.0F, 30.0F);
+					rotateLeft -= clampMultiplier(energy, 25.0F, 10.0F);
 				}
 				else
 				{
@@ -1116,13 +1106,13 @@ public class AnimationHandler
 					/* ==== */
 
 					/* Stay -Away */
-					moveClose = -clamp(closeCap, 0.4F);
+					moveClose = -closeCap * (this.mainhandEnergy * 0.25F + 0.9F);
 					
 					/* Stay -Left */
-					moveRight = -0.5F;
+					moveRight = moveClose;
 					
 					/* Stay +Up */
-					moveUp = 0.5F * closeCap*2.3F;
+					moveUp = -moveClose;
 				}
 			}
 			else
@@ -1131,24 +1121,26 @@ public class AnimationHandler
 				/* === */
 				
 				/* Move -Away */
-				moveClose = -clamp((this.mainhandEnergy - 0.2F) * 2.0F, closeCap);
+				moveClose = (0.2F - this.mainhandEnergy) * closeCap * 5.0F;
 				
 				/* Move -Left */
-				moveRight = (this.mainhandEnergy - 0.2F) * -2.5F;
+				moveRight = moveClose;
 				
 				/* Move +Up */
-				moveUp = -moveRight * closeCap*2.3F;
+				moveUp = -moveClose -0.25F * closeCap;
 			}
 		}
 		else
 		{
 			/* (READY) LOWEST | 0.0F -> 0.2F */
-			moveClose = MathHelper.sin(this.mainhandEnergy*PI*5.0F) * 0.1F;
+			moveClose = MathHelper.sin(this.mainhandEnergy*PI*5.0F) * 0.2F;
+			
+			moveUp = -this.mainhandEnergy * closeCap * 2.5F;
 		}
 		
 		GlStateManager.translate(
        	/* X */ moveRight * ClientProxy.EHC_INSTANCE.betterCombatMainhand.moveRightVariance,
-       	/* Y */ moveUp * ClientProxy.EHC_INSTANCE.betterCombatMainhand.moveUpVariance,
+       	/* Y */ 1.25F * moveUp * ClientProxy.EHC_INSTANCE.betterCombatMainhand.moveUpVariance,
        	/* Z */ moveClose * ClientProxy.EHC_INSTANCE.betterCombatMainhand.moveCloseVariance);
        	
     	GlStateManager.rotate(rotateUp * ClientProxy.EHC_INSTANCE.betterCombatMainhand.rotateUpVariance, 1.0F, 0.0F, 0.0F);
@@ -1167,7 +1159,7 @@ public class AnimationHandler
 		ClientProxy.EHC_INSTANCE.mc.player.rotationYaw -= rotation*ConfigurationHandler.rotationYawSwing * f;
 	}
 	
-	private void animationStabOffhand()
+	private void animationStabOffhand() // XXXSTAB
 	{
 		float moveRight = 0.0F; /* +right */
 		float moveUp = 0.0F; /* +up */
@@ -1177,13 +1169,12 @@ public class AnimationHandler
 		float rotateCounterClockwise = 0.0F; /* +counter-clockwise */
 		float rotateLeft = 0.0F; /* +left */
 		
-	    float closeCap = (0.4F - (float)this.tooCloseTimer) * 1.25F;
+	    float closeCap = (0.6F - this.tooCloseTimer);
 		
-		rotateUp = -clamp(this.offhandEnergy * 400.0F, 60.0F);
+		rotateUp = -clamp(this.offhandEnergy * 240.0F, 60.0F);
 		
-		rotateCounterClockwise = clamp(this.offhandEnergy * 88.0F, 40.0F) - this.offhandEnergy * 10.0F;
-
-		rotateLeft = rotateCounterClockwise - clamp(this.offhandEnergy * 25.0F, 10.0F);
+		rotateCounterClockwise = clamp(this.offhandEnergy * 100.0F, 40.0F) - this.offhandEnergy * 10.0F;
+		rotateLeft = clamp(this.offhandEnergy * 50.0F, 20.0F) - this.offhandEnergy * 10.0F;
 		
 		if ( this.offhandEnergy > 0.2F )
 		{
@@ -1196,22 +1187,18 @@ public class AnimationHandler
 					float energy = (this.offhandEnergy - 0.8F);
 					
 					/* Move +Close */
-					moveClose = -clamp(closeCap, 0.5F) + energy*2.0F;
+					moveClose = -closeCap + energy * 2.5F;
 					
 					/* Move +Right */
-					moveRight = -0.5F + energy*2.5F;
+					moveRight = moveClose;
 					
 					/* Move -Down */
-					moveUp = 0.5F * closeCap*2.3F-energy*2.3F;
+					moveUp = -moveClose;
 					
-					//if ( this.offhandEnergy > 0.9F )
-					{
-						energy *= energy;
-						
-						rotateUp += clampMultiplier(energy, 25.0F, 60.0F);
-						rotateCounterClockwise -= clampMultiplier(energy, 25.0F, 30.0F);
-						rotateLeft -= clampMultiplier(energy, 25.0F, 10.0F);
-					}
+					energy *= energy;
+					rotateUp += clampMultiplier(energy, 25.0F, 70.0F);
+					rotateCounterClockwise -= clampMultiplier(energy, 25.0F, 30.0F);
+					rotateLeft -= clampMultiplier(energy, 25.0F, 10.0F);
 				}
 				else
 				{
@@ -1219,13 +1206,13 @@ public class AnimationHandler
 					/* ==== */
 
 					/* Stay -Away */
-					moveClose = -closeCap;
+					moveClose = -closeCap * (this.offhandEnergy * 0.25F + 0.9F);
 					
 					/* Stay -Left */
-					moveRight = -0.5F;
+					moveRight = moveClose;
 					
 					/* Stay +Up */
-					moveUp = 0.5F * closeCap*2.3F;
+					moveUp = -moveClose;
 				}
 			}
 			else
@@ -1234,24 +1221,26 @@ public class AnimationHandler
 				/* === */
 				
 				/* Move -Away */
-				moveClose = -clamp((this.offhandEnergy - 0.2F) * 2.0F, closeCap);
+				moveClose = (0.2F - this.offhandEnergy) * closeCap * 5.0F;
 				
 				/* Move -Left */
-				moveRight = (this.offhandEnergy - 0.2F) * -2.5F;
+				moveRight = moveClose;
 				
 				/* Move +Up */
-				moveUp = -moveRight * closeCap*2.3F;
+				moveUp = -moveClose -0.25F * closeCap;
 			}
 		}
 		else
 		{
 			/* (READY) LOWEST | 0.0F -> 0.2F */
-			moveClose = MathHelper.sin(this.mainhandEnergy*PI*5.0F) * 0.1F;
+			moveClose = MathHelper.sin(this.offhandEnergy*PI*5.0F) * 0.2F;
+			
+			moveUp = -this.offhandEnergy * closeCap * 2.5F;
 		}
 		
 		GlStateManager.translate(
        	/* X */ -moveRight * ClientProxy.EHC_INSTANCE.betterCombatOffhand.moveRightVariance,
-       	/* Y */ moveUp * ClientProxy.EHC_INSTANCE.betterCombatOffhand.moveUpVariance,
+       	/* Y */ 1.25F * moveUp * ClientProxy.EHC_INSTANCE.betterCombatOffhand.moveUpVariance,
        	/* Z */ moveClose * ClientProxy.EHC_INSTANCE.betterCombatOffhand.moveCloseVariance);
        	
     	GlStateManager.rotate(rotateUp * ClientProxy.EHC_INSTANCE.betterCombatOffhand.rotateUpVariance, 1.0F, 0.0F, 0.0F);
@@ -1267,7 +1256,7 @@ public class AnimationHandler
 		/* Camera */
 		float rotation = MathHelper.sin(-0.4F + this.offhandEnergy * 2.127323F * PI);
 		ClientProxy.EHC_INSTANCE.mc.player.cameraPitch -= rotation*ConfigurationHandler.cameraPitchSwing * f;
-		ClientProxy.EHC_INSTANCE.mc.player.rotationYaw -= rotation*ConfigurationHandler.rotationYawSwing * f;
+		ClientProxy.EHC_INSTANCE.mc.player.rotationYaw += rotation*ConfigurationHandler.rotationYawSwing * f;
 	}
 	
     /* ====================================================================================================================================================== */
@@ -1691,13 +1680,13 @@ public class AnimationHandler
 		{
 			case CROSSHAIRS:
 			{
-				boolean cancelled = event.isCanceled();
-				event.setCanceled(true);
-				if ( !cancelled )
+				if ( !event.isCanceled() && !ConfigurationHandler.showDefaultCrosshair )
 				{
+					event.setCanceled(true);
 					this.gc.renderAttackIndicator(0.5F, new ScaledResolution(Minecraft.getMinecraft()));
 					MinecraftForge.EVENT_BUS.post(new RenderGameOverlayEvent.Post(event, event.getType()));
 				}
+				
 				break;
 			}
 			default:
@@ -1738,134 +1727,4 @@ public class AnimationHandler
 		
 		return f;
 	}
-
-    /* ---------------------------------------------------------------------------------------------------------------------------------------- */
-	/*																MINING ANIMATION																*/
-    /* ---------------------------------------------------------------------------------------------------------------------------------------- */
-	
-
-//	/* ================== SWEEP MAINHAND ================== */
-//	private void aanimationSweepMainhand( float partialTicks )
-//	{
-//		GlStateManager.translate( this.mainhandAnimationTicks > 0.0F ? (0.512F * 5.25F) + this.mainhandAnimationTicks * ClientProxy.EHC_INSTANCE.betterCombatMainhand.xTranslate : this.mainhandEnergy * 5.25F,
-//		// this.mainhandEnergy <= 0.9F ? this.mainhandAnimationTicks * ClientProxy.EHC_INSTANCE.betterCombatMainhand.yTranslate : (0.9F - this.mainhandEnergy) * 2.0F + this.mainhandAnimationTicks * ClientProxy.EHC_INSTANCE.betterCombatMainhand.yTranslate,
-//		// this.mainhandAnimationTicks < 0.0F ? this.mainhandAnimationTicks * -0.2F : 0.0F,
-////		this.mainhandEnergy < 0.2F ? this.mainhandEnergy : 0.25F - this.mainhandEnergy * 0.25F,
-//		this.mainhandEnergy < 0.512F ? this.mainhandEnergy : 0.6144 - this.mainhandEnergy * 0.2F,
-//
-//		Math.sin(PI * this.mainhandEnergy) * ClientProxy.EHC_INSTANCE.betterCombatMainhand.zTranslate );
-//		GlStateManager.rotate(-cappedSpeed(this.mainhandEnergy*ClientProxy.EHC_INSTANCE.betterCombatMainhand.xRotate, 80.0F),1.0F,0.0F,0.0F); /* Point forward to enemy */
-//		GlStateManager.rotate(cappedSpeed(this.mainhandEnergy*ClientProxy.EHC_INSTANCE.betterCombatMainhand.yRotate, 90.0F),0.0F,1.0F,0.0F); /* Twist */
-//		GlStateManager.rotate( this.mainhandAnimationTicks > 0.0F ? -cappedSpeed(this.mainhandAnimationTicks*0.5F,40.0F) : this.mainhandAnimationTicks*80.0F,0.0F,0.0F,1.0F); /* Chop */
-//
-//		this.animationSweepCameraMainhand( partialTicks );
-//	}
-	
-	/* ------------------ SWEEP MAINHAND ------------------ */
-//	GlStateManager.translate
-//	(
-//   	0.0F,
-//   	-(MathHelper.sin(PI * this.mainhandEnergy)+this.mainhandEnergy)*0.33F,
-//   	/*																	   slight pull back 		  forward thrust, mAT starts at -0.5, stops at 0.0	 		  return to sender										*/
-//   	( this.mainhandAnimationTicks <= 0.0F ? (this.mainhandEnergy <= 0.25F ? this.mainhandEnergy*1.6F : this.mainhandAnimationTicks*-5.0F-2.1F) : (MathHelper.clamp(this.mainhandAnimationTicks*2.4F - 2.6F, -2.1F, 1.0F)) )
-//	);
-//	
-//	GlStateManager.rotate( -45.0F + (this.mainhandAnimationTicks <= 0.0F ? -cappedSpeed(this.mainhandEnergy*2.0F,50.0F) : -50.0F + this.mainhandAnimationTicks*10.0F),1.0F,0.0F,0.0F); /* Chopping rotation */
-//	GlStateManager.rotate(MathHelper.sin(PI * this.mainhandEnergy)*20.0F,0.0F,1.0F,1.0F);
-//	
-//	this.animationStabCameraMainhand();
-	
-	/* ================== STAB MAINHAND ================== */
-	
-//	private void animationSwordStabMainhand()
-//	{
-//		float moveRight = 0.0F; /* +right */
-//		float moveUp = 0.0F; /* +up */
-//		float moveClose = 0.0F; /* +zoom */
-//		
-//		float rotateUp = 0.0F; /* +up */
-//		float rotateCounterClockwise = 0.0F; /* +counter-clockwise */
-//		float rotateLeft = 0.0F; /* +left */
-//		
-//	    float closeCap = 0.4F - (float)this.tooCloseTimer;
-//		
-//		float readyDuration = 0.3F; // 0.3
-//		float travelDuration = 0.4F; // 0.4
-//		float holdDuration = 0.9F; // 0.7
-//		
-//		rotateUp = -clamp(this.mainhandEnergy * 2200.0F, 110.0F);
-//		
-//		rotateCounterClockwise = clamp(this.mainhandEnergy * 1600.0F, 40.0F) - this.mainhandEnergy * 20.0F;
-//				
-//		rotateLeft = clamp(this.mainhandEnergy * 1600.0F, 40.0F) - this.mainhandEnergy * 6.0F;
-//				
-//		/* Move +Up (Quickly) */
-//		moveUp = clamp(this.mainhandEnergy * 20.0F, closeCap);
-//		
-//		if ( this.mainhandEnergy > readyDuration )
-//		{
-//			if ( this.mainhandEnergy > travelDuration )
-//			{
-//				if ( this.mainhandEnergy > holdDuration )
-//				{
-//					/* HIGHEST | holdDuration -> 1 */
-//					/* ======= */
-//					
-//					/* Stay -left, Move +Right */
-//					moveRight = (travelDuration - readyDuration) * -8.15F + (this.mainhandEnergy - holdDuration) * 6.0F;
-//
-//					/* Stay -Away, Move +Close */
-//					moveClose = (travelDuration - readyDuration) * -1.35F + (this.mainhandEnergy - holdDuration) * 8.15F;
-//					
-//					/* Move -Down */
-//					moveUp -= (this.mainhandEnergy - holdDuration) * 4.0F;
-//				}
-//				else
-//				{
-//					/* HIGH | travelDuration -> holdDuration */
-//					/* ==== */
-//
-//					/* Stay -Left */
-//					moveRight = (travelDuration - readyDuration) * -8.15F;
-//
-//					/* Stay -Away */
-//					moveClose = (travelDuration - readyDuration) * -1.35F;
-//				}
-//			}
-//			else
-//			{
-//				/* LOW | readyDuration -> travelDuration */
-//				/* === */
-//				
-//				/* Move -Left */
-//				moveRight = (this.mainhandEnergy - readyDuration) * -8.15F;
-//
-//				/* Move -Away */
-//				moveClose = this.mainhandEnergy * -1.35F;
-//			}
-//		}
-//		else
-//		{
-//			/* LOWEST | 0 -> readyDuration */
-//			/* ===== */
-//
-//			/* Move +Right, Move -Left */
-//			moveRight = MathHelper.sin(this.mainhandEnergy * (1.0F/readyDuration) * PI) * 2.0F;
-//
-//			/* Move -Away */
-//			moveClose = this.mainhandEnergy * -1.35F;
-//		}
-//		
-//		GlStateManager.translate(
-//       	/* X */ moveRight,
-//       	/* Y */ moveUp,
-//       	/* Z */ moveClose);
-//       	
-//    	GlStateManager.rotate(rotateUp, 1.0F, 0.0F, 0.0F);
-//    	
-//    	GlStateManager.rotate(rotateCounterClockwise, 0.0F, 1.0F, 0.0F);
-//
-//    	GlStateManager.rotate(rotateLeft, 0.0F, 0.0F, 1.0F);
-//	}
-	
 }

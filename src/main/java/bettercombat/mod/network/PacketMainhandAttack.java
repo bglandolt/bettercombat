@@ -67,16 +67,7 @@ public class PacketMainhandAttack implements IMessage
 				}
 			}
 			
-			if ( ConfigurationHandler.inertiaOnAttack != 1.0F )
-			{
-				if ( player.onGround )
-				{
-					player.motionX *= ConfigurationHandler.inertiaOnAttack;
-					player.motionZ *= ConfigurationHandler.inertiaOnAttack;
-
-					player.velocityChanged = true;
-				}
-			}
+			Helpers.applySwingInteria(player);
 			
 //			if ( ConfigurationHandler.momentumOnAttack != 0.0F )
 //			{

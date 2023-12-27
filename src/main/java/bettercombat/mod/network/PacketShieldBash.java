@@ -1,6 +1,5 @@
 package bettercombat.mod.network;
 
-import bettercombat.mod.util.ConfigurationHandler;
 import bettercombat.mod.util.Helpers;
 import io.netty.buffer.ByteBuf;
 import net.minecraft.entity.Entity;
@@ -79,16 +78,7 @@ public class PacketShieldBash implements IMessage
 
 			player.stopActiveHand();
 
-			if ( ConfigurationHandler.inertiaOnAttack != 1.0F )
-			{
-				if ( player.onGround )
-				{
-					player.motionX *= ConfigurationHandler.inertiaOnAttack;
-					player.motionZ *= ConfigurationHandler.inertiaOnAttack;
-
-					player.velocityChanged = true;
-				}
-			}
+			Helpers.applySwingInteria(player);
 		}
 	}
 }

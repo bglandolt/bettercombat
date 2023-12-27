@@ -93,30 +93,57 @@ public class EventHandlers
 	{
 
 	}
+	
+	/*
+	    EntityPlayer.attackEntityFrom(DamageSource, float) > ForgeHooks.onPlayerAttack(this, source, amount) > LivingAttackEvent (damage)
+	    
+	    EntityPlayer.attackTargetEntityWithCurrentItem(Entity ) > ForgeHooks.onPlayerAttackTarget(this, targetEntity) > AttackEntityEvent (attack)
+	    
+	    
+		public static boolean onPlayerAttackTarget(EntityPlayer player, Entity target)
+	    {
+	        if (MinecraftForge.EVENT_BUS.post(new AttackEntityEvent(player, target))) return false;
+	        ItemStack stack = player.getHeldItemMainhand();
+	        return stack.isEmpty() || !stack.getItem().onLeftClickEntity(stack, player, target);
+	    }
+	    
+	    (Item)
+	    
+	    Called when the player Left Clicks (attacks) an entity.
+	    Processed before damage is done, if the return value is TRUE, further processing is canceled and the entity is NOT attacked!
+	     
+	    @param stack The Item being used
+	    @param player The player that is attacking
+	    @param entity The entity being attacked
+	    @return True to cancel the rest of the interaction.
+     
+	    public boolean onLeftClickEntity(ItemStack stack, EntityPlayer player, Entity entity)
+	    {
+	        return false;
+	    }
+	/* 
     
 	/* AttackEntityEvent is responsible for calling LivingHurtEvent */
 	@SubscribeEvent(priority = EventPriority.HIGHEST, receiveCanceled = true)
 	public void cancelAttackEntityEvent(AttackEntityEvent event)
 	{
-		/* Set the hurtResistantTime to cancel the damage, rather than completely cancelling the attack */
-		if ( event.getTarget() instanceof EntityLivingBase )
+		/* If both hands are empty, */
+		if ( (event.getEntityPlayer().getHeldItemMainhand().isEmpty() && event.getEntityPlayer().getHeldItemOffhand().isEmpty()) || !ConfigurationHandler.isBlacklisted(event.getEntityPlayer().getHeldItemMainhand().getItem()) )
 		{
-			event.getTarget().hurtResistantTime = ((EntityLivingBase)event.getTarget()).maxHurtResistantTime;
-		}
-		
-		if ( event.getEntityPlayer().getHeldItemMainhand().isEmpty() && event.getEntityPlayer().getHeldItemOffhand().isEmpty() )
-		{
-			/* CarryOn */
+			/* Set the hurtResistantTime to cancel the damage, rather than completely cancelling the attack! */
+			if ( event.getTarget() instanceof EntityLivingBase )
+			{
+				event.getTarget().hurtResistantTime = ((EntityLivingBase)event.getTarget()).maxHurtResistantTime;
+			}
+			
+			/* Count the attack as a "hit" for the CarryOn mod! */
 			event.getEntityLiving().hitByEntity(event.getEntityPlayer());
+			
 			return;
 		}
-		
-		if ( ConfigurationHandler.isBlacklisted(event.getEntityPlayer().getHeldItemMainhand().getItem()) )
-		{
-			event.getEntityLiving().hitByEntity(event.getEntityPlayer());
-			event.setCanceled(true);
-			return;
-		}
+				
+		/* Cancel the event, this attack deals no damage and does not count as a hit! */
+		// event.setCanceled(true);
 		
 		return;
 	}
@@ -632,6 +659,9 @@ public class EventHandlers
 					if ( player.getActiveHand().equals(EnumHand.MAIN_HAND) && player.getEntityData().hasKey("isParrying") && player.getEntityData().getBoolean("isParrying") && ConfigurationHandler.isItemClassWhiteList(player.getHeldItemMainhand().getItem()) )
 					{
 						PacketHandler.instance.sendTo(new PacketParried(), player);
+						
+						Helpers.applySwingInteria(player);
+						
 			            player.swingArm(EnumHand.MAIN_HAND);
 						double attackDamage = 1.0D + Helpers.getMainhandAttackDamage(player, player.getHeldItemMainhand());
 						

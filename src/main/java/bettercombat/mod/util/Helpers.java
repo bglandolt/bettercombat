@@ -864,6 +864,20 @@ public final class Helpers
 	{
 		return 0.9F + player.getRNG().nextFloat() * 0.2F;
 	}
+	
+	public static void applySwingInteria(EntityPlayer player)
+	{
+		if ( ConfigurationHandler.inertiaOnAttack != 1.0F )
+		{
+			if ( player.onGround )
+			{
+				player.motionX *= ConfigurationHandler.inertiaOnAttack;
+				player.motionZ *= ConfigurationHandler.inertiaOnAttack;
+				
+				player.velocityChanged = true;
+			}
+		}
+	}
 
 //	public static final double RADIAN_TO_DEGREE = 180.0D/Math.PI;
 //	
@@ -1593,233 +1607,6 @@ public final class Helpers
 
 		return orElse;
 	}
-
-	// public static int getOffhandCooldown(EntityPlayer player, ItemStack oh,
-	// ItemStack mh)
-	// {
-	// /* https://minecraft.fandom.com/wiki/Attribute */
-	//
-	// /*
-	// OPERATION 0 (ADD)
-	//
-	// add (amount +/-): Saved as operation 0. Adds all of the modifiers' amounts
-	// to the current value of the attribute. For example, modifying an attribute
-	// with {Amount:2,Operation:0} and {Amount:4,Operation:0} with a Base of 3
-	// results in 9 (3 + 2 + 4 = 9)
-	// */
-	// double speed = ConfigurationHandler.baseAttackSpeed;
-	//
-	// /*
-	// OPERATION 1 ()
-	//
-	// multiply_base (amount % +/-, additive): Saved as operation 1. Multiplies the
-	// current value of the attribute by (1 + x), where x is the sum of the
-	// modifiers'
-	// amounts. For example, modifying an attribute with {Amount:2,Operation:1} and
-	// {Amount:4,Operation:1} with a Base of 3 results in 21 (3 * (1 + 2 + 4) = 21)
-	// */
-	// double multiply_base = 1.0D;
-	//
-	// /*
-	// OPERATION 2 ()
-	//
-	// multiply (amount % +/-, multiplicative): Saved as operation 2. For every
-	// modifier,
-	// multiplies the current value of the attribute by (1 + x), where x is the
-	// amount of
-	// the particular modifier. Functions the same as Operation 1 if there is only a
-	// single
-	// modifier with operation 1 or 2. However, for multiple modifiers it multiplies
-	// the
-	// modifiers rather than adding them. For example, modifying an attribute with
-	// {Amount:2,Operation:2} and {Amount:4,Operation:2} with a Base of 3 results in
-	// 45
-	// (3 * (1 + 2) * (1 + 4) = 45)
-	// */
-	// double multiply = 1.0D;
-	// Helpers.message("===");
-	//
-	// /* ADD ALL MODIFIERS */
-	// for ( AttributeModifier attribute :
-	// player.getEntityAttribute(SharedMonsterAttributes.ATTACK_SPEED).getModifiers()
-	// )
-	// {
-	// Helpers.message("add " + attribute.getAmount());
-	// switch ( attribute.getOperation() )
-	// {
-	// case 0:
-	// {
-	// speed += attribute.getAmount();
-	// break;
-	// }
-	// case 1:
-	// {
-	// multiply *= (1.0D+attribute.getAmount());
-	// break;
-	// }
-	// case 2:
-	// {
-	// multiply_base += attribute.getAmount();
-	// break;
-	// }
-	// }
-	// }
-	//
-	// /* ADD OFFHAND QUALITY TOOLS */
-	// for ( Map.Entry<String, AttributeModifier> modifier :
-	// oh.getAttributeModifiers(EntityEquipmentSlot.MAINHAND).entries() )
-	// {
-	// Helpers.message("a " + modifier.getValue().getAmount());
-	//
-	// if ( modifier.getKey().contains("attackSpeed") )
-	// {
-	// Helpers.message("add " + modifier.getValue().getAmount());
-	//
-	// switch ( modifier.getValue().getOperation() )
-	// {
-	// case 0:
-	// {
-	// speed += modifier.getValue().getAmount();
-	// break;
-	// }
-	// case 1:
-	// {
-	// multiply *= (1.0D+modifier.getValue().getAmount());
-	// break;
-	// }
-	// case 2:
-	// {
-	// multiply_base += modifier.getValue().getAmount();
-	// break;
-	// }
-	// }
-	// }
-	// }
-	//
-	// /* REMOVE MAINHAND QUALITY TOOLS */
-	// for ( Map.Entry<String, AttributeModifier> modifier :
-	// mh.getAttributeModifiers(EntityEquipmentSlot.MAINHAND).entries() )
-	// {
-	// Helpers.message("r " + modifier.getValue().getAmount());
-	//
-	// if ( modifier.getKey().contains("attackSpeed") )
-	// {
-	// Helpers.message("remove " + modifier.getValue().getAmount());
-	//
-	// switch ( modifier.getValue().getOperation() )
-	// {
-	// case 0:
-	// {
-	// speed -= modifier.getValue().getAmount();
-	// break;
-	// }
-	// case 1:
-	// {
-	// multiply /= (1.0D+modifier.getValue().getAmount());
-	// break;
-	// }
-	// case 2:
-	// {
-	// multiply_base -= modifier.getValue().getAmount();
-	// break;
-	// }
-	// }
-	// }
-	// }
-	// Helpers.message("===");
-	//
-	// return (int)((20.0D/MathHelper.clamp(speed * multiply_base * multiply, 0.1D,
-	// 20.0D))+0.5D);
-	// }
-	// final static UUID MAIN_HAND_ATTACK_SPEED =
-	// UUID.fromString("fa233e1c-4180-4865-b01b-bcce9785aca3");
-
-	// public static int getOffhandCooldown(EntityPlayer player)
-	// {
-	// double power = 1.0D;
-	// double speed = 0.0D;
-	//
-	// Multimap<String, AttributeModifier> modifiers =
-	// player.getHeldItemOffhand().getAttributeModifiers(EntityEquipmentSlot.MAINHAND);
-	//
-	// for ( Map.Entry<String, AttributeModifier> modifier : modifiers.entries())
-	// {
-	// if ( modifier.getKey().contains("attackSpeed") )
-	// {
-	// speed = modifier.getValue().getAmount();
-	// }
-	// }
-	//
-	// if ( player.isPotionActive(MobEffects.MINING_FATIGUE) )
-	// {
-	// power +=
-	// (0.1D*(player.getActivePotionEffect(MobEffects.MINING_FATIGUE).getAmplifier()+1));
-	// }
-	//
-	// if ( player.isPotionActive(MobEffects.HASTE) )
-	// {
-	// power -=
-	// (0.1D*(player.getActivePotionEffect(MobEffects.HASTE).getAmplifier()+1));
-	// }
-	//
-	// try
-	// {
-	// String speedString =
-	// StringUtils.substringBetween(StringUtils.reverse(player.getHeldItemOffhand().getTagCompound().toString()),
-	// "\"deepSkcatta.cireneg\":emaNetubirttA,", ":tnuomA");
-	// double speedDouble = Double.valueOf(StringUtils.reverse(speedString));
-	// power -= speedDouble;
-	// }
-	// catch(Exception e)
-	// {
-	//
-	// }
-	//
-	// if ( speed >= -3.9D )
-	// {
-	// return (int)((20.0D/(4.0D+speed)*power)+0.5D);
-	// }
-	// else
-	// {
-	// return (int)(200*power);
-	// }
-	// }
-
-	// public static float getOffhandDamage(EntityPlayer player)
-	// {
-	// float attack = 1.0F;
-	//
-	// for ( Map.Entry<String, AttributeModifier> modifier :
-	// player.getHeldItemOffhand().getAttributeModifiers(EntityEquipmentSlot.MAINHAND).entries()
-	// )
-	// {
-	// if ( modifier.getKey().contains("attackDamage") )
-	// {
-	// attack += (float) modifier.getValue().getAmount();
-	// }
-	// }
-	//
-	// /* get all modifiers such as strength, sinful, and main hand attack damage */
-	// for ( AttributeModifier modifier :
-	// player.getEntityAttribute(SharedMonsterAttributes.ATTACK_DAMAGE).getModifiers()
-	// )
-	// {
-	// attack += (float) modifier.getAmount();
-	// }
-	//
-	// /* remove main hand attack damage */
-	// for ( Map.Entry<String, AttributeModifier> modifier :
-	// player.getHeldItemMainhand().getAttributeModifiers(EntityEquipmentSlot.MAINHAND).entries()
-	// )
-	// {
-	// if ( modifier.getKey().contains("attackDamage") )
-	// {
-	// attack -= (float) modifier.getValue().getAmount();
-	// }
-	// }
-	//
-	// return ( attack ) * ConfigurationHandler.offHandEfficiency;
-	// }
 
 	public static int getOffhandFireAspect( EntityPlayer player )
 	{

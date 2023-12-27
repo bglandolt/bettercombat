@@ -98,8 +98,8 @@ public class ConfigurationHandler
 	public static double inertiaOnAttack = 0.5D;
 	public static boolean fastEquipHotbarOnly = false;
 	public static boolean fastEquipOffhandWeaponsOrShieldsOnly = true;
-	public static double extraAttackHeight = 0.75D;
-	public static double extraAttackWidth = 0.25D;
+	public static double extraAttackHeight = 1.0D;
+	public static double extraAttackWidth = 0.5D;
 	public static float nauseaAffectsMobs = 2.2F;
 	public static double miningFatigueDamageReduction = 0.0D;
 	public static float silverArmorDamagesUndeadAttackers = 1.5F;
@@ -194,19 +194,20 @@ public class ConfigurationHandler
 	/* UNARMED --------------------------------------------------------------------------------------------------------------------- */
 
 	public static double fistAndNonWeaponDamageReduction = 0.5;
-	public static double fistAndNonWeaponKnockbackReduction = 0.0;
+	public static double fistAndNonWeaponKnockbackReduction = 0.5;
 	public static double fistAndNonWeaponReachReduction = 0.5;
 		
 	/* VISUAL --------------------------------------------------------------------------------------------------------------------- */
 
 	public static boolean aetherealizedDamageParticles = true;
-	public static float breathingAnimationIntensity = 0.03F;
-	public static float breathingAnimationSpeed = 0.04F;
+	public static float breathingAnimationIntensity = 0.025F;
+	public static float breathingAnimationSpeed = 0.075F;
 	public static float cameraPitchSwing = 0.09F;
 	public static float rotationYawSwing = 0.18F;
 	public static boolean damageParticles = true;
 	public static boolean moreSweep = true;
 	public static boolean showShieldCooldownCrosshair = true;
+	public static boolean showDefaultCrosshair = false;
 	
 	/* SHIELD --------------------------------------------------------------------------------------------------------------------- */
 
@@ -426,8 +427,8 @@ public class ConfigurationHandler
 		inertiaOnAttack = config.get(OTHER, "Intertia on Attack", 0.5, "Multiplies the player speed by this amount when they swing a weapon. Set to 1.0 to disable.").getDouble();
 		fastEquipHotbarOnly = config.getBoolean("Fast Equip Hotbar Only", OTHER, false, "Set to true to have Fast Equip use only items in the hotbar instead of the entire inventory. The Fast Equip keybind is set to X, check the minecraft keybind settings to change this.");
 		fastEquipOffhandWeaponsOrShieldsOnly = config.getBoolean("Fast Equip Offhand Weapons Or Shields Only", OTHER, false, "Set to true to have Fast Equip only find weapons or shields, and not tools, for the offhand. Tools will still be found and equipped in the mainhand if no weapons are found. The Fast Equip keybind is set to X, check the minecraft keybind settings to change this.");
-		extraAttackWidth = config.get(OTHER, "Extra Attack Width", 0.25, "How wide, on all directions, the hitbox will be extended for melee attacks. Increase the value of this setting to make the XZ-accuracy of attacks more forgiving. 1.0 is equal to an additional block width on XZ sides.").getDouble();
-		extraAttackHeight = config.get(OTHER, "Extra Attack Height", 0.75, "How high the hitbox will be extended for melee attacks. Increase the value of this setting to make the Y-accuracy of attacks more forgiving. 1.0 is equal to an additional block height above the entity.").getDouble();
+		extraAttackWidth = config.get(OTHER, "Extra Attack Width", 0.5, "How wide, in blocks, the hitbox will be extended for melee attacks. Increase the value of this setting to make the XZ-accuracy of attacks more forgiving. 1.0 is equal to an additional block width on XZ sides.").getDouble();
+		extraAttackHeight = config.get(OTHER, "Extra Attack Height", 1.0, "How high, in blocks, the hitbox will be extended for melee attacks. Increase the value of this setting to make the Y-accuracy of attacks more forgiving. 1.0 is equal to an additional block height above the entity.").getDouble();
 		nauseaAffectsMobs = config.getFloat("Nausea Affects Mobs", OTHER, 2.2F, 0.0F, 256.0F, "Setting to have Nausea & Blindness affect mobs. If a mob has a height equal to or less than this value, it will be affected by Blindess and Nausea potion effects, which causes them to often lose their target and stumble around. Set to 0.0F to disable.");
 		silverArmorDamagesUndeadAttackers = config.getFloat("Silver Armor Damage", OTHER, 1.5F, 0.0F, 256.0F, "Thorns, but for undead. How much damage undead attackers will take against an entity wearing Silver armor per piece of Silver armor. Setting this to 1.5F and wearing 2 pieces of Silver armor deals 3.0F damage to undead attackers. Silver weapons get a damage bonus, so why not add a special interaction with Silver armor? Set to 0.0F to disable.");
 		grassPathingRequiresAnimation = config.getBoolean("Digging Grass Paths Requires Animation", OTHER, true, "If set to true, shoveling grass paths requires an animation. Shovels with a faster attack speed will path land faster.");
@@ -493,7 +494,7 @@ public class ConfigurationHandler
 		String UNARMED = "Unarmed";
 		
 		fistAndNonWeaponDamageReduction = config.get(UNARMED, "Unarmed & Non-Weapon Damage Reduction", 0.5, "Reduce damage from unarmed and non-weapon attacks. The damage of unarmed and non-weapons is reduced by this amount. The reason for this, is that unarmed and non-weapon attacks technically have a higher DPS than wooden tools when 'Hurt Resistant Time' is removed, so unarmed and non-weapon damage should be lowered.", 0.0, baseAttackDamage).getDouble();
-		fistAndNonWeaponKnockbackReduction = config.get(UNARMED, "Unarmed & Non-Weapon Knockback Reduction", 0.0, "Reduce the knockback from unarmed and non-weapon attacks. The knockback of unarmed and non-weapons is reduced by this amount.", 0.0, baseKnockback).getDouble();
+		fistAndNonWeaponKnockbackReduction = config.get(UNARMED, "Unarmed & Non-Weapon Knockback Reduction", 0.5, "Reduce the knockback from unarmed and non-weapon attacks. The knockback of unarmed and non-weapons is reduced by this amount.", 0.0, baseKnockback).getDouble();
 		fistAndNonWeaponReachReduction = config.get(UNARMED, "Unarmed & Non-Weapon Reach Reduction", 0.5, "Reduce the attack range from fists and non-weapon attacks. The range of unarmed and non-weapons is reduced by this amount.", 0.0, 4.0).getDouble();
 		
 		/* --------------------------------------------------------------------------------------------------------------------- */
@@ -501,8 +502,9 @@ public class ConfigurationHandler
 
 		aetherealizedDamageParticles = config.getBoolean("Aetherealized Damage Particles", VISUAL, true, "Enable to have the Aetherealized potion create a ring of particles around the target when struck.");
 		breathingAnimationIntensity = config.getFloat("Breathing Animation Intensity", VISUAL, 0.025F, 0.0F, 1.0F, "How fast items move up and down for the breathing animation.");
-		breathingAnimationSpeed = config.getFloat("Breathing Animation Speed", VISUAL, 0.036F, 0.0F, 1.0F, "How far items move up and down for the breathing animation.");
+		breathingAnimationSpeed = config.getFloat("Breathing Animation Speed", VISUAL, 0.075F, 0.0F, 1.0F, "How far items move up and down for the breathing animation.");
 		showShieldCooldownCrosshair = config.getBoolean("Show Shield Cooldown Crosshair", VISUAL, true, "Show the shield cooldown crosshair, similar to the dual-wielding crosshairs.");
+		showDefaultCrosshair = config.getBoolean("Show Default Crosshair", VISUAL, false, "Set to true to completely disable the new crosshair, and show the default crosshair.");
 		cameraPitchSwing = config.getFloat("Camera Pitch Swing", VISUAL, 0.09F, 0.0F, 1.0F, "How much your camera pitch moves when you swing a weapon. May cause slight motion sickness if set too high. Set to 0.0F to disable.");
 		rotationYawSwing = config.getFloat("Rotation Yaw Swing", VISUAL, 0.18F, 0.0F, 1.0F, "How much your camera yaw moves when you swing a weapon. May cause slight motion sickness if set too high. Set to 0.0F to disable.");
 		damageParticles = config.getBoolean("Damage Particles", VISUAL, true, "Enable to show heart damage particles (this is a vanilla feature, this option is here for those who wish to disable it).");
@@ -662,7 +664,7 @@ public class ConfigurationHandler
 		String BWLISTS = "White/Black Lists";
 
 		itemClassWhitelist = config.getStringList("Item Class Whitelist", BWLISTS, itemClassWhitelist, "Whitelisted item classes for attacking. If an item is added to this list, it will function as an Immersive Combat weapon. The Custom Weapons config is for editing the values and attributes of weapons. The class  net.minecraft.item.ItemSword  and anything that extends it is added by default.");
-		itemClassBlacklist = config.getStringList("Item Class Blacklist", BWLISTS, itemClassBlacklist, "Blacklisted item classes (Advanced setting; requires you to look through the source code of the mod that you are trying to add the class from). If an item is added to this list, it will have the default left-click and right-click behavior. This setting is useful for gun mods, or items that need to have their default left-click and right-click functionality. Example config value:    com.flansmod.common.guns.ItemGun    com.mrcrayfish.guns.item.ItemGun    techguns.items.guns.GenericGun");
+		itemClassBlacklist = config.getStringList("Item Class Blacklist", BWLISTS, itemClassBlacklist, "Blacklisted item classes (Advanced setting; requires you to look through the source code of the mod that you are trying to add the class from). If an item is added to this list, it will have the default left-click and right-click behavior. This setting is useful for gun mods, or items that need to have their default left-click and right-click functionality. Example config value:    com.flansmod.common.guns.ItemGun    com.mrcrayfish.guns.item.ItemGun    techguns.items.guns.GenericGun    com.jozufozu.yoyos.common.ItemYoyo");
 		itemBlacklist = config.getStringList("Item Blacklist", BWLISTS, itemBlacklist, "Blacklisted items (Simple setting; use CraftTweaker to get the syntax of the item in your hand. The command is: /ct hand). This is similar to Item Class Blacklist, however, it instead uses a resource location for specific items, such as:    mrcrayfish:gun");
 		entityBlacklist = config.getStringList("Entity Blacklist", BWLISTS, entityBlacklist, "Blacklisted entity classes for attacking with offhand or sweep. You will not be able to attack any entity that extends this class with your offhand, and they will not be hit by sweep! This is to prevent you from accidentally attacking or killing certain entities. Please note that entities extending IEntityOwnable are by default blacklisted, when the entity is owned by the attacker.");
 
