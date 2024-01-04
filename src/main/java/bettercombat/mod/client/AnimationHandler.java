@@ -845,6 +845,7 @@ public class AnimationHandler
 	/*																SWEEP ANIMATION																*/
     /* ---------------------------------------------------------------------------------------------------------------------------------------- */
 	
+	// xxxaaa
 	private void animationSweepMainhand()
 	{
 		float moveRight = 0.0F;
@@ -891,7 +892,7 @@ public class AnimationHandler
 	    }
 		
 		GlStateManager.translate(
-       	/* X */ moveRight * ClientProxy.EHC_INSTANCE.betterCombatMainhand.moveRightVariance,
+       	/* X */ 1.2F * moveRight * ClientProxy.EHC_INSTANCE.betterCombatMainhand.moveRightVariance,
        	/* Y */ moveUp * ClientProxy.EHC_INSTANCE.betterCombatMainhand.moveUpVariance,
        	/* Z */ moveClose * ClientProxy.EHC_INSTANCE.betterCombatMainhand.moveCloseVariance);
        	
@@ -926,11 +927,12 @@ public class AnimationHandler
 				
 				//rotateUp = 10.0F + energy * 100.0F;
 				
-				moveUp = 0.2F - energy * 3.0F;
+				moveUp = 0.2F - energy * 0.5F;
+				// moveUp = 0.2F - energy * 3.0F;
 				
 				moveRight = -1.55F + energy * 30.0F;
 				
-				rotateLeft = 80.0F + energy * 25.0F;
+				rotateLeft = 83.0F + energy * 12.5F;
 				
 			    moveClose = (-energy * 3.0F) * closeCap;
 			}
@@ -948,7 +950,7 @@ public class AnimationHandler
 					
 				    moveRight = -1.5F - energy * 0.25F;
 				    
-					rotateLeft = 75.0F + energy * 25.0F;
+					rotateLeft = 75.0F + energy * 40.0F;
 					
 				    moveClose = (0.2F - energy) * closeCap;
 				}
@@ -984,7 +986,7 @@ public class AnimationHandler
 	    		
 		GlStateManager.translate(
        	/* X */ 0.75F * moveRight * ClientProxy.EHC_INSTANCE.betterCombatMainhand.moveRightVariance,
-       	/* Y */ 0.75F * moveUp * ClientProxy.EHC_INSTANCE.betterCombatMainhand.moveUpVariance,
+       	/* Y */ 1.15F * moveUp * ClientProxy.EHC_INSTANCE.betterCombatMainhand.moveUpVariance,
        	/* Z */ moveClose * ClientProxy.EHC_INSTANCE.betterCombatMainhand.moveCloseVariance);
        	
 //		float xx = (float)ClientProxy.EHC_INSTANCE.mc.player.posX;

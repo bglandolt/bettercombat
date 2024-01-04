@@ -52,7 +52,7 @@ public class CustomScreenOverlay
 				}
 				else
 				{
-					if ( ClientProxy.AH_INSTANCE.mainhandEnergy > 0.2F )
+					if ( ClientProxy.AH_INSTANCE.mainhandEnergy > 0.35F )
 					{
 						if ( currentFrame < 16 )
 						{
@@ -79,8 +79,8 @@ public class CustomScreenOverlay
         int frameWidth = 64; /* width of a single frame */
         int frameHeight = 64; /* height of a single frame */
 
-		int x = (int)(scaledRes.getScaledWidth() / (scaleX+1.0F)) - 128;
-		int y = (int)(scaledRes.getScaledHeight() / (scaleY+1.0F)) - 64;
+		int x = (int)(scaledRes.getScaledWidth() / (scaleX+1.0F)) - 160;
+		int y = (int)(scaledRes.getScaledHeight() / (scaleY+1.0F)) - 72;
 		
         this.mc.getTextureManager().bindTexture(SWEEP_150);
 
@@ -94,7 +94,7 @@ public class CustomScreenOverlay
         // Render the current frame of the animation at a specific location
         GlStateManager.scale(scaleX, scaleY, 1.0F);
         // GlStateManager.rotate
-        this.mc.ingameGUI.drawTexturedModalRect(x + currentFrame*scaleX, y + currentFrame*scaleY, startX, startY, frameWidth, frameHeight);
+        this.mc.ingameGUI.drawTexturedModalRect(x + currentFrame*scaleX*2, y + currentFrame*scaleY*2, startX, startY, frameWidth, frameHeight);
         GlStateManager.disableBlend();
         GlStateManager.color(1.0F, 1.0F, 1.0F, 1.0F);
         
@@ -112,8 +112,8 @@ public class CustomScreenOverlay
         int frameWidth = 64; /* width of a single frame */
         int frameHeight = 64; /* height of a single frame */
 
-		int x = (int)(scaledRes.getScaledWidth() / (scaleX+1.0F));
-		int y = (int)(scaledRes.getScaledHeight() / (scaleY+1.0F)) - 128;
+		int x = (int)(scaledRes.getScaledWidth() / (scaleX+1.0F)) - 8;
+		int y = (int)(scaledRes.getScaledHeight() / (scaleY+1.0F)) - 44;
 		
         this.mc.getTextureManager().bindTexture(SWEEP_180);
 
@@ -127,7 +127,7 @@ public class CustomScreenOverlay
         // Render the current frame of the animation at a specific location
         GlStateManager.scale(scaleX, scaleY, 1.0F);
         // GlStateManager.rotate
-        this.mc.ingameGUI.drawTexturedModalRect(x - currentFrame*scaleX*2, y, startX, startY, frameWidth, frameHeight);
+        this.mc.ingameGUI.drawTexturedModalRect(x - currentFrame*scaleX*2, y - currentFrame*scaleY, startX, startY, frameWidth, frameHeight);
         GlStateManager.disableBlend();
         GlStateManager.color(1.0F, 1.0F, 1.0F, 1.0F);
         
