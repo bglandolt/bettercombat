@@ -195,10 +195,12 @@ public class BetterCombatHand
 	public float rotateCounterClockwiseVariance = 1.0F;
 	public float rotateLeftVariance = 1.0F;
 	
+	public boolean alternateAnimation = false;
+
 	private final Random rand = new Random();
 	
 	public void randomizeVariances()
-	{
+	{		
 		moveRightVariance = this.randomMoveVariance();
 		moveUpVariance = this.randomMoveVariance();
 		moveCloseVariance = this.randomMoveVariance();
@@ -275,9 +277,17 @@ public class BetterCombatHand
 		this.swingTimer = MathHelper.clamp(i, ConfigurationHandler.minimumAttackSpeedTicks, 14)-2;
 		this.swingTimerCap = this.swingTimer;
 		this.swingTimerIncrement = 1.0F/this.swingTimer;
-				
-		this.swingTimestampSound = Math.round(this.swingTimer*0.8F);
-		this.swingTimestampDamage = this.swingTimestampSound-1;
+		
+		if ( this.alternateAnimation = this.rand.nextBoolean() )
+		{
+			this.swingTimestampSound = Math.round(this.swingTimer*0.5F);
+			this.swingTimestampDamage = this.swingTimestampSound-1;
+		}
+		else
+		{
+			this.swingTimestampSound = Math.round(this.swingTimer*0.8F);
+			this.swingTimestampDamage = this.swingTimestampSound-1;
+		}
 		
 		this.randomizeVariances();
 	}

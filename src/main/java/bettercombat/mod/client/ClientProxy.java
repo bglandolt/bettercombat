@@ -18,6 +18,7 @@ public class ClientProxy extends CommonProxy
 {
 	public static EventHandlersClient EHC_INSTANCE;
 	public static AnimationHandler AH_INSTANCE;
+	public static CustomScreenOverlay CSO_INSTANCE;
 
 	public static KeyBinding fastEquip = new KeyBinding("key.fastEquip.desc", Keyboard.KEY_X, "key.categories.misc");
 
@@ -34,6 +35,7 @@ public class ClientProxy extends CommonProxy
 		super.postInit(event);
 		MinecraftForge.EVENT_BUS.register(EHC_INSTANCE = new EventHandlersClient());
 		MinecraftForge.EVENT_BUS.register(AH_INSTANCE = new AnimationHandler());
+		MinecraftForge.EVENT_BUS.register(CSO_INSTANCE = new CustomScreenOverlay());
 	}
 	
 	@Override

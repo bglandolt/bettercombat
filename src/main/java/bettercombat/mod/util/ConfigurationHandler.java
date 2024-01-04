@@ -200,8 +200,8 @@ public class ConfigurationHandler
 	/* VISUAL --------------------------------------------------------------------------------------------------------------------- */
 
 	public static boolean aetherealizedDamageParticles = true;
-	public static float breathingAnimationIntensity = 0.025F;
-	public static float breathingAnimationSpeed = 0.075F;
+	public static float breathingAnimationIntensity = 0.02F;
+	public static float breathingAnimationSpeed = 0.08F;
 	public static float cameraPitchSwing = 0.09F;
 	public static float rotationYawSwing = 0.18F;
 	public static boolean damageParticles = true;
@@ -501,8 +501,8 @@ public class ConfigurationHandler
 		String VISUAL = "Visual";
 
 		aetherealizedDamageParticles = config.getBoolean("Aetherealized Damage Particles", VISUAL, true, "Enable to have the Aetherealized potion create a ring of particles around the target when struck.");
-		breathingAnimationIntensity = config.getFloat("Breathing Animation Intensity", VISUAL, 0.025F, 0.0F, 1.0F, "How fast items move up and down for the breathing animation.");
-		breathingAnimationSpeed = config.getFloat("Breathing Animation Speed", VISUAL, 0.075F, 0.0F, 1.0F, "How far items move up and down for the breathing animation.");
+		breathingAnimationIntensity = config.getFloat("Breathing Animation Intensity", VISUAL, 0.02F, 0.0F, 1.0F, "How fast items move up and down for the breathing animation.");
+		breathingAnimationSpeed = config.getFloat("Breathing Animation Speed", VISUAL, 0.08F, 0.0F, 1.0F, "How far items move up and down for the breathing animation.");
 		showShieldCooldownCrosshair = config.getBoolean("Show Shield Cooldown Crosshair", VISUAL, true, "Show the shield cooldown crosshair, similar to the dual-wielding crosshairs.");
 		showDefaultCrosshair = config.getBoolean("Show Default Crosshair", VISUAL, false, "Set to true to completely disable the new crosshair, and show the default crosshair.");
 		cameraPitchSwing = config.getFloat("Camera Pitch Swing", VISUAL, 0.09F, 0.0F, 1.0F, "How much your camera pitch moves when you swing a weapon. May cause slight motion sickness if set too high. Set to 0.0F to disable.");
@@ -664,7 +664,7 @@ public class ConfigurationHandler
 		String BWLISTS = "White/Black Lists";
 
 		itemClassWhitelist = config.getStringList("Item Class Whitelist", BWLISTS, itemClassWhitelist, "Whitelisted item classes for attacking. If an item is added to this list, it will function as an Immersive Combat weapon. The Custom Weapons config is for editing the values and attributes of weapons. The class  net.minecraft.item.ItemSword  and anything that extends it is added by default.");
-		itemClassBlacklist = config.getStringList("Item Class Blacklist", BWLISTS, itemClassBlacklist, "Blacklisted item classes (Advanced setting; requires you to look through the source code of the mod that you are trying to add the class from). If an item is added to this list, it will have the default left-click and right-click behavior. This setting is useful for gun mods, or items that need to have their default left-click and right-click functionality. Example config value:    com.flansmod.common.guns.ItemGun    com.mrcrayfish.guns.item.ItemGun    techguns.items.guns.GenericGun    com.jozufozu.yoyos.common.ItemYoyo");
+		itemClassBlacklist = config.getStringList("Item Class Blacklist", BWLISTS, itemClassBlacklist, "Blacklisted item classes (Advanced setting; requires you to look through the source code of the mod that you are trying to add the class from). If an item is added to this list, it will have the default left-click and right-click behavior. This setting is useful for gun mods, or items that need to have their default left-click and right-click functionality. Example config value:    com.flansmod.common.guns.ItemGun    com.mrcrayfish.guns.item.ItemGun    techguns.items.guns.GenericGun    com.paneedah.weaponlib.Weapon    com.jozufozu.yoyos.common.ItemYoyo");
 		itemBlacklist = config.getStringList("Item Blacklist", BWLISTS, itemBlacklist, "Blacklisted items (Simple setting; use CraftTweaker to get the syntax of the item in your hand. The command is: /ct hand). This is similar to Item Class Blacklist, however, it instead uses a resource location for specific items, such as:    mrcrayfish:gun");
 		entityBlacklist = config.getStringList("Entity Blacklist", BWLISTS, entityBlacklist, "Blacklisted entity classes for attacking with offhand or sweep. You will not be able to attack any entity that extends this class with your offhand, and they will not be hit by sweep! This is to prevent you from accidentally attacking or killing certain entities. Please note that entities extending IEntityOwnable are by default blacklisted, when the entity is owned by the attacker.");
 
