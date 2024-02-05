@@ -1205,28 +1205,8 @@ public class EventHandlers
 									arrow.velocityChanged = true;
 								}
 
-								try
-								{
-									Field field = ObfuscationReflectionHelper.findField(event.getEntity().getClass(),
-									"baseDamage");
-
-									if (field == null)
-									{
-										field = ObfuscationReflectionHelper
-										.findField(event.getEntity().getClass().getSuperclass(), "baseDamage");
-									}
-
-									Float baseDamage = (Float) field.get(event.getEntity());
-
-									if (CustomBow.damage != 1.0D)
-									{
-										baseDamage = (float) (baseDamage * CustomBow.damage);
-									}
-
-								}
-								catch (Exception e)
-								{
-								}
+								// TODO baseDamage doesn't exist
+								// event.getEntity().baseDamage *= CustomBow.damage;
 
 								if (name.contains("silver"))
 								{
