@@ -1,6 +1,5 @@
 package bettercombat.mod.enchantment;
 
-import java.lang.reflect.Field;
 import java.util.List;
 
 import bettercombat.mod.util.ConfigurationHandler;
@@ -20,7 +19,6 @@ import net.minecraft.potion.PotionEffect;
 import net.minecraft.util.DamageSource;
 import net.minecraft.util.SoundCategory;
 import net.minecraft.util.math.AxisAlignedBB;
-import net.minecraftforge.fml.common.ObfuscationReflectionHelper;
 
 public class EnchantmentLightning extends Enchantment
 {
@@ -104,15 +102,7 @@ public class EnchantmentLightning extends Enchantment
 				{
 					EntityLightningBolt bolt = new EntityLightningBolt(victim.world, victim.posX + (victim.world.rand.nextBoolean() ? victim.world.rand.nextInt(lvl) * 0.5F : -victim.world.rand.nextInt(lvl) * 0.5F), victim.posY, victim.posZ + (victim.world.rand.nextBoolean() ? victim.world.rand.nextInt(lvl) * 0.5F : -victim.world.rand.nextInt(lvl) * 0.5F), true);
 
-					try
-					{
-						Field field = ObfuscationReflectionHelper.findField(bolt.getClass(), "lightningState");
-						field.setInt(bolt, 1);
-					}
-					catch (Exception e)
-					{
-						// System.out.println("ObfuscationReflectionHelper " + e);
-					}
+					bolt.lightningState = 1;
 					
 					victim.world.addWeatherEffect(bolt);
 				}

@@ -26,7 +26,6 @@ import bettercombat.mod.util.ConfigurationHandler.CustomSword;
 import bettercombat.mod.util.ConfigurationHandler.CustomWeapon;
 import bettercombat.mod.util.ConfigurationHandler.WeaponProperty;
 import bettercombat.mod.util.Helpers;
-import bettercombat.mod.util.Reflections;
 import bettercombat.mod.util.SoundHandler;
 import net.minecraft.block.Block;
 import net.minecraft.block.BlockDirt;
@@ -129,7 +128,7 @@ public class EventHandlersClient
 	{
 
 		/* If the left click counter is less greater than 0 */
-		if (Reflections.getLeftClickCounter(this.mc) > 0 && !this.mc.playerController.isInCreativeMode())
+		if (this.mc.leftClickCounter > 0 && !this.mc.playerController.isInCreativeMode())
 		{
 			/* Cancel left-click! */
 			return true;
@@ -210,7 +209,7 @@ public class EventHandlersClient
 
 					Helpers.applySwingInteria(player);
 
-					Reflections.setLeftClickCounter(this.mc, 10);
+					this.mc.leftClickCounter = 10;
 
 					/* Cancel left-click! */
 					return true;
@@ -252,7 +251,7 @@ public class EventHandlersClient
 				{
 					ItemTool tool = (ItemTool) this.itemStackMainhand.getItem();
 
-					float efficiency = Reflections.getEfficiency(tool);
+					float efficiency = tool.efficiency;
 
 					/*
 					 * WOOD = 2.0F STONE = 4.0F IRON = 6.0F DIAMOND = 8.0F GOLD = 12.0F
@@ -627,7 +626,7 @@ public class EventHandlersClient
 	{
 
 		/* If the player is not valid, */
-		if (this.invalidPlayer(this.mc.player) || Reflections.getRightClickDelayTimer(this.mc) > 0)
+		if (this.invalidPlayer(this.mc.player) || this.mc.rightClickDelayTimer > 0)
 		{
 			/* Cancel right-click! */
 			return true;
@@ -673,7 +672,7 @@ public class EventHandlersClient
 
 			}
 
-			Reflections.setRightClickDelayTimer(this.mc, 4);
+			this.mc.rightClickDelayTimer = 4;
 
 			/* Cancel right-click! */
 			return true;
@@ -733,7 +732,7 @@ public class EventHandlersClient
 
 			}
 
-			Reflections.setRightClickDelayTimer(this.mc, 4);
+			this.mc.rightClickDelayTimer = 4;
 
 			/* Cancel right-click! */
 			return true;
@@ -1053,7 +1052,7 @@ public class EventHandlersClient
 	private boolean rightClickMouse(EnumHand enumhand)
 	{
 
-		if (Reflections.getRightClickDelayTimer(this.mc) > 0)
+		if (this.mc.rightClickDelayTimer > 0)
 		{
 			/* Return true and cancel */
 			return true;
@@ -1077,7 +1076,7 @@ public class EventHandlersClient
 //					if ( itemstack.getItem().onItemRightClick(this.mc.player.getEntityWorld(), this.mc.player, enumhand).getType() == EnumActionResult.SUCCESS )
 //					{
 //						System.out.println("onItemRightClick");
-//						Reflections.setRightClickDelayTimer(this.mc, 4);
+//						this.mc.rightClickDelayTimer = 4;
 //						return true;
 //					}
 //					else
@@ -1089,14 +1088,14 @@ public class EventHandlersClient
 							if (this.mc.playerController.interactWithEntity(this.mc.player, this.mc.objectMouseOver.entityHit, this.mc.objectMouseOver, enumhand) == EnumActionResult.SUCCESS)
 							{
 								// System.out.println("interactWithEntity");
-								Reflections.setRightClickDelayTimer(this.mc, 4);
+								this.mc.rightClickDelayTimer = 4;
 								return true;
 							}
 
 							if (this.mc.playerController.interactWithEntity(this.mc.player, this.mc.objectMouseOver.entityHit, enumhand) == EnumActionResult.SUCCESS)
 							{
 								// System.out.println("interactWithEntity 2");
-								Reflections.setRightClickDelayTimer(this.mc, 4);
+								this.mc.rightClickDelayTimer = 4;
 								return true;
 							}
 
@@ -1133,7 +1132,7 @@ public class EventHandlersClient
 									}
 
 									// System.out.println("processRightClickBlock");
-									Reflections.setRightClickDelayTimer(this.mc, 4);
+									this.mc.rightClickDelayTimer = 4;
 									return true;
 								}
 
@@ -1154,7 +1153,7 @@ public class EventHandlersClient
 					net.minecraftforge.common.ForgeHooks.onEmptyClick(this.mc.player, enumhand);
 
 					// System.out.println("onEmptyClick");
-					Reflections.setRightClickDelayTimer(this.mc, 4);
+					this.mc.rightClickDelayTimer = 4;
 
 					// this.mc.player.setHeldItem(otherHand, tempItemStack);
 
@@ -1166,7 +1165,7 @@ public class EventHandlersClient
 					this.mc.entityRenderer.itemRenderer.resetEquippedProgress(enumhand);
 
 					// System.out.println("processRightClick");
-					Reflections.setRightClickDelayTimer(this.mc, 4);
+					this.mc.rightClickDelayTimer = 4;
 
 					// this.mc.player.setHeldItem(otherHand, tempItemStack);
 
@@ -1191,7 +1190,7 @@ public class EventHandlersClient
 //			{
 //				if ( !this.isMainhandAttackReady() || !this.isOffhandAttackReady() )
 //				{
-//					Reflections.activeItemStackUseCount((EntityLivingBase)this.mc.player, this.itemStackOffhand.getMaxItemUseDuration());
+//					((EntityLivingBase)this.mc.player).activeItemStackUseCount = this.itemStackOffhand.getMaxItemUseDuration();
 //					this.mc.player.stopActiveHand();
 //					
 //					event.setResult(Result.DENY);
@@ -1228,9 +1227,9 @@ public class EventHandlersClient
 				event.setResult(Result.DENY);
 				event.setCanceled(true);
 
-				if (Reflections.getRightClickDelayTimer(this.mc) <= 0)
+				if (this.mc.rightClickDelayTimer <= 0)
 				{
-					Reflections.setRightClickDelayTimer(this.mc, 4);
+					this.mc.rightClickDelayTimer = 4;
 				}
 
 				/* Sets this.mc.gameSettings.keyBindUseItem.isKeyDown() to true */
@@ -1281,7 +1280,7 @@ public class EventHandlersClient
 			if (this.mc.gameSettings.keyBindUseItem.getKeyCode() != -99)
 			{
 				/*
-				 * Reflections.unpressKey(this.mc.gameSettings.keyBindUseItem);
+				 * this.mc.gameSettings.keyBindUseItem.unpressKey();
 				 * this.mc.gameSettings.keyBindUseItem = new KeyBinding("key.use", -99,
 				 * "key.categories.gameplay");
 				 * this.mc.gameSettings.keyBindUseItem.setToDefault();
@@ -1291,15 +1290,15 @@ public class EventHandlersClient
 				if (this.overwriteRightClick())
 				{
 
-					if (Reflections.getRightClickDelayTimer(this.mc) <= 0)
+					if (this.mc.rightClickDelayTimer <= 0)
 					{
-						Reflections.setRightClickDelayTimer(this.mc, 4);
+						this.mc.rightClickDelayTimer = 4;
 					}
 
 				}
 
 				event.setResult(Result.DENY);
-				// Reflections.setRightClickDelayTimer(this.mc, 4); XXX
+				// this.mc.rightClickDelayTimer = 4; XXX
 			}
 
 		}
@@ -1314,7 +1313,7 @@ public class EventHandlersClient
 			if (this.mc.gameSettings.keyBindAttack.getKeyCode() != -100)
 			{
 				/*
-				 * Reflections.unpressKey(this.mc.gameSettings.keyBindAttack);
+				 * this.mc.gameSettings.keyBindAttack.unpressKey();
 				 * this.mc.gameSettings.keyBindAttack = new KeyBinding("key.attack", -100,
 				 * "key.categories.gameplay");
 				 * this.mc.gameSettings.keyBindAttack.setToDefault();
@@ -1409,7 +1408,7 @@ public class EventHandlersClient
 				if (this.betterCombatMainhand.getWeaponProperty() == WeaponProperty.TWOHAND)
 				{
 					/* Must be set to a number greater than 1, otherwise this will not work! */
-					Reflections.setRightClickDelayTimer(this.mc, 2);
+					this.mc.rightClickDelayTimer = 2;
 				}
 
 			}
@@ -1583,14 +1582,14 @@ public class EventHandlersClient
 
 		if (this.checkItemstackChangedOffhand(force))
 		{
-			Reflections.unpressKey(this.mc.gameSettings.keyBindUseItem);
+			this.mc.gameSettings.keyBindUseItem.unpressKey();
 
 			if (this.checkItemstackChangedMainhand(force))
 			{
 
 				if (!this.startedMining)
 				{
-					Reflections.unpressKey(this.mc.gameSettings.keyBindAttack);
+					this.mc.gameSettings.keyBindAttack.unpressKey();
 				}
 
 				return true;
@@ -1604,7 +1603,7 @@ public class EventHandlersClient
 
 			if (!this.startedMining)
 			{
-				Reflections.unpressKey(this.mc.gameSettings.keyBindAttack);
+				this.mc.gameSettings.keyBindAttack.unpressKey();
 			}
 
 			return true;

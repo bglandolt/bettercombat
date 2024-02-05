@@ -1,9 +1,9 @@
 [
 {
   "modid": "bettercombat",
-  "name": "Better Combat",
+  "name": "Immersive Combat",
   "description": "Enables dual wielding combat and add combat gameplay options.",
-  "version": "1.5.6",
+  "version": "2023.12.20",
   "mcversion": "1.12.2",
   "url": "http://www.minecraftforum.net/forums/mapping-and-modding/minecraft-mods/2676282-1-9-x-better-combat-mod-feat-dual-wielding",
   "updateUrl": "",
