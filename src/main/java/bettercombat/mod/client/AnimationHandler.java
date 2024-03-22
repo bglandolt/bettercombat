@@ -857,7 +857,7 @@ public class AnimationHandler
 	    
 	    float closeCap = 0.4F - this.tooCloseTimer;
 	    
-	    rotateUp = -clampMultiplier(this.mainhandEnergy, 6.0F, 140.0F + closeCap * 40.0F); /* Sweep = Up */
+	    rotateUp = -clampMultiplier(this.mainhandEnergy, 6.0F, 140.0F + closeCap * 50.0F); /* Sweep = Up */
 	    
 		/* If mining, then it should be hitting a block and stopping early */
 	    if ( ClientProxy.EHC_INSTANCE.betterCombatMainhand.isMining() )
@@ -893,7 +893,7 @@ public class AnimationHandler
 		
 		GlStateManager.translate(
        	/* X */ 1.2F * moveRight * ClientProxy.EHC_INSTANCE.betterCombatMainhand.moveRightVariance,
-       	/* Y */ moveUp * ClientProxy.EHC_INSTANCE.betterCombatMainhand.moveUpVariance,
+       	/* Y */ 1.1F * moveUp * ClientProxy.EHC_INSTANCE.betterCombatMainhand.moveUpVariance,
        	/* Z */ moveClose * ClientProxy.EHC_INSTANCE.betterCombatMainhand.moveCloseVariance);
        	
     	GlStateManager.rotate(rotateUp * ClientProxy.EHC_INSTANCE.betterCombatMainhand.rotateUpVariance, 1.0F, 0.0F, 0.0F);

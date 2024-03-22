@@ -1145,13 +1145,12 @@ public class EventHandlers
 					Item item = p.getHeldItem(p.getActiveHand()).getItem();
 
 					/* BOWS */
-					if (item instanceof ItemBow)
+					// if ( item instanceof ItemBow || item.getClass().getSimpleName().equals("ItemCrossbow") )
 					{
 						String name = item.getRegistryName().toString();
 
 						for (CustomBow CustomBow : ConfigurationHandler.bows)
 						{
-
 							if (CustomBow.bow == item)
 							{
 
@@ -1175,6 +1174,7 @@ public class EventHandlers
 									arrow.setDamage(damage);
 								}
 
+								/* If the bow firing the arrow contains silver, such as modid:bow_silver */
 								if (name.contains("silver"))
 								{
 									arrow.addTag("silver");
@@ -1182,71 +1182,43 @@ public class EventHandlers
 
 								return;
 							}
-
 						}
-
 					}
-					/* CROSSBOWS */
-					else if (item.getClass().getSimpleName().equals("ItemCrossbow"))
-					{
-						String name = item.getRegistryName().toString();
-
-						for (CustomBow CustomBow : ConfigurationHandler.bows)
-						{
-
-							if (CustomBow.bow == item)
-							{
-
-								if (CustomBow.velocity != 1.0D)
-								{
-									arrow.motionX *= CustomBow.velocity;
-									arrow.motionY *= CustomBow.velocity;
-									arrow.motionZ *= CustomBow.velocity;
-									arrow.velocityChanged = true;
-								}
-
-								try
-								{
-									Field field = ObfuscationReflectionHelper.findField(event.getEntity().getClass(),
-									"baseDamage");
-
-									if (field == null)
-									{
-										field = ObfuscationReflectionHelper
-										.findField(event.getEntity().getClass().getSuperclass(), "baseDamage");
-									}
-
-									Float baseDamage = (Float) field.get(event.getEntity());
-
-									if (CustomBow.damage != 1.0D)
-									{
-										baseDamage = (float) (baseDamage * CustomBow.damage);
-									}
-
-								}
-								catch (Exception e)
-								{
-								}
-
-								if (name.contains("silver"))
-								{
-									arrow.addTag("silver");
-								}
-
-								return;
-							}
-
-						}
-
-					}
-
 				}
 				catch (Exception e)
 				{
+					
 				}
 			}
 		}
+//		else if ( isBolt(entity.getClass()) )
+//		{
+//			
+//		}
 	}
+	
+//	private boolean isBolt(Class<?> clazz)
+//	{
+//	    while (clazz != null)
+//	    {
+//	        if (clazz.getSimpleName().equals("ItemBolt"))
+//	        {
+//	            return true;
+//	        }
+//	        
+//	        clazz = clazz.getSuperclass();
+//	        
+//	        if ( clazz != null )
+//	        {
+//	        	if (clazz.getSimpleName().equals("ItemBolt"))
+//		        {
+//	        		Field field = ObfuscationReflectionHelper.findField(clazz, "baseDamage");
+//					Float baseDamage = (Float) field.get(event.getEntity());
+//		        }
+//	        }
+//	    }
+//	    return false;
+//	}
 
 	@SubscribeEvent(priority = EventPriority.LOWEST)
 	public void arrowImpact(ProjectileImpactEvent event)
@@ -1270,11 +1242,8 @@ public class EventHandlers
 					{
 						event.getEntity().extinguish();
 					}
-
 				}
-
 			}
-
 		}
 
 		if (event.getEntity() instanceof EntityArrow)
@@ -1285,6 +1254,24 @@ public class EventHandlers
 			{
 				EntityLivingBase victim = (EntityLivingBase) (event.getRayTraceResult().entityHit);
 
+				/* Ignore effects when blocked */
+				if ( victim.isActiveItemStackBlocking() )
+				{
+					Vec3d vec3d = event.getEntity().getPositionVector();
+
+					if (vec3d != null)
+					{
+						Vec3d vec3d1 = victim.getLook(1.0F);
+						Vec3d vec3d2 = vec3d.subtractReverse(new Vec3d(victim.posX, victim.posY, victim.posZ)).normalize();
+						vec3d2 = new Vec3d(vec3d2.x, 0.0D, vec3d2.z);
+
+						if (vec3d2.dotProduct(vec3d1) < 0.0D)
+						{
+							return;
+						}
+					}
+				}
+				
 				for (String t : arrow.getTags())
 				{
 

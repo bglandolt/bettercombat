@@ -1,6 +1,5 @@
 package bettercombat.mod.network;
 
-import bettercombat.mod.util.ConfigurationHandler;
 import bettercombat.mod.util.Helpers;
 import io.netty.buffer.ByteBuf;
 import net.minecraft.entity.Entity;

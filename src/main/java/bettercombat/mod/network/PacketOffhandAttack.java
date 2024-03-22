@@ -36,6 +36,7 @@ public class PacketOffhandAttack implements IMessage
 	public void toBytes( ByteBuf buf )
 	{
 		buf.writeBoolean(this.entityId != null);
+		
 		if ( this.entityId != null )
 		{
 			ByteBufUtils.writeVarInt(buf, this.entityId, 4);

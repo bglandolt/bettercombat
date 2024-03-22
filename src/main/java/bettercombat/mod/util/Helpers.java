@@ -50,6 +50,7 @@ import net.minecraft.util.EnumHand;
 import net.minecraft.util.EnumParticleTypes;
 import net.minecraft.util.math.MathHelper;
 import net.minecraft.util.math.Vec3d;
+import net.minecraft.util.text.TextComponentString;
 import net.minecraft.world.WorldServer;
 import net.minecraftforge.event.ForgeEventFactory;
 
@@ -63,11 +64,16 @@ public final class Helpers
     /*																		ATTACK 																			  */
     /* ====================================================================================================================================================== */
 	
+	public static void message(EntityPlayer player, String message)
+	{
+		player.sendMessage(new TextComponentString(message));
+	}
+	
 	public static boolean playerAttackVictim( EntityPlayer player, Entity victim, boolean mainhandAttack )
 	{
 		final ItemStack offhand = player.getHeldItemOffhand();
 		final ItemStack mainhand = player.getHeldItemMainhand();
-		
+				
 		boolean attacked = false;
 		
 		if ( mainhandAttack ) /* MAINHAND */
@@ -480,7 +486,7 @@ public final class Helpers
 				}
 			}
 			
-			if ( configWeapon && ConfigurationHandler.moreSweep )
+			if ( configWeapon && ConfigurationHandler.attackSweepParticles )
 			{
 				spawnSweepHit(player, victim);
 			}
@@ -683,12 +689,11 @@ public final class Helpers
 					int k = (int) (damage * 0.5D);
 					((WorldServer) player.world).spawnParticle(EnumParticleTypes.DAMAGE_INDICATOR, victim.posX, victim.posY + victim.height * 0.5F, victim.posZ, k, 0.1D, 0.0D, 0.1D, 0.2D);
 				}
-			}
-			
+			}			
 			return true;
 		}
 		else
-		{
+		{			
 			player.world.playSound(null, player.posX, player.posY, player.posZ, SoundEvents.ENTITY_PLAYER_ATTACK_NODAMAGE, player.getSoundCategory(), 1.0F, 1.0F);
 			return false;
 		}

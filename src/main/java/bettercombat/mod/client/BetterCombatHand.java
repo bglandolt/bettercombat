@@ -201,13 +201,13 @@ public class BetterCombatHand
 	
 	public void randomizeVariances()
 	{		
-		moveRightVariance = this.randomMoveVariance();
-		moveUpVariance = this.randomMoveVariance();
-		moveCloseVariance = this.randomMoveVariance();
+		this.moveRightVariance = this.randomMoveVariance();
+		this.moveUpVariance = this.randomMoveVariance();
+		this.moveCloseVariance = this.randomMoveVariance();
 
-		rotateUpVariance = this.randomRotationVariance();
-		rotateCounterClockwiseVariance = this.randomRotationVariance();
-		rotateLeftVariance = this.randomRotationVariance();
+		this.rotateUpVariance = this.randomRotationVariance();
+		this.rotateCounterClockwiseVariance = this.randomRotationVariance();
+		this.rotateLeftVariance = this.randomRotationVariance();
 	}
 	
 	public float randomMoveVariance()
@@ -218,6 +218,11 @@ public class BetterCombatHand
 	public float randomRotationVariance()
 	{
 		return 1.03F - this.rand.nextFloat() * 0.06F;
+	}
+	
+	public float randomPreciseRotationVariance()
+	{
+		return 1.015F - this.rand.nextFloat() * 0.03F;
 	}
 	
 	public void stopAttack()
@@ -289,7 +294,13 @@ public class BetterCombatHand
 			this.swingTimestampDamage = this.swingTimestampSound-1;
 		}
 		
-		this.randomizeVariances();
+		this.moveRightVariance = this.randomMoveVariance();
+		this.moveUpVariance = this.randomMoveVariance();
+		this.moveCloseVariance = this.randomMoveVariance();
+
+		this.rotateUpVariance = this.randomPreciseRotationVariance();
+		this.rotateCounterClockwiseVariance = this.randomRotationVariance();
+		this.rotateLeftVariance = this.randomRotationVariance();
 	}
 	
 	public void setStabbing( int i )

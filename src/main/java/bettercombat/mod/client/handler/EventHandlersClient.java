@@ -34,6 +34,7 @@ import net.minecraft.block.BlockGrass;
 import net.minecraft.block.BlockGrassPath;
 import net.minecraft.block.BlockLog;
 import net.minecraft.block.material.Material;
+import net.minecraft.block.state.IBlockState;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.entity.EntityPlayerSP;
 import net.minecraft.client.resources.I18n;
@@ -127,7 +128,6 @@ public class EventHandlersClient
 
 	public boolean overwriteLeftClick(boolean checkBlocks)
 	{
-
 		/* If the left click counter is less greater than 0 */
 		if (Reflections.getLeftClickCounter(this.mc) > 0 && !this.mc.playerController.isInCreativeMode())
 		{
@@ -210,6 +210,7 @@ public class EventHandlersClient
 
 					Helpers.applySwingInteria(player);
 
+					/* Prevent the player from immediately attacking with a weapon after a shield bash */
 					Reflections.setLeftClickCounter(this.mc, 10);
 
 					/* Cancel left-click! */
@@ -357,11 +358,9 @@ public class EventHandlersClient
 	}
 
 	public void mainhandAttack()
-	{
-
+	{		
 		if (this.mc.objectMouseOver != null)
 		{
-
 			/* If the MAINHAND item can interact with that block, */
 			if (this.mc.objectMouseOver.typeOfHit == Type.BLOCK && this.mc.objectMouseOver.getBlockPos() != null && this.mc.objectMouseOver.getBlockPos() != BlockPos.ORIGIN)
 			{
@@ -376,20 +375,16 @@ public class EventHandlersClient
 				{
 					this.swingThroughGrass(this.mc.objectMouseOver.getBlockPos());
 				}
-
 			}
-
 		}
 
 		RayTraceResult mov = this.getMainhandMouseover();
 
 		/*
-		 * If, the MOV is not null AND has an entity AND if it is a player, can it be
-		 * PVPd
+		 * If the MOV is not null AND has an entity AND if it is a player, can it be PVPd
 		 */
 		if (mov != null && mov.entityHit != null && this.canPVP(mov.entityHit, this.mc.player))
 		{
-
 			if (this.checkParent(mov.entityHit))
 			{
 				mov.entityHit = this.getParent(mov.entityHit);
@@ -400,11 +395,11 @@ public class EventHandlersClient
 			return;
 		}
 		else
-
+		{
 			/* MISS! Send an attack packet with NO target! */
 			PacketHandler.instance.sendToServer(new PacketMainhandAttack());
-
-		return;
+			return;
+		}
 	}
 
 	public boolean checkParent(Entity entity)
@@ -421,7 +416,6 @@ public class EventHandlersClient
 
 	public EntityLiving getParent(Object partEntity)
 	{
-
 		try
 		{
 			Field field = CommonProxy.partEntityClass.getDeclaredField("parent");
@@ -482,10 +476,8 @@ public class EventHandlersClient
 
 	public void offhandAttack()
 	{
-
 		if (this.mc.objectMouseOver != null)
 		{
-
 			/* If the OFFHAND item can interact with that block, */
 			if (this.mc.objectMouseOver.typeOfHit == Type.BLOCK && this.mc.objectMouseOver.getBlockPos() != null && this.mc.objectMouseOver.getBlockPos() != BlockPos.ORIGIN)
 			{
@@ -506,14 +498,13 @@ public class EventHandlersClient
 		}
 
 		RayTraceResult mov = this.getOffhandMouseover();
-
+		
 		/*
 		 * If, the MOV is not null AND has an entity AND if it is a player, can it be
 		 * PVPd
 		 */
 		if (mov != null && mov.entityHit != null && this.canPVP(mov.entityHit, this.mc.player) && ConfigurationHandler.rightClickAttackable(this.mc.player, mov.entityHit))
 		{
-
 			if (this.checkParent(mov.entityHit))
 			{
 				mov.entityHit = this.getParent(mov.entityHit);
@@ -534,13 +525,16 @@ public class EventHandlersClient
 
 		}
 
+		
 		if (this.itemStackOffhand.getItem() instanceof ItemShield)
 		{
+			/* MISS! */
 			PacketHandler.instance.sendToServer(new PacketShieldBash());
 			return;
 		}
 		else
 		{
+			/* MISS! */
 			PacketHandler.instance.sendToServer(new PacketOffhandAttack());
 			return;
 		}
@@ -625,9 +619,8 @@ public class EventHandlersClient
 	 */
 	public boolean overwriteRightClick()
 	{
-
 		/* If the player is not valid, */
-		if (this.invalidPlayer(this.mc.player) || Reflections.getRightClickDelayTimer(this.mc) > 0)
+		if (this.invalidPlayer(this.mc.player) ) // || Reflections.getRightClickDelayTimer(this.mc) > 0) // 3/20
 		{
 			/* Cancel right-click! */
 			return true;
@@ -661,7 +654,7 @@ public class EventHandlersClient
 			{
 
 				/* Only use the MAINHAND */
-				if (this.rightClickMouse(EnumHand.MAIN_HAND))
+				if (this.rightClickInteract(EnumHand.MAIN_HAND))
 				{
 					/* Cancel right-click! Right click timer is only set on success */
 					return true;
@@ -706,13 +699,11 @@ public class EventHandlersClient
 
 			if (this.itemStackMainhand.getItemUseAction() == EnumAction.NONE)
 			{
-
 				/* Only use the MAINHAND */
-				if (this.rightClickMouse(EnumHand.MAIN_HAND))
+				if (this.rightClickInteract(EnumHand.MAIN_HAND))
 				{
 					/* Cancel right-click, but use still place block! */
-					return true; // (complete) Bugfix: Cannot place blocks by holding right click when the
-									// offhand has a twohand or mainhand weapon
+					return true; // (complete) Bugfix: Cannot place blocks by holding right click when the offhand has a twohand or mainhand weapon
 				}
 				else if (this.canParry(false))
 				{
@@ -720,12 +711,10 @@ public class EventHandlersClient
 				}
 
 			}
-			else // (complete) Bugfix: If you put a "Mainhand" only weapon in the offhand, and
-					// try to eat something with your main hand (food), it doesn't work
+			else // (complete) Bugfix: If you put a "Mainhand" only weapon in the offhand, and try to eat something with your main hand (food), it doesn't work
 			{
-
 				/* Do not use the offhand because it contains a TWOHAND or MAINHAND weapon */
-				if (this.rightClickMouse(EnumHand.MAIN_HAND))
+				if (this.rightClickInteract(EnumHand.MAIN_HAND))
 				{
 					/* Cancel right-click, but use the item still! */
 					return true;
@@ -759,7 +748,7 @@ public class EventHandlersClient
 		}
 
 		/* If targeting a block, and not targeting any entity */
-		if (mov.typeOfHit == RayTraceResult.Type.BLOCK && !this.offhandMouseoverHasEntity())
+		if ( mov.typeOfHit == RayTraceResult.Type.BLOCK )
 		{
 			BlockPos pos = mov.getBlockPos();
 
@@ -770,45 +759,46 @@ public class EventHandlersClient
 				return true;
 			}
 
-			Block block = this.mc.player.world.getBlockState(pos).getBlock();
-
-			/* If the block is a PLANT and the MAINHAND OR OFFHAND has a HOE, */
-			if ((block instanceof IPlantable || block instanceof IShearable) && (this.betterCombatOffhand.hasCustomWeapon() || (this.itemStackMainhand.getItem() instanceof ItemHoe || this.itemStackOffhand.getItem() instanceof ItemHoe)))
+			IBlockState state = this.mc.player.world.getBlockState(pos);
+			Block block = state.getBlock();
+			
+			if ( !this.offhandMouseoverHasEntity() || (this.mc.player.world.isRemote && block.onBlockActivated(this.mc.player.world, pos, state, this.mc.player, EnumHand.OFF_HAND, this.mc.objectMouseOver.sideHit, this.mc.objectMouseOver.sideHit.getFrontOffsetX(), this.mc.objectMouseOver.sideHit.getFrontOffsetY(), this.mc.objectMouseOver.sideHit.getFrontOffsetZ())) )
 			{
-
-				if (this.itemStackMainhand.getItem() instanceof ItemHoe || this.itemStackOffhand.getItem() instanceof ItemHoe)
+				/* If the block is a PLANT and the MAINHAND OR OFFHAND has a HOE, */
+				if ( (block instanceof IPlantable || block instanceof IShearable) && (this.betterCombatOffhand.hasCustomWeapon() || (this.itemStackMainhand.getItem() instanceof ItemHoe || this.itemStackOffhand.getItem() instanceof ItemHoe)) )
 				{
-					/* Due to other mods, continue with right-click, using the HOE on the PLANT! */
+					if (this.itemStackMainhand.getItem() instanceof ItemHoe || this.itemStackOffhand.getItem() instanceof ItemHoe)
+					{
+						/* Due to other mods, continue with right-click, using the HOE on the PLANT! */
+						return false;
+					}
+				}
+				/*
+				 * Otherwise, if the player can interact with any hand,
+				 */
+				else if ( !this.betterCombatMainhand.hasCustomWeapon() && !this.betterCombatOffhand.hasCustomWeapon() )
+				{
+					/* Continue with right-click, placing blocks! */
 					return false;
 				}
-
+				/*
+				 * Otherwise, if the player can interact with any hand,
+				 */
+				else if ( this.rightClickInteract(EnumHand.MAIN_HAND) || this.rightClickInteract(EnumHand.OFF_HAND) ) // XXX
+				{
+					/* Cancel right-click! */
+					return true;
+				}
+				/*
+				 * If hands have the ability to interact, such as tilling, pathing, or stripping
+				 * bark,
+				 */
+				else if ( this.useTools(this.mc.player, block) )
+				{
+					/* Cancel right-click, use tools! */
+					return true;
+				}
 			}
-			/*
-			 * Otherwise, if the player can interact with any hand,
-			 */
-			else if (!this.betterCombatMainhand.hasCustomWeapon() && !this.betterCombatOffhand.hasCustomWeapon())
-			{
-				/* Continue with right-click, placing blocks! */
-				return false;
-			}
-			/*
-			 * Otherwise, if the player can interact with any hand,
-			 */
-			else if (this.rightClickMouse(EnumHand.MAIN_HAND) || this.rightClickMouse(EnumHand.OFF_HAND))
-			{
-				/* Cancel right-click! */
-				return true;
-			}
-			/*
-			 * If hands have the ability to interact, such as tilling, pathing, or stripping
-			 * bark,
-			 */
-			else if (this.useTools(this.mc.player, block))
-			{
-				/* Cancel right-click, use tools! */
-				return true;
-			}
-
 		}
 		/* Otherwise, if there are no equipped weapons */
 		else if (!this.betterCombatMainhand.hasCustomWeapon() && !this.betterCombatOffhand.hasCustomWeapon())
@@ -841,7 +831,7 @@ public class EventHandlersClient
 		/* SWING WEAPON */
 		/* ----------------------------------------- */
 
-		return this.rightClick(this.mc.player);
+		return this.initiateOffhandAttack(this.mc.player);
 	}
 
 	private boolean canParry(boolean checkOffhand)
@@ -873,7 +863,7 @@ public class EventHandlersClient
 
 					if (this.isOffhandAttackReady())
 					{
-						this.rightClick(player);
+						this.initiateOffhandAttack(player);
 					}
 
 					return true;
@@ -904,7 +894,7 @@ public class EventHandlersClient
 
 					if (this.isOffhandAttackReady())
 					{
-						this.rightClick(player);
+						this.initiateOffhandAttack(player);
 					}
 
 					return true;
@@ -935,7 +925,7 @@ public class EventHandlersClient
 
 					if (this.isOffhandAttackReady())
 					{
-						this.rightClick(player);
+						this.initiateOffhandAttack(player);
 					}
 
 					return true;
@@ -1020,9 +1010,8 @@ public class EventHandlersClient
 	}
 
 	/* Initiate the right click attack, prepares offhandAttack */
-	private boolean rightClick(EntityPlayerSP player)
+	private boolean initiateOffhandAttack(EntityPlayerSP player)
 	{
-
 		if (this.betterCombatOffhand.hasCustomWeapon())
 		{
 			/*
@@ -1050,37 +1039,23 @@ public class EventHandlersClient
 	private int    parryingTimer = 0;
 	public boolean parrying      = false;
 
-	private boolean rightClickMouse(EnumHand enumhand)
+	/* PlayerControllerMP */
+	private boolean rightClickInteract(EnumHand enumhand)
 	{
-
 		if (Reflections.getRightClickDelayTimer(this.mc) > 0)
 		{
 			/* Return true and cancel */
 			return true;
 		}
-
+		
 		if (!this.mc.playerController.getIsHittingBlock())
 		{
-
 			if (!this.mc.player.isRowingBoat())
 			{
-//				EnumHand otherHand = enumhand.equals(EnumHand.MAIN_HAND) ? EnumHand.OFF_HAND : EnumHand.MAIN_HAND;
-//				ItemStack tempItemStack = this.mc.player.getHeldItem(otherHand);
-//				this.mc.player.setHeldItem(otherHand, ItemStack.EMPTY);
-
 				ItemStack itemstack = this.mc.player.getHeldItem(enumhand);
 
 				if (this.mc.objectMouseOver != null)
 				{
-
-//					/* TODO */
-//					if ( itemstack.getItem().onItemRightClick(this.mc.player.getEntityWorld(), this.mc.player, enumhand).getType() == EnumActionResult.SUCCESS )
-//					{
-//						System.out.println("onItemRightClick");
-//						Reflections.setRightClickDelayTimer(this.mc, 4);
-//						return true;
-//					}
-//					else
 					switch (this.mc.objectMouseOver.typeOfHit)
 					{
 						case ENTITY:
@@ -1088,14 +1063,12 @@ public class EventHandlersClient
 
 							if (this.mc.playerController.interactWithEntity(this.mc.player, this.mc.objectMouseOver.entityHit, this.mc.objectMouseOver, enumhand) == EnumActionResult.SUCCESS)
 							{
-								// System.out.println("interactWithEntity");
 								Reflections.setRightClickDelayTimer(this.mc, 4);
 								return true;
 							}
 
 							if (this.mc.playerController.interactWithEntity(this.mc.player, this.mc.objectMouseOver.entityHit, enumhand) == EnumActionResult.SUCCESS)
 							{
-								// System.out.println("interactWithEntity 2");
 								Reflections.setRightClickDelayTimer(this.mc, 4);
 								return true;
 							}
@@ -1128,11 +1101,9 @@ public class EventHandlersClient
 
 									if (!itemstack.isEmpty() && (itemstack.getCount() != i || this.mc.playerController.isInCreativeMode()))
 									{
-										// System.out.println("resetEquippedProgress");
 										this.mc.entityRenderer.itemRenderer.resetEquippedProgress(enumhand);
 									}
 
-									// System.out.println("processRightClickBlock");
 									Reflections.setRightClickDelayTimer(this.mc, 4);
 									return true;
 								}
@@ -1152,33 +1123,18 @@ public class EventHandlersClient
 				if (itemstack.isEmpty() && (this.mc.objectMouseOver == null || this.mc.objectMouseOver.typeOfHit == RayTraceResult.Type.MISS))
 				{
 					net.minecraftforge.common.ForgeHooks.onEmptyClick(this.mc.player, enumhand);
-
-					// System.out.println("onEmptyClick");
 					Reflections.setRightClickDelayTimer(this.mc, 4);
-
-					// this.mc.player.setHeldItem(otherHand, tempItemStack);
-
 					return true;
 				}
 
 				if (!itemstack.isEmpty() && this.mc.playerController.processRightClick(this.mc.player, this.mc.world, enumhand) == EnumActionResult.SUCCESS)
 				{
 					this.mc.entityRenderer.itemRenderer.resetEquippedProgress(enumhand);
-
-					// System.out.println("processRightClick");
 					Reflections.setRightClickDelayTimer(this.mc, 4);
-
-					// this.mc.player.setHeldItem(otherHand, tempItemStack);
-
 					return true;
 				}
-
-				// this.mc.player.setHeldItem(otherHand, tempItemStack);
 			}
-
 		}
-
-		// System.out.println("false");
 		return false;
 	}
 
@@ -1221,7 +1177,6 @@ public class EventHandlersClient
 
 		if (event.isButtonstate() && event.getButton() == rightClick.getKeyCode() + 100)
 		{
-
 			if (this.overwriteRightClick())
 			{
 				/* Cancel the vanilla right-click! */
@@ -1236,7 +1191,6 @@ public class EventHandlersClient
 				/* Sets this.mc.gameSettings.keyBindUseItem.isKeyDown() to true */
 				KeyBinding.setKeyBindState(rightClick.getKeyCode(), true);
 			}
-
 		}
 
 		KeyBinding leftClick = this.mc.gameSettings.keyBindAttack; /* 0 */
@@ -1265,7 +1219,6 @@ public class EventHandlersClient
 	@SubscribeEvent(priority = EventPriority.HIGHEST, receiveCanceled = true)
 	public void onKeyEvent(KeyInputEvent event)
 	{
-
 		if (ClientProxy.fastEquip.isKeyDown() && this.isMainhandAttackReady() && this.isOffhandAttackReady())
 		{
 			PacketHandler.instance.sendToServer(new PacketFastEquip());
@@ -1290,12 +1243,10 @@ public class EventHandlersClient
 				/* Cancel the vanilla right-click! */
 				if (this.overwriteRightClick())
 				{
-
 					if (Reflections.getRightClickDelayTimer(this.mc) <= 0)
 					{
 						Reflections.setRightClickDelayTimer(this.mc, 4);
 					}
-
 				}
 
 				event.setResult(Result.DENY);
@@ -1399,8 +1350,7 @@ public class EventHandlersClient
 			/* Lets the player hold down right-click */
 			if (this.mc.gameSettings.keyBindUseItem.isPressed() || this.mc.gameSettings.keyBindUseItem.isKeyDown())
 			{
-
-				if (!this.mc.player.isHandActive())
+				if ( !this.mc.player.isHandActive() )
 				{
 					this.overwriteRightClick();
 				}
@@ -2508,7 +2458,7 @@ public class EventHandlersClient
 
 			for (Entity entity : list)
 			{
-				System.out.println(entity);
+				//System.out.println(entity);
 				
 				if ( !entity.isEntityAlive() )
 				{
@@ -2517,14 +2467,14 @@ public class EventHandlersClient
 
 				if ( entity == player.getRidingEntity() )
 				{
-					System.out.println("riding CANCEL");
+					//System.out.println("riding CANCEL");
 
 					continue;
 				}
 
 				if ( !entity.canBeAttackedWithItem() )
 				{
-					System.out.println("atkwithitem CANCEL");
+					//System.out.println("atkwithitem CANCEL");
 
 					continue;
 				}
@@ -2532,7 +2482,7 @@ public class EventHandlersClient
 				/* Checks to see if the target is within the view of an attack, prevents hitting targets off screen */
 				if ( !isEntityInView(player, entity) )
 				{
-					System.out.println("isEntityInView CANCEL");
+					//System.out.println("isEntityInView CANCEL");
 					continue;
 				}
 				
@@ -2546,7 +2496,7 @@ public class EventHandlersClient
 				
 				if ( rayTraceResult == null )
 				{
-					System.out.println("lookEyes CANCEL");
+					//System.out.println("lookEyes CANCEL");
 					continue;
 				}
 				
@@ -2556,7 +2506,7 @@ public class EventHandlersClient
 				/* Checks to see if the target can be seen, meaning, no blocks are in the way */
 				if ( !player.canEntityBeSeen(entity) )
 				{
-					System.out.println("cant be seen CANCEL");
+					//System.out.println("cant be seen CANCEL");
 					continue;
 				}
 				

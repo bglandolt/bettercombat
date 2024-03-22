@@ -9,11 +9,25 @@ import net.minecraftforge.fml.common.event.FMLPreInitializationEvent;
 
 public class CommonProxy
 {
-//    public void spawnSweep(EntityPlayer player)
-//    {
-//    	
-//    }
+	public void init(FMLInitializationEvent event)
+	{
+		
+	}
+	
+	public void preInit( FMLPreInitializationEvent event )
+	{
+		MinecraftForge.EVENT_BUS.register(new EventHandlers());
+		ConfigurationHandler.init(event.getSuggestedConfigurationFile());
+        MinecraftForge.EVENT_BUS.register(new ConfigurationHandler());
+        ConfigurationHandler.createInstLists();
+        
+		PacketHandler.registerMessages(Reference.MOD_ID);
+		SoundHandler.registerSounds();
 
+//		registerParticles();
+	}
+	
+	/* I&F */
     public static Class<?> partEntityClass = null;
 
 	public void postInit( FMLPostInitializationEvent event ) throws Exception
@@ -31,24 +45,6 @@ public class CommonProxy
 
 			}
 		}
-	}
-
-	public void init(FMLInitializationEvent event)
-	{
-		
-	}
-	
-	public void preInit( FMLPreInitializationEvent event )
-	{
-		MinecraftForge.EVENT_BUS.register(new EventHandlers());
-		ConfigurationHandler.init(event.getSuggestedConfigurationFile());
-        MinecraftForge.EVENT_BUS.register(new ConfigurationHandler());
-        ConfigurationHandler.createInstLists();
-        
-		PacketHandler.registerMessages(Reference.MOD_ID);
-		SoundHandler.registerSounds();
-
-//		registerParticles();
 	}
 
 	// PARTICLE

@@ -205,8 +205,10 @@ public class ConfigurationHandler
 	public static float cameraPitchSwing = 0.09F;
 	public static float rotationYawSwing = 0.18F;
 	public static boolean damageParticles = true;
-	public static boolean moreSweep = true;
+	public static boolean attackSweepParticles = true;
+	public static boolean attackSweepOverlay = true;
 	public static boolean showShieldCooldownCrosshair = true;
+	// public static boolean showWeaponCooldownCrosshair = false;
 	public static boolean showDefaultCrosshair = false;
 	
 	/* SHIELD --------------------------------------------------------------------------------------------------------------------- */
@@ -503,12 +505,14 @@ public class ConfigurationHandler
 		aetherealizedDamageParticles = config.getBoolean("Aetherealized Damage Particles", VISUAL, true, "Enable to have the Aetherealized potion create a ring of particles around the target when struck.");
 		breathingAnimationIntensity = config.getFloat("Breathing Animation Intensity", VISUAL, 0.02F, 0.0F, 1.0F, "How fast items move up and down for the breathing animation.");
 		breathingAnimationSpeed = config.getFloat("Breathing Animation Speed", VISUAL, 0.08F, 0.0F, 1.0F, "How far items move up and down for the breathing animation.");
-		showShieldCooldownCrosshair = config.getBoolean("Show Shield Cooldown Crosshair", VISUAL, true, "Show the shield cooldown crosshair, similar to the dual-wielding crosshairs.");
-		showDefaultCrosshair = config.getBoolean("Show Default Crosshair", VISUAL, false, "Set to true to completely disable the new crosshair, and show the default crosshair.");
+		showShieldCooldownCrosshair = config.getBoolean("Show Shield Cooldown on Crosshair", VISUAL, true, "Set to true to show the shield cooldown/energy indicator. This setting does nothing when showDefaultCrosshair is set to true.");
+		// showWeaponCooldownCrosshair = config.getBoolean("Show Weapon Cooldown on Crosshair", VISUAL, false, "Set to true to show the weapon cooldown/energy crosshair. This setting does nothing when showDefaultCrosshair is set to true.");
+		showDefaultCrosshair = config.getBoolean("Show Default Crosshair", VISUAL, false, "Set to true to completely disable the new crosshair, and show the default crosshair. The attack energy/cooldown indicator can also be enabled/disabled in the Minecraft settings.");
 		cameraPitchSwing = config.getFloat("Camera Pitch Swing", VISUAL, 0.09F, 0.0F, 1.0F, "How much your camera pitch moves when you swing a weapon. May cause slight motion sickness if set too high. Set to 0.0F to disable.");
 		rotationYawSwing = config.getFloat("Rotation Yaw Swing", VISUAL, 0.18F, 0.0F, 1.0F, "How much your camera yaw moves when you swing a weapon. May cause slight motion sickness if set too high. Set to 0.0F to disable.");
-		damageParticles = config.getBoolean("Damage Particles", VISUAL, true, "Enable to show heart damage particles (this is a vanilla feature, this option is here for those who wish to disable it).");
-		moreSweep = config.getBoolean("More Attack Hit Particles", VISUAL, true, "Add sweep particles on attack (looks good, reccommend you keep this as true).");
+		damageParticles = config.getBoolean("3D Damage Particles", VISUAL, true, "Display heart damage particles (this is a vanilla feature, this option is here for those who wish to disable it).");
+		attackSweepParticles = config.getBoolean("3D Attack Sweep Particles", VISUAL, true, "Display 3D sweep particles on a successful attack.");
+		attackSweepOverlay = config.getBoolean("2D Attack Sweep Overlay", VISUAL, true, "Display 2D attack lines across the screen when you swing a weapon.");
 
 		/* --------------------------------------------------------------------------------------------------------------------- */
 		String AXE = "Axes";
@@ -663,10 +667,10 @@ public class ConfigurationHandler
 		/* --------------------------------------------------------------------------------------------------------------------- */
 		String BWLISTS = "White/Black Lists";
 
-		itemClassWhitelist = config.getStringList("Item Class Whitelist", BWLISTS, itemClassWhitelist, "Whitelisted item classes for attacking. If an item is added to this list, it will function as an Immersive Combat weapon. The Custom Weapons config is for editing the values and attributes of weapons. The class  net.minecraft.item.ItemSword  and anything that extends it is added by default.");
-		itemClassBlacklist = config.getStringList("Item Class Blacklist", BWLISTS, itemClassBlacklist, "Blacklisted item classes (Advanced setting; requires you to look through the source code of the mod that you are trying to add the class from). If an item is added to this list, it will have the default left-click and right-click behavior. This setting is useful for gun mods, or items that need to have their default left-click and right-click functionality. Example config value:    com.flansmod.common.guns.ItemGun    com.mrcrayfish.guns.item.ItemGun    techguns.items.guns.GenericGun    com.paneedah.weaponlib.Weapon    com.jozufozu.yoyos.common.ItemYoyo");
-		itemBlacklist = config.getStringList("Item Blacklist", BWLISTS, itemBlacklist, "Blacklisted items (Simple setting; use CraftTweaker to get the syntax of the item in your hand. The command is: /ct hand). This is similar to Item Class Blacklist, however, it instead uses a resource location for specific items, such as:    mrcrayfish:gun");
-		entityBlacklist = config.getStringList("Entity Blacklist", BWLISTS, entityBlacklist, "Blacklisted entity classes for attacking with offhand or sweep. You will not be able to attack any entity that extends this class with your offhand, and they will not be hit by sweep! This is to prevent you from accidentally attacking or killing certain entities. Please note that entities extending IEntityOwnable are by default blacklisted, when the entity is owned by the attacker.");
+		itemClassWhitelist = config.getStringList("(Class) Item Whitelist", BWLISTS, itemClassWhitelist, "(Class) Item Whitelist.\nWhitelisted item classes for attacking. If an item is added to this list, it will function as an Immersive Combat weapon. The Custom Weapons config is for editing the values and attributes of weapons. The class  net.minecraft.item.ItemSword  and anything that extends it is added by default.");
+		itemClassBlacklist = config.getStringList("(Class) Item Blacklist", BWLISTS, itemClassBlacklist, "(Class) Item Blacklist.\nBlacklisted item classes. This is an advanced setting, as it requires you to look through the source code of the mod that you are trying to add the class from. If an item is added to this list, it will have the default left-click and right-click behavior. This setting is useful for gun mods, or items that need to have their default left-click and right-click functionality. Example config value:    com.flansmod.common.guns.ItemGun    com.mrcrayfish.guns.item.ItemGun    techguns.items.guns.GenericGun    com.paneedah.weaponlib.Weapon    com.jozufozu.yoyos.common.ItemYoyo");
+		itemBlacklist = config.getStringList("(Resource Location) Item Blacklist", BWLISTS, itemBlacklist, "(Resource Location) Item Blacklist.\nBlacklisted items, use CraftTweaker to get the syntax of the item in your hand. The command is /ct hand). This is similar to Item Class Blacklist, however, it instead uses a resource location for specific items, such as:    mrcrayfish:gun");
+		entityBlacklist = config.getStringList("(Class) Entity Blacklist", BWLISTS, entityBlacklist, "Entity Class Blacklist.\nBlacklisted entity classes for attacking with offhand or sweep. You will not be able to attack any entity that extends this class with your offhand, and they will not be hit by sweep! This is to prevent you from accidentally attacking or killing certain entities. Please note that entities extending IEntityOwnable are by default blacklisted, when the entity is owned by the attacker.");
 
 		/* --------------------------------------------------------------------------------------------------------------------- */
 

@@ -3,6 +3,7 @@ package bettercombat.mod.client;
 import org.lwjgl.input.Keyboard;
 
 import bettercombat.mod.client.handler.EventHandlersClient;
+import bettercombat.mod.network.PacketHandler;
 import bettercombat.mod.util.CommonProxy;
 import net.minecraft.client.settings.KeyBinding;
 import net.minecraftforge.common.MinecraftForge;
@@ -26,6 +27,7 @@ public class ClientProxy extends CommonProxy
 	public void preInit( FMLPreInitializationEvent event )
 	{
 		super.preInit(event);
+		PacketHandler.registerClientMessages();
 		ClientRegistry.registerKeyBinding(fastEquip);
 	}
 
