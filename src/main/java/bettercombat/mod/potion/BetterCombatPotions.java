@@ -1,4 +1,4 @@
-package bettercombat.mod.util;
+package bettercombat.mod.potion;
 
 import net.minecraft.potion.Potion;
 import net.minecraftforge.event.RegistryEvent;

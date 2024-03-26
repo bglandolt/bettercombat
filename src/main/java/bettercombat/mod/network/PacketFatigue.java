@@ -12,26 +12,26 @@ import net.minecraftforge.fml.common.network.simpleimpl.MessageContext;
 
 public class PacketFatigue implements IMessage
 {
-	private Integer entityId;
+	//private Integer entityId;
 	private int fatigue = 0;
 
 	public PacketFatigue()
 	{
 	}
 
-	public PacketFatigue( Integer id, int f )
+	public PacketFatigue( int f )
 	{
-		this.entityId = id;
+		//this.entityId = id;
 		this.fatigue = f;
 	}
 
 	@Override
 	public void fromBytes( ByteBuf buf )
 	{
-		if ( buf.readBoolean() )
-		{
-			this.entityId = ByteBufUtils.readVarInt(buf, 4);
-		}
+//		if ( buf.readBoolean() )
+//		{
+//			this.entityId = ByteBufUtils.readVarInt(buf, 4);
+//		}
 		
 		this.fatigue = ByteBufUtils.readVarInt(buf, 1);
 	}
@@ -39,12 +39,12 @@ public class PacketFatigue implements IMessage
 	@Override
 	public void toBytes( ByteBuf buf )
 	{
-		buf.writeBoolean(this.entityId != null);
-		
-		if ( this.entityId != null )
-		{
-			ByteBufUtils.writeVarInt(buf, this.entityId, 4);
-		}
+//		buf.writeBoolean(this.entityId != null);
+//		
+//		if ( this.entityId != null )
+//		{
+//			ByteBufUtils.writeVarInt(buf, this.entityId, 4);
+//		}
 		
 		ByteBufUtils.writeVarInt(buf, this.fatigue, 1);
 	}

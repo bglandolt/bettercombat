@@ -10,7 +10,6 @@ import java.util.function.Function;
 import javax.annotation.Nullable;
 
 import bettercombat.mod.client.ClientProxy;
-import bettercombat.mod.handler.EventHandlers;
 import bettercombat.mod.network.PacketHandler;
 import bettercombat.mod.network.PacketParrying;
 import bettercombat.mod.util.ConfigurationHandler.Animation;

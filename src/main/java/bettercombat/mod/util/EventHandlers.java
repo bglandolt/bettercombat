@@ -1,4 +1,4 @@
-package bettercombat.mod.handler;
+package bettercombat.mod.util;
 
 import java.lang.reflect.Field;
 import java.util.List;
@@ -12,13 +12,9 @@ import bettercombat.mod.enchantment.EnchantmentWebbing;
 import bettercombat.mod.network.PacketHandler;
 import bettercombat.mod.network.PacketParried;
 import bettercombat.mod.network.PacketParrying;
-import bettercombat.mod.util.BetterCombatPotions;
-import bettercombat.mod.util.ConfigurationHandler;
+import bettercombat.mod.potion.BetterCombatPotions;
+import bettercombat.mod.potion.PotionAetherealized;
 import bettercombat.mod.util.ConfigurationHandler.CustomBow;
-import bettercombat.mod.util.Helpers;
-import bettercombat.mod.util.PotionAetherealized;
-import bettercombat.mod.util.Reference;
-import bettercombat.mod.util.SoundHandler;
 import net.minecraft.block.Block;
 import net.minecraft.block.BlockDirt;
 import net.minecraft.block.BlockGrass;
@@ -304,6 +300,27 @@ public class EventHandlers
 			if ( event.getPotionEffect().getDuration() == 20 && event.getPotionEffect().getPotion().equals(MobEffects.MINING_FATIGUE) )
 			{
 				event.setResult(Result.DENY);
+			}
+		}
+		
+		if ( event.getPotionEffect().getPotion().equals(BetterCombatPotions.BLEEDING) )
+		{
+			if ( !ConfigurationHandler.canBleed(event.getEntityLiving()) )
+			{
+				event.setResult(Result.DENY);
+			}
+		}
+		else if ( event.getEntityLiving().isPotionActive(BetterCombatPotions.BLEEDING) )
+		{
+			Potion potionApplicable = event.getPotionEffect().getPotion();
+			
+			/* If the entity has a potion effect that makes them immune to bleeding, return false */
+			for ( Potion potionImmunity : ConfigurationHandler.bleedingPotionImmunityPotionArray )
+			{
+				if ( potionApplicable.equals(potionImmunity) )
+				{
+					event.getEntityLiving().removeActivePotionEffect(BetterCombatPotions.BLEEDING);
+				}
 			}
 		}
 	}

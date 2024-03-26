@@ -1,4 +1,4 @@
-package bettercombat.mod.handler;
+package bettercombat.mod.util;
 
 import net.minecraft.entity.EntityCreature;
 import net.minecraft.entity.EntityLiving;

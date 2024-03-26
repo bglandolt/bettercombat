@@ -1,6 +1,5 @@
 package bettercombat.mod.util;
 
-import bettercombat.mod.handler.EventHandlers;
 import bettercombat.mod.network.PacketHandler;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.fml.common.event.FMLInitializationEvent;

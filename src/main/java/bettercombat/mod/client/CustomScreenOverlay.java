@@ -88,7 +88,7 @@ public class CustomScreenOverlay
 //    	int zz = (int)ClientProxy.EHC_INSTANCE.mc.player.posZ;
 		
 		int x = (scaledRes.getScaledWidth()-410/scaledRes.getScaleFactor())>>1;
-		int y = (scaledRes.getScaledHeight()-60/scaledRes.getScaleFactor())>>1;
+		int y = (scaledRes.getScaledHeight()-65/scaledRes.getScaleFactor())>>1;
 		
         this.mc.getTextureManager().bindTexture(SWEEP_150);
 

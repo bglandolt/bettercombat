@@ -5,6 +5,7 @@ import java.util.ArrayList;
 
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityLiving;
+import net.minecraft.entity.EntityLivingBase;
 import net.minecraft.entity.IEntityOwnable;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.item.Item;
@@ -124,8 +125,6 @@ public class ConfigurationHandler
 	{
 	    "net.minecraft.entity.passive.EntityHorse", "net.minecraft.entity.item.EntityArmorStand", "net.minecraft.entity.passive.EntityVillager", "net.torocraft.toroquest.entities.creatures.ICitizen"
 	};
-
-	
 	
 	@SuppressWarnings("rawtypes")
 	private static ArrayList<Class> itemClassWhiteArray = new ArrayList<Class>();
@@ -134,8 +133,6 @@ public class ConfigurationHandler
 	{
 	    "net.minecraft.item.ItemSword", "net.minecraft.item.ItemTool", "net.minecraft.item.ItemHoe", "com.oblivioussp.spartanweaponry.item.ItemThrowingWeapon"
 	};
-	
-	
 	
 	@SuppressWarnings("rawtypes")
 	private static ArrayList<Class> itemClassBlackArray = new ArrayList<Class>();
@@ -161,7 +158,34 @@ public class ConfigurationHandler
 	public static double extraSplashPotionWidth = 0.0D;
 	public static double extraSplashPotionHeight = 2.0D;
 	public static float bleedingDamagePerTick = 0.5F;
+	public static boolean bleedingDurationExtendedIfWet = true;
+	public static boolean bleedingDamageIncreasedIfSprinting = true;
+
+	@SuppressWarnings("rawtypes")
+	private static ArrayList<Class> bleedingPotionEntityArray = new ArrayList<Class>();
 	
+	private static String[] bleedingPotionEntityBlacklist =
+	{
+	    "net.minecraft.entity.monster.AbstractSkeleton",
+	    "net.minecraft.entity.monster.EntityGolem",
+	    "net.minecraft.entity.monster.EntityGuardian",
+	    "net.minecraft.entity.boss.EntityWither",
+		"net.minecraft.entity.boss.EntityDragon",
+		"net.minecraft.entity.monster.EntityBlaze",
+		"net.minecraft.entity.monster.EntityEnderman",
+		"net.minecraft.entity.monster.EntityEndermite",
+		"net.minecraft.entity.monster.EntitySilverfish",
+		"net.minecraft.entity.monster.EntityCreeper"
+	};
+	
+	static ArrayList<Potion> bleedingPotionImmunityPotionArray = new ArrayList<Potion>();
+	
+	private static String[] bleedingPotionImmunityPotionEffects =
+	{
+	    "potioncore:iron_skin",
+	    "potioncore:diamond_skin"
+	};
+		
 	/* SOUND --------------------------------------------------------------------------------------------------------------------- */
 	
 	public static float bowThudSoundVolume = 1.0F;
@@ -465,7 +489,14 @@ public class ConfigurationHandler
 		extraSplashPotionWidth = config.get(POTIONS, "Extra Splash Potion Width", 0.0, "Additional splash potion width.").getDouble();
 		extraSplashPotionHeight = config.get(POTIONS, "Extra Splash Potion Height", 0.2, "Additional splash potion height.").getDouble();
 		bleedingDamagePerTick = config.getFloat("Bleeding Damage Per Tick", POTIONS, 0.5F, 0.0F, 256.0F, "The amount of damage bleeding does, per level, per second.");
+		
+		bleedingDurationExtendedIfWet = config.getBoolean("Bleeding Duration Extended If Wet", POTIONS, true, "If true, being submerged in water or wet from rain extends the current bleeding duration on that entity");
+		
+		bleedingDamageIncreasedIfSprinting = config.getBoolean("Bleeding Duration Extended If Wet", POTIONS, true, "If true, sprinting has a small chance to increase the current bleeding damage on that entity");
 
+		bleedingPotionEntityBlacklist = config.getStringList("Bleeding Potion - (Class) Entity Blacklist", POTIONS, bleedingPotionEntityBlacklist, "Entity Class Blacklist for the Bleeding Potion Effect.\nBlacklisted entity classes for the bleeding effect. Any entity that extends this class is immune to bleeding!");
+		bleedingPotionImmunityPotionEffects = config.getStringList("Bleeding Potion - (Resource Location) Potion Effect Immunity", POTIONS, bleedingPotionEntityBlacklist, "Potion Effect Resource Location for immunity to the Bleeding Potion Effect.\nIf an entity is under the effect by a potion listed here, that entity will not take damage from bleeding.");
+		
 		/* --------------------------------------------------------------------------------------------------------------------- */
 		String SOUND = "Sound";
 		
@@ -668,10 +699,10 @@ public class ConfigurationHandler
 		String BWLISTS = "White/Black Lists";
 
 		itemClassWhitelist = config.getStringList("(Class) Item Whitelist", BWLISTS, itemClassWhitelist, "(Class) Item Whitelist.\nWhitelisted item classes for attacking. If an item is added to this list, it will function as an Immersive Combat weapon. The Custom Weapons config is for editing the values and attributes of weapons. The class  net.minecraft.item.ItemSword  and anything that extends it is added by default.");
-		itemClassBlacklist = config.getStringList("(Class) Item Blacklist", BWLISTS, itemClassBlacklist, "(Class) Item Blacklist.\nBlacklisted item classes. This is an advanced setting, as it requires you to look through the source code of the mod that you are trying to add the class from. If an item is added to this list, it will have the default left-click and right-click behavior. This setting is useful for gun mods, or items that need to have their default left-click and right-click functionality. Example config value:    com.flansmod.common.guns.ItemGun    com.mrcrayfish.guns.item.ItemGun    techguns.items.guns.GenericGun    com.paneedah.weaponlib.Weapon    com.jozufozu.yoyos.common.ItemYoyo");
+		itemClassBlacklist = config.getStringList("(Class) Item Blacklist", BWLISTS, itemClassBlacklist, "(Class) Item Blacklist.\nBlacklisted item classes. This is an advanced setting, as it requires you to look through the source code of the mod that you are trying to add the class from. If an item is added to this list, it will have the default left-click and right-click behavior. This setting is useful for gun mods, or items that need to have their default left-click and right-click functionality. Example config value:    com.flansmod.common.guns.ItemGun    com.mrcrayfish.guns.item.ItemGun    techguns.items.guns.GenericGun    com.paneedah.mwc.weapons.Guns    com.jozufozu.yoyos.common.ItemYoyo");
 		itemBlacklist = config.getStringList("(Resource Location) Item Blacklist", BWLISTS, itemBlacklist, "(Resource Location) Item Blacklist.\nBlacklisted items, use CraftTweaker to get the syntax of the item in your hand. The command is /ct hand). This is similar to Item Class Blacklist, however, it instead uses a resource location for specific items, such as:    mrcrayfish:gun");
 		entityBlacklist = config.getStringList("(Class) Entity Blacklist", BWLISTS, entityBlacklist, "Entity Class Blacklist.\nBlacklisted entity classes for attacking with offhand or sweep. You will not be able to attack any entity that extends this class with your offhand, and they will not be hit by sweep! This is to prevent you from accidentally attacking or killing certain entities. Please note that entities extending IEntityOwnable are by default blacklisted, when the entity is owned by the attacker.");
-
+		
 		/* --------------------------------------------------------------------------------------------------------------------- */
 
 		setDefaultCustomWeaponVariables();
@@ -1016,6 +1047,30 @@ public class ConfigurationHandler
 				
 			}
 		}
+		
+		for ( String className : bleedingPotionEntityBlacklist )
+		{
+			try
+			{
+				bleedingPotionEntityArray.add(Class.forName(className));
+			}
+			catch ( ClassNotFoundException classNotFoundException )
+			{
+				
+			}
+		}
+		
+		for ( String potion : bleedingPotionImmunityPotionEffects )
+		{
+			try
+			{
+				bleedingPotionImmunityPotionArray.add(Potion.getPotionFromResourceLocation(potion));
+			}
+			catch ( Exception e )
+			{
+				
+			}
+		}
 	}
 	
 	/* REMOVED */
@@ -1139,6 +1194,31 @@ public class ConfigurationHandler
 		}
 		
 		/* It is attackable, return true */
+		return true;
+	}
+	
+	@SuppressWarnings( "rawtypes" )
+	public static boolean canBleed( EntityLivingBase entity )
+	{
+		/* If the entity is blacklisted, return false */
+		for ( Class clazz : bleedingPotionEntityArray )
+		{			
+			if ( clazz.isInstance(entity) )
+			{
+				return false;
+			}
+		}
+		
+		/* If the entity has a potion effect that makes them immune to bleeding, return false */
+		for ( Potion potion : ConfigurationHandler.bleedingPotionImmunityPotionArray )
+		{			
+			if ( entity.isPotionActive(potion) )
+			{
+				return false;
+			}
+		}
+		
+		/* return true, the entity can bleed */
 		return true;
 	}
 	

@@ -1,4 +1,4 @@
-package bettercombat.mod.client.gui;
+package bettercombat.mod.client;
 
 import bettercombat.mod.util.Reference;
 import bettercombat.mod.util.ConfigurationHandler;

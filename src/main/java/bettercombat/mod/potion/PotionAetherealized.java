@@ -1,5 +1,7 @@
-package bettercombat.mod.util;
+package bettercombat.mod.potion;
 
+import bettercombat.mod.util.ConfigurationHandler;
+import bettercombat.mod.util.Reference;
 import net.minecraft.client.gui.Gui;
 import net.minecraft.client.renderer.GlStateManager;
 import net.minecraft.entity.Entity;

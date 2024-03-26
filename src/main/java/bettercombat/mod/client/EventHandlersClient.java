@@ -1,4 +1,4 @@
-package bettercombat.mod.client.handler;
+package bettercombat.mod.client;
 
 import java.lang.reflect.Field;
 import java.util.ArrayList;
@@ -8,8 +8,6 @@ import java.util.regex.Pattern;
 
 import javax.annotation.Nullable;
 
-import bettercombat.mod.client.BetterCombatHand;
-import bettercombat.mod.client.ClientProxy;
 import bettercombat.mod.network.PacketBreakBlock;
 import bettercombat.mod.network.PacketFastEquip;
 import bettercombat.mod.network.PacketHandler;

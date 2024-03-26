@@ -1,4 +1,4 @@
-package bettercombat.mod.client.gui;
+package bettercombat.mod.client;
 
 import java.util.Set;
 
