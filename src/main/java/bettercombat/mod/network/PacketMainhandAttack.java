@@ -10,6 +10,7 @@ import net.minecraftforge.fml.common.network.ByteBufUtils;
 import net.minecraftforge.fml.common.network.simpleimpl.IMessage;
 import net.minecraftforge.fml.common.network.simpleimpl.IMessageHandler;
 import net.minecraftforge.fml.common.network.simpleimpl.MessageContext;
+import scala.Console;
 
 import static bettercombat.mod.util.ConfigurationHandler.elanaiDodgeCompat;
 import static bettercombat.mod.util.ConfigurationHandler.elanaiDodgeMainHandFeatherCost;
@@ -66,6 +67,7 @@ public class PacketMainhandAttack implements IMessage
 
 			if (elanaiDodgeCompat && Loader.isModLoaded("elenaidodge2")) {
 				if (getFeatherLevel(player) < elanaiDodgeMainHandFeatherCost) {
+					Console.println("cant swing");
 					return;
 				}
 

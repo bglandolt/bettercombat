@@ -67,6 +67,7 @@ import net.minecraftforge.client.event.MouseEvent;
 import net.minecraftforge.common.IPlantable;
 import net.minecraftforge.common.IShearable;
 import net.minecraftforge.event.entity.player.ItemTooltipEvent;
+import net.minecraftforge.fml.common.Loader;
 import net.minecraftforge.fml.common.eventhandler.Event.Result;
 import net.minecraftforge.fml.common.eventhandler.EventPriority;
 import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
@@ -74,6 +75,9 @@ import net.minecraftforge.fml.common.gameevent.InputEvent.KeyInputEvent;
 import net.minecraftforge.fml.common.gameevent.TickEvent;
 import net.minecraftforge.fml.relauncher.Side;
 import net.minecraftforge.fml.relauncher.SideOnly;
+
+import static bettercombat.mod.util.ConfigurationHandler.*;
+import static com.elenai.elenaidodge2.api.FeathersHelper.getFeatherLevel;
 
 @SideOnly(Side.CLIENT)
 public class EventHandlersClient
@@ -378,6 +382,12 @@ public class EventHandlersClient
 
 		RayTraceResult mov = this.getMainhandMouseover();
 
+		if (Loader.isModLoaded("elanaidodge2") && elanaiDodgeCompat) {
+			if (getFeatherLevel(this.mc.player) < elanaiDodgeMainHandFeatherCost) {
+				return;
+			}
+		}
+
 		/*
 		 * If the MOV is not null AND has an entity AND if it is a player, can it be PVPd
 		 */
@@ -496,7 +506,13 @@ public class EventHandlersClient
 		}
 
 		RayTraceResult mov = this.getOffhandMouseover();
-		
+
+		if (elanaiDodgeCompat && Loader.isModLoaded("elanaidodge2")) {
+			if (getFeatherLevel(this.mc.player) < elanaiDodgeOffHandFeatherCost) {
+				return;
+			}
+		}
+
 		/*
 		 * If, the MOV is not null AND has an entity AND if it is a player, can it be
 		 * PVPd
@@ -1768,6 +1784,11 @@ public class EventHandlersClient
 
 	public boolean isMainhandAttackReady()
 	{
+
+		if (Loader.isModLoaded("elanaidodge2") && elanaiDodgeCompat) {
+			return this.mainhandCooldown <= 0 && getFeatherLevel(this.mc.player) >= elanaiDodgeMainHandFeatherCost;
+		}
+
 		return this.mainhandCooldown <= 0;
 	}
 
@@ -1778,6 +1799,11 @@ public class EventHandlersClient
 
 	public boolean isOffhandAttackReady()
 	{
+
+		if (Loader.isModLoaded("elanaidodge2") && elanaiDodgeCompat) {
+			return this.offhandCooldown <= 0 && getFeatherLevel(this.mc.player) >= elanaiDodgeOffHandFeatherCost;
+		}
+
 		return this.offhandCooldown <= 0;
 	}
 
