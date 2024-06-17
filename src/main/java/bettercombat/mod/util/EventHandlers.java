@@ -80,6 +80,8 @@ import net.minecraftforge.fml.common.eventhandler.Event.Result;
 import net.minecraftforge.fml.common.eventhandler.EventPriority;
 import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
 
+import static com.elenai.elenaidodge2.api.FeathersHelper.decreaseFeathers;
+
 public class EventHandlers
 {
 	public static final IAttribute CRIT_CHANCE = (new RangedAttribute(null, Reference.MOD_ID + ".critChance", ConfigurationHandler.baseCritPercentChance, 0.0D, 1.0D)).setDescription("Critical strike chance").setShouldWatch(true);
@@ -655,7 +657,7 @@ public class EventHandlers
 			}
 		}
 	}
-	
+
 	@SubscribeEvent(priority = EventPriority.LOWEST, receiveCanceled = true)
 	public void livingAttackEvent( LivingAttackEvent event )
 	{		

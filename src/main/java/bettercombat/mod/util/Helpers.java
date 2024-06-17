@@ -9,6 +9,7 @@ import java.util.function.Function;
 
 import javax.annotation.Nullable;
 
+import com.elenai.elenaidodge2.api.*;
 import bettercombat.mod.client.ClientProxy;
 import bettercombat.mod.network.PacketHandler;
 import bettercombat.mod.network.PacketParrying;
@@ -33,6 +34,7 @@ import net.minecraft.entity.ai.attributes.AttributeModifier;
 import net.minecraft.entity.item.EntityArmorStand;
 import net.minecraft.entity.monster.IMob;
 import net.minecraft.entity.player.EntityPlayer;
+import net.minecraft.entity.player.EntityPlayerMP;
 import net.minecraft.init.Enchantments;
 import net.minecraft.init.MobEffects;
 import net.minecraft.init.SoundEvents;
@@ -53,6 +55,8 @@ import net.minecraft.util.text.TextComponentString;
 import net.minecraft.world.WorldServer;
 import net.minecraftforge.event.ForgeEventFactory;
 
+import static com.elenai.elenaidodge2.api.FeathersHelper.decreaseFeathers;
+
 public final class Helpers
 {
 	private Helpers(){}
@@ -67,7 +71,7 @@ public final class Helpers
 	{
 		player.sendMessage(new TextComponentString(message));
 	}
-	
+
 	public static boolean playerAttackVictim( EntityPlayer player, Entity victim, boolean mainhandAttack )
 	{
 		final ItemStack offhand = player.getHeldItemOffhand();
@@ -146,7 +150,6 @@ public final class Helpers
 				}
 			}
 		}
-		
 		return attacked;
 	}
 
@@ -688,7 +691,8 @@ public final class Helpers
 					int k = (int) (damage * 0.5D);
 					((WorldServer) player.world).spawnParticle(EnumParticleTypes.DAMAGE_INDICATOR, victim.posX, victim.posY + victim.height * 0.5F, victim.posZ, k, 0.1D, 0.0D, 0.1D, 0.2D);
 				}
-			}			
+			}
+
 			return true;
 		}
 		else
