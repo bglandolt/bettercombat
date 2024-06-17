@@ -67,7 +67,6 @@ public class PacketMainhandAttack implements IMessage
 
 			if (elanaiDodgeCompat && Loader.isModLoaded("elenaidodge2")) {
 				if (getFeatherLevel(player) < elanaiDodgeMainHandFeatherCost) {
-					Console.println("cant swing");
 					return;
 				}
 

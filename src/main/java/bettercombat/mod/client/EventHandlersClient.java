@@ -75,9 +75,11 @@ import net.minecraftforge.fml.common.gameevent.InputEvent.KeyInputEvent;
 import net.minecraftforge.fml.common.gameevent.TickEvent;
 import net.minecraftforge.fml.relauncher.Side;
 import net.minecraftforge.fml.relauncher.SideOnly;
+import scala.Console;
 
 import static bettercombat.mod.util.ConfigurationHandler.*;
 import static com.elenai.elenaidodge2.api.FeathersHelper.getFeatherLevel;
+import static com.elenai.elenaidodge2.api.FeathersHelper.getWeight;
 
 @SideOnly(Side.CLIENT)
 public class EventHandlersClient
@@ -1785,8 +1787,8 @@ public class EventHandlersClient
 	public boolean isMainhandAttackReady()
 	{
 
-		if (Loader.isModLoaded("elanaidodge2") && elanaiDodgeCompat) {
-			return this.mainhandCooldown <= 0 && getFeatherLevel(this.mc.player) >= elanaiDodgeMainHandFeatherCost;
+		if (Loader.isModLoaded("elenaidodge2") & elanaiDodgeCompat) {
+			return this.mainhandCooldown <= 0 & (getFeatherLevel(this.mc.player) - getWeight(this.mc.player)) >= elanaiDodgeMainHandFeatherCost;
 		}
 
 		return this.mainhandCooldown <= 0;
@@ -1800,8 +1802,8 @@ public class EventHandlersClient
 	public boolean isOffhandAttackReady()
 	{
 
-		if (Loader.isModLoaded("elanaidodge2") && elanaiDodgeCompat) {
-			return this.offhandCooldown <= 0 && getFeatherLevel(this.mc.player) >= elanaiDodgeOffHandFeatherCost;
+		if (Loader.isModLoaded("elenaidodge2") & elanaiDodgeCompat) {
+			return this.offhandCooldown <= 0 & (getFeatherLevel(this.mc.player) - getWeight(this.mc.player)) >= elanaiDodgeOffHandFeatherCost;
 		}
 
 		return this.offhandCooldown <= 0;
