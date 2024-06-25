@@ -5,10 +5,17 @@ import io.netty.buffer.ByteBuf;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.player.EntityPlayerMP;
 import net.minecraftforge.fml.common.FMLCommonHandler;
+import net.minecraftforge.fml.common.Loader;
 import net.minecraftforge.fml.common.network.ByteBufUtils;
 import net.minecraftforge.fml.common.network.simpleimpl.IMessage;
 import net.minecraftforge.fml.common.network.simpleimpl.IMessageHandler;
 import net.minecraftforge.fml.common.network.simpleimpl.MessageContext;
+import scala.Console;
+
+import static bettercombat.mod.util.ConfigurationHandler.elanaiDodgeCompat;
+import static bettercombat.mod.util.ConfigurationHandler.elanaiDodgeMainHandFeatherCost;
+import static com.elenai.elenaidodge2.api.FeathersHelper.decreaseFeathers;
+import static com.elenai.elenaidodge2.api.FeathersHelper.getFeatherLevel;
 
 public class PacketMainhandAttack implements IMessage
 {
@@ -54,18 +61,29 @@ public class PacketMainhandAttack implements IMessage
 
 		private static void handle( PacketMainhandAttack message, MessageContext ctx )
 		{
+
 			EntityPlayerMP player = ctx.getServerHandler().player;
+
+
+			if (elanaiDodgeCompat && Loader.isModLoaded("elenaidodge2")) {
+				if (getFeatherLevel(player) < elanaiDodgeMainHandFeatherCost) {
+					return;
+				}
+
+				decreaseFeathers(player, elanaiDodgeMainHandFeatherCost);
+
+			}
 
 			if ( message.entityId != null )
 			{
 				Entity target = player.world.getEntityByID(message.entityId);
-				
+
 				if ( target != null )
 				{
 					Helpers.playerAttackVictim(player, target, true);
 				}
 			}
-			
+
 			Helpers.applySwingInteria(player);
 			
 //			if ( ConfigurationHandler.momentumOnAttack != 0.0F )

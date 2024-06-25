@@ -5,10 +5,15 @@ import io.netty.buffer.ByteBuf;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.player.EntityPlayerMP;
 import net.minecraftforge.fml.common.FMLCommonHandler;
+import net.minecraftforge.fml.common.Loader;
 import net.minecraftforge.fml.common.network.ByteBufUtils;
 import net.minecraftforge.fml.common.network.simpleimpl.IMessage;
 import net.minecraftforge.fml.common.network.simpleimpl.IMessageHandler;
 import net.minecraftforge.fml.common.network.simpleimpl.MessageContext;
+
+import static bettercombat.mod.util.ConfigurationHandler.*;
+import static com.elenai.elenaidodge2.api.FeathersHelper.decreaseFeathers;
+import static com.elenai.elenaidodge2.api.FeathersHelper.getFeatherLevel;
 
 public class PacketOffhandAttack implements IMessage
 {
@@ -55,7 +60,17 @@ public class PacketOffhandAttack implements IMessage
 		private static void handle( PacketOffhandAttack message, MessageContext ctx )
 		{
 			EntityPlayerMP player = ctx.getServerHandler().player;
-			
+
+
+			if (elanaiDodgeCompat && Loader.isModLoaded("elenaidodge2")) {
+				if (getFeatherLevel(player) < elanaiDodgeOffHandFeatherCost) {
+					return;
+				}
+
+				decreaseFeathers(player, elanaiDodgeOffHandFeatherCost);
+
+			}
+
 			if ( message.entityId != null )
 			{				
 				Entity target = player.world.getEntityByID(message.entityId);

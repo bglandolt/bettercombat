@@ -25,7 +25,11 @@ public class ConfigurationHandler
 			loadConfiguration();
 		}
 	}
-	
+
+	// Elanai Ddoge 2 Compat
+	public static boolean elanaiDodgeCompat = true;
+	public static int elanaiDodgeMainHandFeatherCost = 2;
+	public static int elanaiDodgeOffHandFeatherCost = 1;
 	/* ARROWS --------------------------------------------------------------------------------------------------------------------- */
 
 	public static boolean addDamageSourceToTippedArrows = true;
@@ -398,6 +402,12 @@ public class ConfigurationHandler
 
 	private static void loadConfiguration()
 	{
+
+		String COMPAT = "Compat";
+
+		elanaiDodgeCompat = config.getBoolean("Elani Dodge 2 Feather Compat", COMPAT, true, "Enable elaina Dodge 2 feathers compat");
+		elanaiDodgeMainHandFeatherCost = config.getInt("Main Hand Feather Cost", COMPAT, 2, 0, 20, "Main Hand Attacks will drain this amount of feathers");
+		elanaiDodgeOffHandFeatherCost = config.getInt("Off Hand Feather Cost", COMPAT, 1, 0, 20, "Off Hand Attacks will drain this amount of feathers");
 		/* --------------------------------------------------------------------------------------------------------------------- */
 		String ARROWS = "Arrows";
 		
