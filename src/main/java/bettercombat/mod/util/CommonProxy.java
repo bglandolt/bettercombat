@@ -1,6 +1,8 @@
 package bettercombat.mod.util;
 
+import bettercombat.mod.client.SoundHandler;
 import bettercombat.mod.network.PacketHandler;
+import bettercombat.mod.server.EventHandlers;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.fml.common.event.FMLInitializationEvent;
 import net.minecraftforge.fml.common.event.FMLPostInitializationEvent;

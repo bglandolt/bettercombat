@@ -1,8 +1,10 @@
-package bettercombat.mod.util;
+package bettercombat.mod.client;
 
 import javax.annotation.Nullable;
 
-import bettercombat.mod.client.BetterCombatHand;
+import bettercombat.mod.util.ConfigurationHandler;
+import bettercombat.mod.util.Helpers;
+import bettercombat.mod.util.Reference;
 import bettercombat.mod.util.ConfigurationHandler.Animation;
 import bettercombat.mod.util.ConfigurationHandler.SoundType;
 import bettercombat.mod.util.ConfigurationHandler.WeaponProperty;
@@ -507,11 +509,11 @@ public class SoundHandler
 		float volume = getRandomSwingVolume();
 		float pitch = getSwingPitch(cooldown);
 		
-		if ( !betterCombatHand.hasCustomWeapon() )
+		if ( !betterCombatHand.hasConfigWeapon() )
 		{
 			if ( itemStack.getItem() instanceof ItemShield )
 			{				
-				if ( Helpers.isMetal(itemStack) )
+				if ( Helpers.isMetalItem(itemStack) )
 				{
 					swingMetalShield(elb, volume, getRandomSwingPitch());
 					return;
@@ -541,7 +543,7 @@ public class SoundHandler
 			return;
 		}
 		
-		if ( Helpers.isMetal(itemStack) )
+		if ( Helpers.isMetalItem(itemStack) )
 		{
 			switch ( betterCombatHand.getSoundType() )
 			{
@@ -579,7 +581,7 @@ public class SoundHandler
 		float volume = getRandomSwingVolume();
 		float pitch = getSwingPitch(cooldown);
 
-		if ( !betterCombatHand.hasCustomWeapon() )
+		if ( !betterCombatHand.hasConfigWeapon() )
 		{
 			swingPunchRight(elb, volume, pitch);
 			return;
@@ -597,7 +599,7 @@ public class SoundHandler
 			return;
 		}
 		
-		if ( Helpers.isMetal(itemStack) )
+		if ( Helpers.isMetalItem(itemStack) )
 		{
 			switch ( betterCombatHand.getSoundType() )
 			{
@@ -700,7 +702,7 @@ public class SoundHandler
 	
 	public static void playEquipSoundLeft( EntityLivingBase elb, BetterCombatHand betterCombatHand, ItemStack itemStack, int cooldown )
 	{
-		if ( !betterCombatHand.hasCustomWeapon() )
+		if ( !betterCombatHand.hasConfigWeapon() )
 		{
 			return;
 		}		
@@ -708,7 +710,7 @@ public class SoundHandler
 		float volume = getRandomEquipAndSheatheVolume();
 		float pitch = getSwingPitch(cooldown);
 		
-		if ( Helpers.isMetal(itemStack) )
+		if ( Helpers.isMetalItem(itemStack) )
 		{
 			/* AXE, BLADE, BLUNT, NONE, POLEARM */
 			switch ( betterCombatHand.getSoundType() )
@@ -739,7 +741,7 @@ public class SoundHandler
 	
 	public static void playEquipSoundRight( EntityLivingBase elb, BetterCombatHand betterCombatHand, ItemStack itemStack, int cooldown )
 	{
-		if ( !betterCombatHand.hasCustomWeapon() )
+		if ( !betterCombatHand.hasConfigWeapon() )
 		{
 			return;
 		}
@@ -747,7 +749,7 @@ public class SoundHandler
 		float volume = getRandomEquipAndSheatheVolume();
 		float pitch = getSwingPitch(cooldown);
 		
-		if ( Helpers.isMetal(itemStack) )
+		if ( Helpers.isMetalItem(itemStack) )
 		{
 			switch ( betterCombatHand.getSoundType() )
 			{
@@ -781,7 +783,7 @@ public class SoundHandler
 	
 	public static void playSheatheSoundLeft( EntityLivingBase elb, BetterCombatHand betterCombatHand, ItemStack itemStack, int cooldown, boolean isMetal )
 	{		
-		if ( !betterCombatHand.hasCustomWeapon() )
+		if ( !betterCombatHand.hasConfigWeapon() )
 		{
 			return;
 		}
@@ -819,7 +821,7 @@ public class SoundHandler
 	
 	public static void playSheatheSoundRight( EntityLivingBase elb, BetterCombatHand betterCombatHand, ItemStack itemStack, int cooldown, boolean isMetal )
 	{
-		if ( !betterCombatHand.hasCustomWeapon() )
+		if ( !betterCombatHand.hasConfigWeapon() )
 		{
 			return;
 		}
@@ -924,7 +926,7 @@ public class SoundHandler
 		float volume = getRandomImpactVolume();
 		float pitch = getRandomImpactPitch();
 		
-		switch ( Helpers.rand.nextInt(4) )
+		switch ( elb.world.rand.nextInt(4) )
 		{
 			case 0:
 			{
@@ -959,7 +961,7 @@ public class SoundHandler
 		float volume = getRandomImpactVolume();
 		float pitch = getRandomImpactPitch();
 		
-		switch ( Helpers.rand.nextInt(4) )
+		switch ( elb.world.rand.nextInt(4) )
 		{
 			case 0:
 			{

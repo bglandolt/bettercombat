@@ -9,6 +9,14 @@ import net.minecraftforge.fml.common.event.FMLInitializationEvent;
 import net.minecraftforge.fml.common.event.FMLPostInitializationEvent;
 import net.minecraftforge.fml.common.event.FMLPreInitializationEvent;
 
+/*
+
+cd Documents/GitHub/bettercombat
+export JAVA_HOME=/Library/Java/JavaVirtualMachines/jdk1.8.0_202.jdk/Contents/Home export PATH=$JAVA_HOME/bin:$PATH
+./gradlew build
+
+ */
+
 @Mod.EventBusSubscriber(modid = Reference.MOD_ID)
 @Mod(modid=Reference.MOD_ID, name=Reference.MOD_NAME, version=Reference.VERSION, guiFactory="bettercombat.mod.client.GUIFactory", acceptedMinecraftVersions="[1.12.2]")
 public class BetterCombatMod
@@ -45,7 +53,7 @@ public class BetterCombatMod
 	}
 
 	// PARTICLE
-//	public ParticleWizardry createParticle(ResourceLocation type, World world, double x, double y, double z)
+//	public Particle createParticle(ResourceLocation type, World world, double x, double y, double z)
 //	{
 //		return null;
 //	}

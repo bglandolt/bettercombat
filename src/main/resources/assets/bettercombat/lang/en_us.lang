@@ -15,23 +15,23 @@ death.attack.bleeding.player=%1$s was exsanguinated by %2$s
 
 enchantment.gourmand=Curse of Gluttony
 enchantment.gourmand.name=Curse of Gluttony
-enchantment.gourmand.desc=Damage taken is instead dealt to your hunger and saturation.
+enchantment.bettercombat.gourmand.desc=Damage taken is instead dealt to your hunger and saturation.
 
 enchantment.lightning=§bLightning§r
 enchantment.lightning.name=§bLightning§r
-enchantment.lightning.desc=Call down lightning from the sky, dealing magic in a radius. Deals increased damage against damp targets, and can only be used outside.
+enchantment.bettercombat.lightning.desc=Call down lightning from the sky, dealing magic in a radius. Deals increased damage against damp targets, and can only be used outside.
 
 enchantment.sorcery=§dSorcery§r
 enchantment.sorcery.name=§dSorcery§r
-enchantment.sorcery.desc=Increases magic damage.
+enchantment.bettercombat.sorcery.desc=Increases magic damage.
 
 enchantment.revitalize=§aRevitalize§r
 enchantment.revitalize.name=§aRevitalize§r
-enchantment.revitalize.desc=Increases healing received.
+enchantment.bettercombat.revitalize.desc=Increases healing received.
 
 enchantment.webbing=Webbing
 enchantment.webbing.name=Webbing
-enchantment.webbing.desc=Encase foes in sticky webs.
+enchantment.bettercombat.webbing.desc=Encase foes in sticky webs.
 
 bettercombat.info.attribute.color=§2
 bettercombat.info.positive.color=§a+

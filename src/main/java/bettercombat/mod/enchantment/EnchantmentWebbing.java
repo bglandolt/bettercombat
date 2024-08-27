@@ -18,7 +18,7 @@ public class EnchantmentWebbing extends Enchantment
 {
 	public EnchantmentWebbing()
 	{
-		super(Rarity.VERY_RARE, BetterCombatEnchantments.THROWING_WEAPON, new EntityEquipmentSlot[]
+		super(Rarity.VERY_RARE, BetterCombatEnchantments.RANGED_WEAPON, new EntityEquipmentSlot[]
 		{
 			EntityEquipmentSlot.MAINHAND,
 			EntityEquipmentSlot.OFFHAND
@@ -44,7 +44,7 @@ public class EnchantmentWebbing extends Enchantment
 	@Override
     public boolean canApplyTogether(Enchantment ench)
     {
-        if (ench instanceof EnchantmentArrowKnockback)
+        if ( ench instanceof EnchantmentArrowKnockback )
         {
             return false;
         }
@@ -104,5 +104,4 @@ public class EnchantmentWebbing extends Enchantment
 			victim.world.setBlockState(pos, Blocks.WEB.getDefaultState());
 		}
 	}
-
 }

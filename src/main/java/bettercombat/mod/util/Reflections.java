@@ -81,6 +81,10 @@ public class Reflections
 	private static final String EFF_SRG = "field_77349_p";
 	private static final String EFF_MCP = "efficiency";
 	
+	private static Field lastDamage;
+	private static final String LDG_SRG = "field_110153_bc";
+	private static final String LDG_MCP = "lastDamage";
+	
 	public static Float getEfficiency( ItemTool tool )
 	{
 		try
@@ -198,10 +202,8 @@ public class Reflections
 	
 	public static void setTicksSinceLastSwing( EntityLivingBase living, int ticks )
 	{
-
 		try
 		{
-
 			if ( ticksSinceLastSwing == null )
 			{
 				ticksSinceLastSwing = EntityLivingBase.class.getDeclaredField(getName(TSLS_SRG, TSLS_MCP));
@@ -214,7 +216,24 @@ public class Reflections
 		{
 			throw new RuntimeException("setTicksSinceLastSwing exception: " + ex);
 		}
+	}
+	
+	public static void setLastDamage( EntityLivingBase living, float damage )
+	{
+		try
+		{
+			if ( lastDamage == null )
+			{
+				lastDamage = EntityLivingBase.class.getDeclaredField(getName(LDG_SRG, LDG_MCP));
+				lastDamage.setAccessible(true);
+			}
 
+			lastDamage.setFloat(living, damage);
+		}
+		catch (Exception ex)
+		{
+			throw new RuntimeException("lastDamage exception: " + ex);
+		}
 	}
 
 	public static void activeItemStackUseCount( EntityLivingBase living, int ticks )

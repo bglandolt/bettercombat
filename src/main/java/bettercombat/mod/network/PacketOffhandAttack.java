@@ -1,6 +1,5 @@
 package bettercombat.mod.network;
 
-import bettercombat.mod.util.Helpers;
 import io.netty.buffer.ByteBuf;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.player.EntityPlayerMP;
@@ -14,6 +13,8 @@ import net.minecraftforge.fml.common.network.simpleimpl.MessageContext;
 import static bettercombat.mod.util.ConfigurationHandler.*;
 import static com.elenai.elenaidodge2.api.FeathersHelper.decreaseFeathers;
 import static com.elenai.elenaidodge2.api.FeathersHelper.getFeatherLevel;
+
+import bettercombat.mod.util.Helpers;
 
 public class PacketOffhandAttack implements IMessage
 {

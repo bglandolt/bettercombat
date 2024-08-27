@@ -20,7 +20,7 @@ public class BetterCombatEnchantments
 {
 	public static final ArrayList<Enchantment> ENCHANTMENTS = new ArrayList<Enchantment>();
 
-	public static final EnumEnchantmentType THROWING_WEAPON = addEnchantment("throwing", item -> item instanceof ItemBow || item.getClass().getSuperclass().getSimpleName().equals("ItemThrowingWeapon"));
+	public static final EnumEnchantmentType RANGED_WEAPON = addEnchantment("throwing", item -> item instanceof ItemBow || item.getClass().getSuperclass().getSimpleName().equals("ItemThrowingWeapon"));
 
 	@Nonnull
 	public static EnumEnchantmentType addEnchantment( String name, Predicate<Item> condition )

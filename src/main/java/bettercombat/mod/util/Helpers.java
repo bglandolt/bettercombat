@@ -9,16 +9,16 @@ import java.util.function.Function;
 
 import javax.annotation.Nullable;
 
-import com.elenai.elenaidodge2.api.*;
 import bettercombat.mod.client.ClientProxy;
+import bettercombat.mod.client.SoundHandler;
 import bettercombat.mod.network.PacketHandler;
 import bettercombat.mod.network.PacketParrying;
+import bettercombat.mod.server.EventHandlers;
 import bettercombat.mod.util.ConfigurationHandler.Animation;
+import bettercombat.mod.util.ConfigurationHandler.ConfigWeapon;
+import bettercombat.mod.util.ConfigurationHandler.ConfigWeaponPotionEffect;
 import bettercombat.mod.util.ConfigurationHandler.CustomAxe;
 import bettercombat.mod.util.ConfigurationHandler.CustomShield;
-import bettercombat.mod.util.ConfigurationHandler.CustomSword;
-import bettercombat.mod.util.ConfigurationHandler.CustomWeapon;
-import bettercombat.mod.util.ConfigurationHandler.CustomWeaponPotionEffect;
 import bettercombat.mod.util.ConfigurationHandler.SoundType;
 import net.minecraft.enchantment.Enchantment;
 import net.minecraft.enchantment.EnchantmentHelper;
@@ -34,7 +34,6 @@ import net.minecraft.entity.ai.attributes.AttributeModifier;
 import net.minecraft.entity.item.EntityArmorStand;
 import net.minecraft.entity.monster.IMob;
 import net.minecraft.entity.player.EntityPlayer;
-import net.minecraft.entity.player.EntityPlayerMP;
 import net.minecraft.init.Enchantments;
 import net.minecraft.init.MobEffects;
 import net.minecraft.init.SoundEvents;
@@ -42,7 +41,6 @@ import net.minecraft.inventory.EntityEquipmentSlot;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemShield;
 import net.minecraft.item.ItemStack;
-import net.minecraft.item.ItemSword;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.nbt.NBTTagList;
 import net.minecraft.potion.PotionEffect;
@@ -51,35 +49,44 @@ import net.minecraft.util.EnumHand;
 import net.minecraft.util.EnumParticleTypes;
 import net.minecraft.util.math.MathHelper;
 import net.minecraft.util.math.Vec3d;
-import net.minecraft.util.text.TextComponentString;
 import net.minecraft.world.WorldServer;
 import net.minecraftforge.event.ForgeEventFactory;
+import net.minecraftforge.fml.relauncher.Side;
+import net.minecraftforge.fml.relauncher.SideOnly;
 
-import static com.elenai.elenaidodge2.api.FeathersHelper.decreaseFeathers;
-
-public final class Helpers
+public class Helpers
 {
-	private Helpers(){}
+	public static UUID weaponModifierUUID = UUID.fromString("fa233e1c-4180-4865-b01b-bcce9785aca3");
+	
+	/* Attributes */
+	public static String ATTACK_SPEED = "attackSpeed";
+	public static String REACH_DISTANCE = "reachDistance";
+	public static String ATTRIBUTE_NAME = "AttributeName";
+	public static String QUALITY = "Quality";
+	public static String ATTRIBUTE_MODIFIERS = "AttributeModifiers";
+	public static String ATTACK_DAMAGE = "attackDamage";
 	
 	public static Random rand = new Random();
-
-	/* ====================================================================================================================================================== */
-    /*																		ATTACK 																			  */
-    /* ====================================================================================================================================================== */
 	
-	public static void message(EntityPlayer player, String message)
+	private Helpers()
 	{
-		player.sendMessage(new TextComponentString(message));
+		
 	}
 
+	/* ====================================================================================================================================================== */
+    /*																		Attack 																			  */
+    /* ====================================================================================================================================================== */
+	
+	/* Attack the entity with a mainhand or offhand attack */
 	public static boolean playerAttackVictim( EntityPlayer player, Entity victim, boolean mainhandAttack )
 	{
-		final ItemStack offhand = player.getHeldItemOffhand();
 		final ItemStack mainhand = player.getHeldItemMainhand();
+		final ItemStack offhand = player.getHeldItemOffhand();
 				
 		boolean attacked = false;
 		
-		if ( mainhandAttack ) /* MAINHAND */
+		/* MAINHAND */
+		if ( mainhandAttack )
 		{
 			player.setHeldItem(EnumHand.OFF_HAND, ItemStack.EMPTY);
 			
@@ -110,7 +117,8 @@ public final class Helpers
 				}
 			}
 		}
-		else /* OFFHAND */
+		/* OFFHAND */
+		else
 		{			
 			player.setHeldItem(EnumHand.OFF_HAND, ItemStack.EMPTY);
 			player.setHeldItem(EnumHand.MAIN_HAND, offhand);
@@ -150,11 +158,12 @@ public final class Helpers
 				}
 			}
 		}
+		
 		return attacked;
 	}
 
 	/*
-	 * player.attackTargetEntityWithCurrentItem(victim) vanilla attacks are cancelled and this method is instead called
+	 * Attack the entity with a weapon
 	 */
 	public static boolean playerAttackVictimWithWeapon( EntityPlayer player, Entity entity, ItemStack mainhand, ItemStack offhand, boolean mainhandAttack )
 	{
@@ -196,19 +205,19 @@ public final class Helpers
 			damage *= ConfigurationHandler.offHandEfficiency;
 		}
 				
-		CustomWeaponPotionEffect customWeaponPotionEffect = null;
+		ConfigWeaponPotionEffect customWeaponPotionEffect = null;
 		
-		if ( ConfigurationHandler.isItemClassWhiteList(weapon.getItem()) )
+		if ( ConfigurationHandler.isConfigWeapon(weapon.getItem()) )
 		{
 			configWeapon = true;
 
-			final String weaponName = getString(weapon);
+			final String weaponName = getRegistryNameFromItem(weapon);
 			
-			isMetal = Helpers.isMetal(weaponName);
+			isMetal = Helpers.isMetalRegistryName(weaponName);
 			
 			boolean customWeapon = false;
 			
-			for ( CustomWeapon s : ConfigurationHandler.weapons )
+			for ( ConfigWeapon s : ConfigurationHandler.weapons )
 			{
 				if ( weaponName.contains(s.name) )
 				{
@@ -223,7 +232,7 @@ public final class Helpers
 					soundType = s.soundType;
 					animation = s.animation;
 					
-					customWeaponPotionEffect = s.customWeaponPotionEffect;
+					customWeaponPotionEffect = s.configWeaponPotionEffect;
 					
 					break;
 				}
@@ -244,8 +253,9 @@ public final class Helpers
 		else
 		{
 			damage -= ConfigurationHandler.fistAndNonWeaponDamageReduction;
+			knockbackMod += ConfigurationHandler.baseKnockback;
 			knockbackMod -= ConfigurationHandler.fistAndNonWeaponKnockbackReduction;
-			additionalReach = -ConfigurationHandler.fistAndNonWeaponReachReduction;
+			additionalReach -= ConfigurationHandler.fistAndNonWeaponReachReduction;
 			isMetal = false;
 			configWeapon = false;
 		}
@@ -480,17 +490,17 @@ public final class Helpers
 			{
 				if ( customWeaponPotionEffect.afflict )
 				{
-					victim.addPotionEffect(new PotionEffect(customWeaponPotionEffect.getPotion(), customWeaponPotionEffect.potionDuration, customWeaponPotionEffect.potionPower-1, true, false));
+					victim.addPotionEffect(new PotionEffect(customWeaponPotionEffect.getPotion(), customWeaponPotionEffect.potionDuration, customWeaponPotionEffect.potionPower-1, customWeaponPotionEffect.ambient, customWeaponPotionEffect.showParticles));
 				}
 				else
 				{
-					player.addPotionEffect(new PotionEffect(customWeaponPotionEffect.getPotion(), customWeaponPotionEffect.potionDuration, customWeaponPotionEffect.potionPower-1, true, false));
+					player.addPotionEffect(new PotionEffect(customWeaponPotionEffect.getPotion(), customWeaponPotionEffect.potionDuration, customWeaponPotionEffect.potionPower-1, customWeaponPotionEffect.ambient, customWeaponPotionEffect.showParticles));
 				}
 			}
 			
 			if ( configWeapon && ConfigurationHandler.attackSweepParticles )
 			{
-				spawnSweepHit(player, victim);
+				sweepParticles(player, victim);
 			}
 							
 			victim.knockBack(player, (float)(0.5D * knockbackMod), MathHelper.sin(player.rotationYaw * 0.017453292F), -MathHelper.cos(player.rotationYaw * 0.017453292F));
@@ -568,7 +578,7 @@ public final class Helpers
 
 				if ( swept )
 				{
-					player.world.playSound(null, player.posX, player.posY, player.posZ, SoundEvents.ENTITY_PLAYER_ATTACK_SWEEP, player.getSoundCategory(), ConfigurationHandler.weaponHitSoundVolume, randomPitch(player));
+					player.world.playSound(null, player.posX, player.posY, player.posZ, SoundEvents.ENTITY_PLAYER_ATTACK_SWEEP, player.getSoundCategory(), ConfigurationHandler.weaponHitSoundVolume, SoundHandler.getRandomImpactPitch());
 				}
 			}
 			
@@ -576,7 +586,7 @@ public final class Helpers
 			{
 				player.onCriticalHit(victim);
 				
-				player.world.playSound(null, player.posX, player.posY, player.posZ, SoundEvents.ENTITY_PLAYER_ATTACK_CRIT, player.getSoundCategory(), ConfigurationHandler.weaponHitSoundVolume, randomPitch(player));
+				player.world.playSound(null, player.posX, player.posY, player.posZ, SoundEvents.ENTITY_PLAYER_ATTACK_CRIT, player.getSoundCategory(), ConfigurationHandler.weaponHitSoundVolume, SoundHandler.getRandomImpactPitch());
 				
 				if ( enchantmentModifier > 0.0F )
 				{
@@ -702,6 +712,7 @@ public final class Helpers
 		}
 	}
 
+	/* Returns true if the player successfully attacked the victim */
 	private static boolean playerAttackedVictim(EntityPlayer player, EntityLivingBase victim, @Nullable MultiPartEntityPart bodyPart, float damage)
 	{
 		victim.hurtResistantTime = 0;
@@ -789,7 +800,7 @@ public final class Helpers
 				
 				if ( bodyPart.parent != null )
 				{
-					if ( isMetal(getString(shield)) )
+					if ( isMetalItem(shield) )
 					{
 						SoundHandler.playBashMetalShieldSound(player);
 					}
@@ -833,17 +844,17 @@ public final class Helpers
 			return false;
 		}
 		
-		if ( ConfigurationHandler.shieldSilverDamageMultiplier != 1.0F && victim.isEntityUndead() && isSilver(getString(shield)) )
+		if ( ConfigurationHandler.shieldSilverDamageMultiplier != 1.0F && victim.isEntityUndead() && isSilverRegistryName(getRegistryNameFromItem(shield)) )
 		{
 			damage *= ConfigurationHandler.shieldSilverDamageMultiplier;
-			EventHandlers.playSilverArmorEffect(victim);
+			silverArmorParticles(victim);
 		}
 		
 		player.addExhaustion(0.1F);
 				
 		if ( playerAttackedVictim(player, victim, bodyPart, (float)damage) )
 		{
-			if ( isMetal(getString(shield)) )
+			if ( isMetalRegistryName(getRegistryNameFromItem(shield)) )
 			{
 				SoundHandler.playBashMetalShieldSound(player);
 			}
@@ -867,39 +878,19 @@ public final class Helpers
 		
 		return false;
 	}
-
-	private static float randomPitch(EntityPlayer player)
-	{
-		return 0.9F + player.getRNG().nextFloat() * 0.2F;
-	}
 	
-	public static void applySwingInteria(EntityPlayer player)
-	{
-		if ( ConfigurationHandler.inertiaOnAttack != 1.0F )
-		{
-			if ( player.onGround )
-			{
-				player.motionX *= ConfigurationHandler.inertiaOnAttack;
-				player.motionZ *= ConfigurationHandler.inertiaOnAttack;
-				
-				player.velocityChanged = true;
-			}
-		}
-	}
+    /* ====================================================================================================================================================== */
+    /*																   Calculations																		      */
+    /* ====================================================================================================================================================== */
 
-//	public static final double RADIAN_TO_DEGREE = 180.0D/Math.PI;
-//	
-//	/* returns true if the target entity is in view of in entity, uses head rotation to calculate */
-//	public static boolean isEntityInView( EntityLivingBase in, EntityLivingBase target )
-//	{
-//        double rotation = (Math.atan2(target.posZ - in.posZ, target.posX - in.posX) * RADIAN_TO_DEGREE + 360) % 360 - (in.rotationYawHead + 450) % 360;
-//        return (rotation <= 50 && rotation >= -50) || rotation >= 310 || rotation <= -310;
-//	}
-	
 	public static double calculateAttribute( double attribute, double additive, double multiplicative )
 	{
 		return attribute *= additive * multiplicative;
 	}
+	
+    /* ====================================================================================================================================================== */
+    /*																  Base Attributes																		  */
+    /* ====================================================================================================================================================== */
 	
 	public static double getBaseReach( EntityPlayer player )
 	{
@@ -910,6 +901,51 @@ public final class Helpers
 		
 		return player.getEntityAttribute(EntityPlayer.REACH_DISTANCE).getBaseValue();
 	}
+	
+    /* ====================================================================================================================================================== */
+    /*																	  Mainhand																			  */
+    /* ====================================================================================================================================================== */
+	
+    /* ------------------------------------------------------------------------------------------------------------------------------------------------------ */
+    /*																	Attack Damage																		  */
+    /* ------------------------------------------------------------------------------------------------------------------------------------------------------ */
+	
+	public static double getMainhandAttackDamage( EntityPlayer player, ItemStack mh )
+	{
+		double attackDamage = player.getEntityAttribute(SharedMonsterAttributes.ATTACK_DAMAGE).getBaseValue();
+
+		double multiply_base = 1.0D;
+
+		double multiply = 1.0D;
+
+		for ( AttributeModifier attribute : player.getEntityAttribute(SharedMonsterAttributes.ATTACK_DAMAGE).getModifiers() )
+		{
+			switch( attribute.getOperation() )
+			{
+				case 0:
+				{
+					attackDamage += attribute.getAmount();
+					break;
+				}
+				case 1:
+				{
+					multiply_base += attribute.getAmount();
+					break;
+				}
+				case 2:
+				{
+					multiply *= (1.0D + attribute.getAmount());
+					break;
+				}
+			}
+		}
+
+		return attackDamage *= multiply_base *= multiply;
+	}
+	
+    /* ------------------------------------------------------------------------------------------------------------------------------------------------------ */
+    /*																		Reach																			  */
+    /* ------------------------------------------------------------------------------------------------------------------------------------------------------ */
 	
 	public static double getMainhandReach( EntityPlayer player, double additionalReach )
 	{
@@ -943,422 +979,13 @@ public final class Helpers
 		return calculateAttribute(reach, additive, multiplicative);
 	}
 	
-	public static int getMainhandCooldown( EntityPlayer player, ItemStack mh, ItemStack oh )
-	{
-		double speed = player.getEntityAttribute(SharedMonsterAttributes.ATTACK_SPEED).getBaseValue();
-		
-		double multiply_base = 1.0D;
-
-		double multiply = 1.0D;
-
-		/* + ALL */
-		for ( AttributeModifier attribute : player.getEntityAttribute(SharedMonsterAttributes.ATTACK_SPEED).getModifiers() )
-		{
-			switch( attribute.getOperation() )
-			{
-				case 0:
-				{
-					speed += attribute.getAmount();
-					break;
-				}
-				case 1:
-				{
-					multiply_base += attribute.getAmount();
-					break;
-				}
-				case 2:
-				{
-					multiply *= (1.0D + attribute.getAmount());
-					break;
-				}
-			}
-		}
-		
-		if ( mh.getItem() instanceof ItemSword && !ConfigurationHandler.swords.isEmpty() )
-		{
-			String s = Helpers.getString(mh);
-			
-			for ( CustomSword sword : ConfigurationHandler.swords )
-			{
-				if ( s.contains(sword.name) )
-				{
-					speed += sword.attackSpeed;
-					break;
-				}
-			}
-		}
-		
-		if ( !mh.isEmpty() && !oh.isEmpty() )
-		{
-			/* Set the fatigue to the custom weapon fatigue, only versatile weapons have fatigue */
-			speed /= 1.0 + ClientProxy.EHC_INSTANCE.betterCombatMainhand.getFatigue() + ClientProxy.EHC_INSTANCE.betterCombatOffhand.getFatigue()/2.0;
-		}
-		
-		return calculateAttackSpeedTicks(speed, multiply_base, multiply);
-	}
-	
-	private static int calculateAttackSpeedTicks( double speed, double multiply_base, double multiply )
-	{
-		return (int)( (20.0D/MathHelper.clamp(calculateAttribute(speed, multiply_base, multiply), 0.1D, 20.0D)) + ConfigurationHandler.addedSwingTickCooldown );
-	}
-		
-	/* ====================================================================================================================================================== */
-    /*																	OFFHAND REACH 																		  */
+    /* ====================================================================================================================================================== */
+    /*																	   Offhand																			  */
     /* ====================================================================================================================================================== */
 	
-	public static double getOffhandReach( EntityPlayer player, double additionalReach, ItemStack oh, ItemStack mh )
-	{
-		double reach = additionalReach + getBaseReach(player);
-		double additive = 1.0D;
-		double multiplicative = 1.0D;
-
-		/* + ALL */
-		for ( AttributeModifier attribute : player.getEntityAttribute(EntityPlayer.REACH_DISTANCE).getModifiers() )
-		{
-			switch( attribute.getOperation() )
-			{
-				case 0:
-				{
-					reach += attribute.getAmount();
-					break;
-				}
-				case 1:
-				{
-					additive += attribute.getAmount();
-					break;
-				}
-				case 2:
-				{
-					multiplicative *= (1.0D + attribute.getAmount());
-					break;
-				}
-			}
-		}
-
-		/* - MAINHAND */
-		for ( Map.Entry<String, AttributeModifier> modifier : mh.getAttributeModifiers(EntityEquipmentSlot.MAINHAND).entries() )
-		{
-			if ( modifier.getKey().contains("reachDistance") )
-			{
-				// Helpers.message("-key mh " + modifier.getValue().getAmount());
-
-				switch( modifier.getValue().getOperation() )
-				{
-					case 0:
-					{
-						reach -= modifier.getValue().getAmount();
-						break;
-					}
-					case 1:
-					{
-						additive -= modifier.getValue().getAmount();
-						break;
-					}
-					case 2:
-					{
-						multiplicative /= (1.0D + modifier.getValue().getAmount());
-						break;
-					}
-				}
-			}
-		}
-
-		/* + OFFHAND */
-		for ( Map.Entry<String, AttributeModifier> modifier : oh.getAttributeModifiers(EntityEquipmentSlot.MAINHAND).entries() )
-		{
-			if ( modifier.getKey().contains("reachDistance") )
-			{
-				// Helpers.message("+key oh" + modifier.getValue().getAmount());
-
-				switch( modifier.getValue().getOperation() )
-				{
-					case 0:
-					{
-						reach += modifier.getValue().getAmount();
-						break;
-					}
-					case 1:
-					{
-						additive += modifier.getValue().getAmount();
-						break;
-					}
-					case 2:
-					{
-						multiplicative *= (1.0D + modifier.getValue().getAmount());
-						break;
-					}
-				}
-			}
-		}
-
-		/* - MAINHAND QUALITY TOOLS */
-		if ( mh.hasTagCompound() && mh.getTagCompound().hasKey("Quality", 10) )
-		{
-			final NBTTagCompound tag = mh.getSubCompound("Quality");
-			final NBTTagList attributeList = tag.getTagList("AttributeModifiers", 10);
-
-			for ( int j = 0; j < attributeList.tagCount(); ++j )
-			{
-				final AttributeModifier modifier = SharedMonsterAttributes.readAttributeModifierFromNBT(attributeList.getCompoundTagAt(j));
-				final String attributeName = attributeList.getCompoundTagAt(j).getString("AttributeName");
-
-				if ( attributeName.contains("reachDistance") )
-				{
-					switch( modifier.getOperation() )
-					{
-						case 0:
-						{
-							reach -= modifier.getAmount();
-							break;
-						}
-						case 1:
-						{
-							additive -= modifier.getAmount();
-							break;
-						}
-						case 2:
-						{
-							multiplicative /= (1.0D + modifier.getAmount());
-							break;
-						}
-					}
-				}
-			}
-		}
-
-		/* + OFFHAND QUALITY TOOLS */
-		if ( oh.hasTagCompound() && oh.getTagCompound().hasKey("Quality", 10) )
-		{
-			final NBTTagCompound tag = oh.getSubCompound("Quality");
-			final NBTTagList attributeList = tag.getTagList("AttributeModifiers", 10);
-
-			for ( int j = 0; j < attributeList.tagCount(); ++j )
-			{
-				final AttributeModifier modifier = SharedMonsterAttributes.readAttributeModifierFromNBT(attributeList.getCompoundTagAt(j));
-				final String attributeName = attributeList.getCompoundTagAt(j).getString("AttributeName");
-
-				if ( attributeName.contains("reachDistance") )
-				{
-					switch( modifier.getOperation() )
-					{
-						case 0:
-						{
-							reach += modifier.getAmount();
-							break;
-						}
-						case 1:
-						{
-							additive += modifier.getAmount();
-							break;
-						}
-						case 2:
-						{
-							multiplicative *= (1.0D + modifier.getAmount());
-							break;
-						}
-					}
-				}
-			}
-		}
-
-		return calculateAttribute(reach, additive, multiplicative);
-	}
-
-    /* ====================================================================================================================================================== */
-    /*																OFFHAND ATTACK SPEED 																	  */
-    /* ====================================================================================================================================================== */
-	private static UUID weaponModifierUUID = UUID.fromString("fa233e1c-4180-4865-b01b-bcce9785aca3");
-	
-	public static int getOffhandCooldown( EntityPlayer player, ItemStack oh, ItemStack mh )
-	{
-		double speed = player.getEntityAttribute(SharedMonsterAttributes.ATTACK_SPEED).getBaseValue();
-
-		double multiply_base = 1.0D;
-
-		double multiply = 1.0D;
-
-		/* + ALL */
-		for ( AttributeModifier attribute : player.getEntityAttribute(SharedMonsterAttributes.ATTACK_SPEED).getModifiers() )
-		{			
-			if ( attribute.getID().equals(weaponModifierUUID) )
-			{
-				continue;
-			}
-			
-			switch( attribute.getOperation() )
-			{
-				case 0:
-				{
-					speed += attribute.getAmount();
-					break;
-				}
-				case 1:
-				{
-					multiply_base += attribute.getAmount();
-					break;
-				}
-				case 2:
-				{
-					multiply *= (1.0D + attribute.getAmount());
-					break;
-				}
-			}
-		}
-
-		/* - MAINHAND */
-		for ( Map.Entry<String, AttributeModifier> modifier : mh.getAttributeModifiers(EntityEquipmentSlot.MAINHAND).entries() )
-		{
-			if ( modifier.getKey().contains("attackSpeed") )
-			{
-				if ( modifier.getValue().getID().equals(weaponModifierUUID) )
-				{
-					continue;
-				}
-				
-				switch( modifier.getValue().getOperation() )
-				{
-					case 0:
-					{
-						speed -= modifier.getValue().getAmount();
-						break;
-					}
-					case 1:
-					{
-						multiply_base -= modifier.getValue().getAmount();
-						break;
-					}
-					case 2:
-					{
-						multiply /= (1.0D + modifier.getValue().getAmount());
-						break;
-					}
-				}
-			}
-		}
-
-		/* + OFFHAND */
-		for ( Map.Entry<String, AttributeModifier> modifier : oh.getAttributeModifiers(EntityEquipmentSlot.MAINHAND).entries() )
-		{
-			if ( modifier.getKey().contains("attackSpeed") )
-			{
-				switch( modifier.getValue().getOperation() )
-				{
-				case 0:
-				{
-					speed += modifier.getValue().getAmount();
-					break;
-				}
-				case 1:
-				{
-					multiply_base += modifier.getValue().getAmount();
-					break;
-				}
-				case 2:
-				{
-					multiply *= (1.0D + modifier.getValue().getAmount());
-					break;
-				}
-				}
-			}
-		}
-
-		/* - MAINHAND QUALITY TOOLS */
-		if ( mh.hasTagCompound() && mh.getTagCompound().hasKey("Quality", 10) )
-		{
-			final NBTTagCompound tag = mh.getSubCompound("Quality");
-			final NBTTagList attributeList = tag.getTagList("AttributeModifiers", 10);
-
-			for ( int j = 0; j < attributeList.tagCount(); ++j )
-			{
-				final AttributeModifier modifier = SharedMonsterAttributes.readAttributeModifierFromNBT(attributeList.getCompoundTagAt(j));
-				final String attributeName = attributeList.getCompoundTagAt(j).getString("AttributeName");
-
-				if ( attributeName.contains("attackSpeed") )
-				{
-					switch( modifier.getOperation() )
-					{
-					case 0:
-					{
-						speed -= modifier.getAmount();
-						break;
-					}
-					case 1:
-					{
-						multiply_base -= modifier.getAmount();
-						break;
-					}
-					case 2:
-					{
-						multiply /= (1.0D + modifier.getAmount());
-						break;
-					}
-					}
-				}
-			}
-		}
-
-		/* + OFFHAND QUALITY TOOLS */
-		if ( oh.hasTagCompound() && oh.getTagCompound().hasKey("Quality", 10) )
-		{
-			final NBTTagCompound tag = oh.getSubCompound("Quality");
-			final NBTTagList attributeList = tag.getTagList("AttributeModifiers", 10);
-
-			for ( int j = 0; j < attributeList.tagCount(); ++j )
-			{
-				final AttributeModifier modifier = SharedMonsterAttributes.readAttributeModifierFromNBT(attributeList.getCompoundTagAt(j));
-				final String attributeName = attributeList.getCompoundTagAt(j).getString("AttributeName");
-
-				if ( attributeName.contains("attackSpeed") )
-				{
-					switch( modifier.getOperation() )
-					{
-						case 0:
-						{
-							speed += modifier.getAmount();
-							break;
-						}
-						case 1:
-						{
-							multiply_base += modifier.getAmount();
-							break;
-						}
-						case 2:
-						{
-							multiply *= (1.0D + modifier.getAmount());
-							break;
-						}
-					}
-				}
-			}
-		}
-		
-		if ( oh.getItem() instanceof ItemSword && !ConfigurationHandler.swords.isEmpty() )
-		{
-			String s = Helpers.getString(oh);
-			
-			for ( CustomSword sword : ConfigurationHandler.swords )
-			{
-				if ( s.contains(sword.name) )
-				{
-					speed += sword.attackSpeed;
-					break;
-				}
-			}
-		}
-		
-
-		if ( !oh.isEmpty() && !mh.isEmpty() )
-		{
-			/* Set the fatigue to the custom weapon fatigue, only versatile weapons have fatigue */
-			speed /= 1.0 + ClientProxy.EHC_INSTANCE.betterCombatOffhand.getFatigue() + ClientProxy.EHC_INSTANCE.betterCombatMainhand.getFatigue()/2.0;
-		}
-
-		return calculateAttackSpeedTicks(speed, multiply_base, multiply);
-	}
-
-    /* ====================================================================================================================================================== */
-    /*																OFFHAND ATTACK DAMAGE 																	  */
-    /* ====================================================================================================================================================== */
+    /* ------------------------------------------------------------------------------------------------------------------------------------------------------ */
+    /*																	Attack Damage																		  */
+    /* ------------------------------------------------------------------------------------------------------------------------------------------------------ */
 	
 	public static double getOffhandAttackDamage( EntityPlayer player, ItemStack oh, ItemStack mh )
 	{
@@ -1394,7 +1021,7 @@ public final class Helpers
 		/* - MAINHAND */
 		for ( Map.Entry<String, AttributeModifier> modifier : mh.getAttributeModifiers(EntityEquipmentSlot.MAINHAND).entries() )
 		{
-			if ( modifier.getKey().contains("attackDamage") )
+			if ( modifier.getKey().contains(ATTACK_DAMAGE) )
 			{
 				switch( modifier.getValue().getOperation() )
 				{
@@ -1420,7 +1047,7 @@ public final class Helpers
 		/* + OFFHAND */
 		for ( Map.Entry<String, AttributeModifier> modifier : oh.getAttributeModifiers(EntityEquipmentSlot.MAINHAND).entries() )
 		{
-			if ( modifier.getKey().contains("attackDamage") )
+			if ( modifier.getKey().contains(ATTACK_DAMAGE) )
 			{
 				switch( modifier.getValue().getOperation() )
 				{
@@ -1454,9 +1081,9 @@ public final class Helpers
 				final AttributeModifier modifier = SharedMonsterAttributes.readAttributeModifierFromNBT(attributeList.getCompoundTagAt(j));
 				final String attributeName = attributeList.getCompoundTagAt(j).getString("AttributeName");
 
-				if ( attributeName.contains("attackDamage") )
+				if ( attributeName.contains(ATTACK_DAMAGE) )
 				{
-					// Helpers.message("tag " + modifier.getAmount());
+					// message("tag " + modifier.getAmount());
 
 					switch( modifier.getOperation() )
 					{
@@ -1491,9 +1118,9 @@ public final class Helpers
 				final AttributeModifier modifier = SharedMonsterAttributes.readAttributeModifierFromNBT(attributeList.getCompoundTagAt(j));
 				final String attributeName = attributeList.getCompoundTagAt(j).getString("AttributeName");
 
-				if ( attributeName.contains("attackDamage") )
+				if ( attributeName.contains(ATTACK_DAMAGE) )
 				{
-					// Helpers.message("tag " + modifier.getAmount());
+					// message("tag " + modifier.getAmount());
 
 					switch( modifier.getOperation() )
 					{
@@ -1519,102 +1146,203 @@ public final class Helpers
 
 		return attackDamage *= multiply_base *= multiply;
 	}
-
-    /* ====================================================================================================================================================== */
-    /*																MAINHAND ATTACK DAMAGE 																	  */
-    /* ====================================================================================================================================================== */
 	
-	public static double getMainhandAttackDamage( EntityPlayer player, ItemStack mh )
+    /* ------------------------------------------------------------------------------------------------------------------------------------------------------ */
+    /*																		Reach																			  */
+    /* ------------------------------------------------------------------------------------------------------------------------------------------------------ */
+	
+	public static double getOffhandReach( EntityPlayer player, double additionalReach, ItemStack oh, ItemStack mh )
 	{
-		double attackDamage = player.getEntityAttribute(SharedMonsterAttributes.ATTACK_DAMAGE).getBaseValue();
+		double reach = additionalReach + getBaseReach(player);
+		double additive = 1.0D;
+		double multiplicative = 1.0D;
 
-		double multiply_base = 1.0D;
-
-		double multiply = 1.0D;
-
-		for ( AttributeModifier attribute : player.getEntityAttribute(SharedMonsterAttributes.ATTACK_DAMAGE).getModifiers() )
+		/* + ALL */
+		for ( AttributeModifier attribute : player.getEntityAttribute(EntityPlayer.REACH_DISTANCE).getModifiers() )
 		{
 			switch( attribute.getOperation() )
 			{
 				case 0:
 				{
-					attackDamage += attribute.getAmount();
+					reach += attribute.getAmount();
 					break;
 				}
 				case 1:
 				{
-					multiply_base += attribute.getAmount();
+					additive += attribute.getAmount();
 					break;
 				}
 				case 2:
 				{
-					multiply *= (1.0D + attribute.getAmount());
+					multiplicative *= (1.0D + attribute.getAmount());
 					break;
 				}
 			}
 		}
 
-		return attackDamage *= multiply_base *= multiply;
-	}
-
-//	public static final UUID STRENGTH_POTION_UUID = UUID.fromString("648d7064-6a60-4f59-8abe-c2c23a6dd7a9");
-//	public static final UUID WEAKNESS_POTION_UUID = UUID.fromString("22653b89-116e-49dc-9b6b-9971489b5be5");
-
-	/* https://algorithms.tutorialhorizon.com/convert-integer-to-roman/ */
-	
-	static final int[] values =
-	{
-		1000, 900, 500, 400, 100, 90, 50, 40, 10, 9, 5, 4, 1
-	};
-	static final String[] romanLiterals =
-	{
-		"M", "CM", "D", "CD", "C", "XC", "L", "XL", "X", "IX", "V", "IV", "I"
-	};
-	
-	public static String integerToRoman( int num )
-	{
-		StringBuilder roman = new StringBuilder();
-
-		for ( int i = 0; i < values.length; i++ )
+		/* - MAINHAND */
+		for ( Map.Entry<String, AttributeModifier> modifier : mh.getAttributeModifiers(EntityEquipmentSlot.MAINHAND).entries() )
 		{
-			while (num >= values[i])
+			if ( modifier.getKey().contains(REACH_DISTANCE) )
 			{
-				num -= values[i];
-				roman.append(romanLiterals[i]);
+				// message("-key mh " + modifier.getValue().getAmount());
+
+				switch( modifier.getValue().getOperation() )
+				{
+					case 0:
+					{
+						reach -= modifier.getValue().getAmount();
+						break;
+					}
+					case 1:
+					{
+						additive -= modifier.getValue().getAmount();
+						break;
+					}
+					case 2:
+					{
+						multiplicative /= (1.0D + modifier.getValue().getAmount());
+						break;
+					}
+				}
 			}
 		}
 
-		return roman.toString();
-	}
-
-	public static void spawnSweepHit( EntityPlayer e, Entity target )
-	{
-		double d0 = (double) (-MathHelper.sin(e.rotationYaw * 0.017453292F));
-		double d1 = (double) MathHelper.cos(e.rotationYaw * 0.017453292F);
-
-		if ( e.world instanceof WorldServer )
+		/* + OFFHAND */
+		for ( Map.Entry<String, AttributeModifier> modifier : oh.getAttributeModifiers(EntityEquipmentSlot.MAINHAND).entries() )
 		{
-			((WorldServer) e.world).spawnParticle(EnumParticleTypes.SWEEP_ATTACK, target.posX + d0 * 0.5D, e.posY + e.height * 0.5D, target.posZ + d1 * 0.5D, 0, d0, 0.0D, d1, 0.0D);
+			if ( modifier.getKey().contains(REACH_DISTANCE) )
+			{
+				// message("+key oh" + modifier.getValue().getAmount());
+
+				switch( modifier.getValue().getOperation() )
+				{
+					case 0:
+					{
+						reach += modifier.getValue().getAmount();
+						break;
+					}
+					case 1:
+					{
+						additive += modifier.getValue().getAmount();
+						break;
+					}
+					case 2:
+					{
+						multiplicative *= (1.0D + modifier.getValue().getAmount());
+						break;
+					}
+				}
+			}
+		}
+
+		/* - MAINHAND QUALITY TOOLS */
+		if ( mh.hasTagCompound() && mh.getTagCompound().hasKey(QUALITY, 10) )
+		{
+			final NBTTagCompound tag = mh.getSubCompound(QUALITY);
+			final NBTTagList attributeList = tag.getTagList(ATTRIBUTE_MODIFIERS, 10);
+
+			for ( int j = 0; j < attributeList.tagCount(); ++j )
+			{
+				final AttributeModifier modifier = SharedMonsterAttributes.readAttributeModifierFromNBT(attributeList.getCompoundTagAt(j));
+				final String attributeName = attributeList.getCompoundTagAt(j).getString(ATTRIBUTE_NAME);
+
+				if ( attributeName.contains(REACH_DISTANCE) )
+				{
+					switch( modifier.getOperation() )
+					{
+						case 0:
+						{
+							reach -= modifier.getAmount();
+							break;
+						}
+						case 1:
+						{
+							additive -= modifier.getAmount();
+							break;
+						}
+						case 2:
+						{
+							multiplicative /= (1.0D + modifier.getAmount());
+							break;
+						}
+					}
+				}
+			}
+		}
+
+		/* + OFFHAND QUALITY TOOLS */
+		if ( oh.hasTagCompound() && oh.getTagCompound().hasKey(QUALITY, 10) )
+		{
+			final NBTTagCompound tag = oh.getSubCompound(QUALITY);
+			final NBTTagList attributeList = tag.getTagList(ATTRIBUTE_MODIFIERS, 10);
+
+			for ( int j = 0; j < attributeList.tagCount(); ++j )
+			{
+				final AttributeModifier modifier = SharedMonsterAttributes.readAttributeModifierFromNBT(attributeList.getCompoundTagAt(j));
+				final String attributeName = attributeList.getCompoundTagAt(j).getString(ATTRIBUTE_NAME);
+
+				if ( attributeName.contains(REACH_DISTANCE) )
+				{
+					switch( modifier.getOperation() )
+					{
+						case 0:
+						{
+							reach += modifier.getAmount();
+							break;
+						}
+						case 1:
+						{
+							additive += modifier.getAmount();
+							break;
+						}
+						case 2:
+						{
+							multiplicative *= (1.0D + modifier.getAmount());
+							break;
+						}
+					}
+				}
+			}
+		}
+
+		return calculateAttribute(reach, additive, multiplicative);
+	}
+	
+    /* ====================================================================================================================================================== */
+    /*																		  Motion	 																	  */
+    /* ====================================================================================================================================================== */
+
+	public static void applySwingInteria(EntityPlayer player)
+	{
+		if ( ConfigurationHandler.inertiaOnAttack != 1.0F )
+		{
+			if ( player.onGround && !player.isRiding() )
+			{
+				player.motionX *= ConfigurationHandler.inertiaOnAttack;
+				player.motionZ *= ConfigurationHandler.inertiaOnAttack;
+				
+//				if ( !player.isSprinting() )
+//				{
+//				    player.motionX -= Math.sin(Math.toRadians(player.rotationYaw)) * 0.01D;
+//				    player.motionZ += Math.cos(Math.toRadians(player.rotationYaw)) * 0.01D;
+//				}
+				
+//				if ( player.onGround )
+//				{
+//					player.motionY += 0.001D;
+//				}
+//				player.motionX += MathHelper.sin(player.rotationYaw * 0.017453292F);
+//				player.motionZ -= *MathHelper.cos(player.rotationYaw * 0.017453292F);
+				
+				player.velocityChanged = true;
+			}
 		}
 	}
 	
-	public static <T> void execNullable( @Nullable T obj, Consumer<T> onNonNull )
-	{
-		if ( obj != null )
-		{
-			onNonNull.accept(obj);
-		}
-	}
-
-	public static <T, R> R execNullable( @Nullable T obj, Function<T, R> onNonNull, R orElse )
-	{
-		if ( obj != null )
-		{
-			return onNonNull.apply(obj);
-		}
-
-		return orElse;
-	}
+    /* ====================================================================================================================================================== */
+    /*																		Enchantment	 																	  */
+    /* ====================================================================================================================================================== */
 
 	public static int getOffhandFireAspect( EntityPlayer player )
 	{
@@ -1649,43 +1377,49 @@ public final class Helpers
 
 		return 0;
 	}
-
-//	public static void message( Object o )
-//	{
-//		try
-//		{
-//			Minecraft mc = Minecraft.getMinecraft();
-//			EntityPlayer player = mc.player;
-//			player.sendMessage(new TextComponentString("" + o));
-//		}
-//		catch (Exception e)
-//		{
-//
-//		}
-//	}
 	
+    /* ====================================================================================================================================================== */
+    /*																		 String	 																	 	  */
+    /* ====================================================================================================================================================== */
 
-	public static String getString(ItemStack itemStack)
+    /* ------------------------------------------------------------------------------------------------------------------------------------------------------ */
+    /*																		Registry																		  */
+    /* ------------------------------------------------------------------------------------------------------------------------------------------------------ */
+	
+	public static String getRegistryNameFromItem(ItemStack itemStack)
 	{
 		return itemStack.getItem().getRegistryName().getResourcePath();
 	}
 	
-	public static String getString(Item item)
+	public static String getRegistryNameFromItem(Item item)
 	{
 		return item.getRegistryName().getResourcePath();
 	}
 	
-	public static boolean isSilver(String string)
+    /* ------------------------------------------------------------------------------------------------------------------------------------------------------ */
+    /*																		Silver																			  */
+    /* ------------------------------------------------------------------------------------------------------------------------------------------------------ */
+	
+	public static boolean isSilverRegistryName(String string)
 	{
 		return string.contains("silver");
 	}
 	
-	public static boolean isSilver(ItemStack itemStack)
+	public static boolean isSilverItem(ItemStack itemStack)
 	{
-		return getString(itemStack).contains("silver");
+		return getRegistryNameFromItem(itemStack).contains("silver");
 	}
 	
-	public static boolean isMetal(String string)
+	public static boolean isSilverItem(Item item)
+	{
+		return getRegistryNameFromItem(item).contains("silver");
+	}
+	
+    /* ------------------------------------------------------------------------------------------------------------------------------------------------------ */
+    /*																		 Metal																			  */
+    /* ------------------------------------------------------------------------------------------------------------------------------------------------------ */
+	
+	public static boolean isMetalRegistryName(String string)
 	{		
 		for ( String s : ConfigurationHandler.nonMetalList )
 		{
@@ -1697,9 +1431,9 @@ public final class Helpers
 		return true;
 	}
 	
-	public static boolean isMetal(ItemStack itemStack)
+	public static boolean isMetalItem(ItemStack itemStack)
 	{
-		String string = getString(itemStack);
+		String string = getRegistryNameFromItem(itemStack);
 
 		for ( String s : ConfigurationHandler.nonMetalList )
 		{
@@ -1711,60 +1445,182 @@ public final class Helpers
 		return true;
 	}
 	
+	public static boolean isMetalItem(Item item)
+	{
+		String string = getRegistryNameFromItem(item);
+
+		for ( String s : ConfigurationHandler.nonMetalList )
+		{
+			if ( string.contains(s) )
+			{
+				return false;
+			}
+		}
+		return true;
+	}
+	
+    /* ------------------------------------------------------------------------------------------------------------------------------------------------------ */
+    /*																		Tooltip																			  */
+    /* ------------------------------------------------------------------------------------------------------------------------------------------------------ */
+	
+	public static final int[] values =
+	{
+		1000, 900, 500, 400, 100, 90, 50, 40, 10, 9, 5, 4, 1
+	};
+	
+	public static final String[] romanLiterals =
+	{
+		"M", "CM", "D", "CD", "C", "XC", "L", "XL", "X", "IX", "V", "IV", "I"
+	};
+	
+	public static String integerToRoman( int num )
+	{
+		StringBuilder roman = new StringBuilder();
+
+		for ( int i = 0; i < values.length; i++ )
+		{
+			while ( num >= values[i] )
+			{
+				num -= values[i];
+				roman.append(romanLiterals[i]);
+			}
+		}
+
+		return roman.toString();
+	}
+	
+    /* ====================================================================================================================================================== */
+    /*																		  Particle	 																	  */
+    /* ====================================================================================================================================================== */
+
+	@SideOnly(Side.CLIENT)
+	public static void sweepParticlesClient(EntityPlayer e, int x, int z)
+	{
+		double d0 = -Math.sin(e.rotationYaw * 0.017453292F);
+		double d1 = MathHelper.cos(e.rotationYaw * 0.017453292F);
+
+		e.world.spawnParticle(EnumParticleTypes.SWEEP_ATTACK, x + d0 * 0.5D, e.posY + e.height * 0.5D, z + d1 * 0.5D, 0.0D, 0.0D, 0.0D);
+	}
+	
+	public static void sweepParticles( EntityPlayer e, Entity target )
+	{
+		double d0 = (double) (-MathHelper.sin(e.rotationYaw * 0.017453292F));
+		double d1 = (double) MathHelper.cos(e.rotationYaw * 0.017453292F);
+
+		if ( e.world instanceof WorldServer )
+		{
+			((WorldServer) e.world).spawnParticle(EnumParticleTypes.SWEEP_ATTACK, target.posX + d0 * 0.5D, e.posY + e.height * 0.5D, target.posZ + d1 * 0.5D, 0, d0, 0.0D, d1, 0.0D);
+		}
+	}
+	
+	public static void dragonArrowParticles(Entity e)
+	{
+		if ( e.world instanceof WorldServer )
+		{
+
+			for (int i = 12; i > 0; i--)
+			{
+				((WorldServer) e.world).spawnParticle(EnumParticleTypes.SMOKE_NORMAL,
+				e.posX + e.world.rand.nextGaussian() * 0.12D, e.posY + e.world.rand.nextGaussian() * 0.18D,
+				e.posZ + e.world.rand.nextGaussian() * 0.12D, 1, e.world.rand.nextGaussian() * 0.06D,
+				e.world.rand.nextGaussian() * 0.06D, e.world.rand.nextGaussian() * 0.06D,
+				e.world.rand.nextDouble() * 0.08D, new int[0]);
+			}
+
+			for (int i = 4; i > 0; i--)
+			{
+				((WorldServer) e.world).spawnParticle(EnumParticleTypes.SMOKE_LARGE,
+				e.posX + e.world.rand.nextGaussian() * 0.12D, e.posY + e.world.rand.nextGaussian() * 0.18D,
+				e.posZ + e.world.rand.nextGaussian() * 0.12D, 1, e.world.rand.nextGaussian() * 0.06D,
+				e.world.rand.nextGaussian() * 0.06D, e.world.rand.nextGaussian() * 0.06D,
+				e.world.rand.nextDouble() * 0.08D, new int[0]);
+			}
+
+		}
+
+	}
+
+	public static void silverArrowParticles(Entity e)
+	{
+		if (e.world instanceof WorldServer)
+		{
+
+			for (int i = 12; i > 0; i--)
+			{
+				((WorldServer) e.world).spawnParticle(EnumParticleTypes.CRIT_MAGIC,
+				e.posX + e.world.rand.nextGaussian() * e.width, e.posY + e.world.rand.nextGaussian() * e.height,
+				e.posZ + e.world.rand.nextGaussian() * e.width, 1, e.world.rand.nextGaussian() * 0.01D,
+				e.world.rand.nextGaussian() * 0.01D, e.world.rand.nextGaussian() * 0.01D,
+				e.world.rand.nextDouble() * 0.02D, new int[0]);
+			}
+
+		}
+
+	}
+
+	public static void silverArmorParticles(Entity e)
+	{
+		if (e.world instanceof WorldServer)
+		{
+
+			for (int i = 12; i > 0; i--)
+			{
+				((WorldServer) e.world).spawnParticle(EnumParticleTypes.CRIT_MAGIC,
+				e.posX + e.world.rand.nextGaussian() * e.width, e.posY + e.world.rand.nextGaussian() * e.height,
+				e.posZ + e.world.rand.nextGaussian() * e.width, 1, e.world.rand.nextGaussian() * 0.06D,
+				e.world.rand.nextGaussian() * 0.06D, e.world.rand.nextGaussian() * 0.06D,
+				e.world.rand.nextDouble() * 0.06D, new int[0]);
+			}
+
+		}
+
+	}
+
+	public static void healParticles(Entity e, int amount)
+	{
+		if (e.world instanceof WorldServer)
+		{
+			for (int i = 0; i < amount; i++)
+			{
+				double d0 = e.world.rand.nextGaussian() * 0.02D;
+				double d1 = e.world.rand.nextGaussian() * 0.02D;
+				double d2 = e.world.rand.nextGaussian() * 0.02D;
+				((WorldServer) e.world).spawnParticle(EnumParticleTypes.HEART,
+				e.posX + (double) (e.world.rand.nextFloat() * e.width * 2.0F) - (double) e.width,
+				e.posY + 0.5D + (double) (e.world.rand.nextFloat() * e.height),
+				e.posZ + (double) (e.world.rand.nextFloat() * e.width * 2.0F) - (double) e.width, d0, d1, d2);
+			}
+		}
+	}
+	
+    /* ====================================================================================================================================================== */
+    /*																		    Hand	 																	  */
+    /* ====================================================================================================================================================== */
+
 	public static boolean isHandActive( EntityPlayer player, EnumHand hand )
 	{
 		return player.isHandActive() && player.getItemInUseCount() > 0 && player.getActiveHand().equals(hand);
 	}
 	
-
-	/* CombatRules */
-//	if ( (armor > 0.0D || armorToughness > 0.0D) && ConfigurationHandler.warhammerArmorPiercingAdjustments && weaponName.contains("warhammer_") )
-//	{
-//		double damageAfterArmor = damage * (1.0F - (MathHelper.clamp(armor - damage / (2.0F + armorToughness / 4.0F), armor * 0.2F, 20.0F)) / 25.0F);
-//
-//		if ( damageAfterArmor < damage )
-//		{
-//			damage += damage - (damageAfterArmor * 0.8F);
-//		}
-//	}
+    /* ====================================================================================================================================================== */
+    /*																			Exec	 																	  */
+    /* ====================================================================================================================================================== */
 	
-	
-//	public void disableShield(boolean p_190777_1_)
-//    {
-//        float f = 0.25F + (float)EnchantmentHelper.getEfficiencyModifier(this) * 0.05F;
-//
-//        if (p_190777_1_)
-//        {
-//            f += 0.75F;
-//        }
-//
-//        if (this.rand.nextFloat() < f)
-//        {
-//            this.getCooldownTracker().setCooldown(this.getActiveItemStack().getItem(), 100);
-//            this.resetActiveHand();
-//            this.world.setEntityState(this, (byte)30);
-//        }
-//    }
+	public static <T> void execNullable( @Nullable T obj, Consumer<T> onNonNull )
+	{
+		if ( obj != null )
+		{
+			onNonNull.accept(obj);
+		}
+	}
 
-//	else if (id == 30)
-//    {
-//        this.playSound(SoundEvents.ITEM_SHIELD_BREAK, 0.8F, 0.8F + this.world.rand.nextFloat() * 0.4F);
-//    }
+	public static <T, R> R execNullable( @Nullable T obj, Function<T, R> onNonNull, R orElse )
+	{
+		if ( obj != null )
+		{
+			return onNonNull.apply(obj);
+		}
 
-
-/* TESTING! remove XXX */
-//	if ( player.getPositionVector() != null )
-//	{
-//		Vec3d vec3d = player.getPositionVector();
-//
-//		Vec3d vec3d1 = victim.getLook(1.0F);
-//		Vec3d vec3d2 = vec3d.subtractReverse(new Vec3d(victim.posX, victim.posY, victim.posZ)).normalize();
-//		vec3d2 = new Vec3d(vec3d2.x, 0.0D, vec3d2.z);
-//
-//		if ( vec3d2.dotProduct(vec3d1) < 0.0D )
-//		{
-//		}
-//
-//	}
-/* TESTING! remove XXX */
+		return orElse;
+	}
 }

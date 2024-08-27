@@ -13,6 +13,7 @@ import net.minecraft.potion.Potion;
 import net.minecraft.potion.PotionEffect;
 import net.minecraft.util.DamageSource;
 import net.minecraft.util.ResourceLocation;
+import net.minecraft.util.math.MathHelper;
 import net.minecraftforge.fml.common.network.NetworkRegistry;
 import net.minecraftforge.fml.relauncher.Side;
 import net.minecraftforge.fml.relauncher.SideOnly;
@@ -22,6 +23,7 @@ public class PotionBleeding extends Potion
 	public ResourceLocation    TEXTURE       = new ResourceLocation(Reference.MOD_ID + ":textures/gui/bleeding.png");
 	public static DamageSource DAMAGE_SOURCE = new DamageSource("bleeding").setDamageBypassesArmor();
 
+	//effect @e bettercombat:bleeding 100 1
 	protected PotionBleeding()
 	{
 		super(false, 0xff6066);
@@ -68,17 +70,19 @@ public class PotionBleeding extends Potion
 				
 				if ( bleeding != null )
 				{
-					entityLivingBaseIn.addPotionEffect(new PotionEffect(BetterCombatPotions.BLEEDING, bleeding.getDuration()+10, amplifier));
+					entityLivingBaseIn.removePotionEffect(bleeding.getPotion());
+					entityLivingBaseIn.addPotionEffect(new PotionEffect(BetterCombatPotions.BLEEDING, bleeding.getDuration()+10, amplifier, bleeding.getIsAmbient(), bleeding.doesShowParticles()));
 				}
 			}
 			
-			if ( ConfigurationHandler.bleedingDamageIncreasedIfSprinting && entityLivingBaseIn.isSprinting() && entityLivingBaseIn.world.rand.nextFloat() > 0.2F )
+			if ( ConfigurationHandler.bleedingDamageIncreasedIfSprinting && entityLivingBaseIn.isSprinting() && entityLivingBaseIn.world.rand.nextFloat() < 0.2F )
 			{
 				PotionEffect bleeding = entityLivingBaseIn.getActivePotionEffect(BetterCombatPotions.BLEEDING);
 				
 				if ( bleeding != null )
 				{
-					entityLivingBaseIn.addPotionEffect(new PotionEffect(BetterCombatPotions.BLEEDING, bleeding.getDuration()+20, amplifier));
+					entityLivingBaseIn.removePotionEffect(bleeding.getPotion());
+					entityLivingBaseIn.addPotionEffect(new PotionEffect(BetterCombatPotions.BLEEDING, bleeding.getDuration()+20, amplifier, bleeding.getIsAmbient(), bleeding.doesShowParticles()));
 				}
 			}
 			
@@ -86,27 +90,29 @@ public class PotionBleeding extends Potion
 			{
 				entityLivingBaseIn.hurtResistantTime = 0;
 				entityLivingBaseIn.attackEntityFrom(DAMAGE_SOURCE, ConfigurationHandler.bleedingDamagePerTick * (1 + amplifier));
+				entityLivingBaseIn.hurtTime = 0;
+				entityLivingBaseIn.maxHurtTime = 0;
 				entityLivingBaseIn.hurtResistantTime = 0;
 			}
 			
-			this.bleed(entityLivingBaseIn);
+			this.bleedParticles(entityLivingBaseIn, MathHelper.clamp(amplifier * 8 + 16, 16, 127));
 		}
-
 	}
-
-//  this.bleed(entityLivingBaseIn, amplifier, x, z, padding);
-	// @SideOnly( Side.CLIENT )
-	private void bleed(EntityLivingBase entityLivingBaseIn)
+	
+	private void bleedParticles( EntityLivingBase entityLivingBaseIn, int numberOfParticles )
 	{
 		/* Server */
 		if ( !entityLivingBaseIn.world.isRemote )
 		{
-			PacketHandler.instance.sendToAllAround(new PacketBleeding(entityLivingBaseIn.getEntityId()), new NetworkRegistry.TargetPoint(entityLivingBaseIn.world.provider.getDimension(), entityLivingBaseIn.posX, entityLivingBaseIn.posY, entityLivingBaseIn.posZ, 16));
+			PacketHandler.instance.sendToAllAround(new PacketBleeding(entityLivingBaseIn.getEntityId(), numberOfParticles), new NetworkRegistry.TargetPoint(entityLivingBaseIn.world.provider.getDimension(), entityLivingBaseIn.posX, entityLivingBaseIn.posY, entityLivingBaseIn.posZ, 16));
 		}
 		/* Client */
 		else
 		{
-			Minecraft.getMinecraft().effectRenderer.addEffect(new ParticleBlood.Factory().createParticle(0, entityLivingBaseIn.world, entityLivingBaseIn.posX, entityLivingBaseIn.posY, entityLivingBaseIn.posZ, 0, 0, 0));
+			while ( --numberOfParticles >= 0 )
+			{
+				Minecraft.getMinecraft().effectRenderer.addEffect(new ParticleBlood.Factory().createParticle(0, entityLivingBaseIn.world, entityLivingBaseIn.posX, entityLivingBaseIn.posY, entityLivingBaseIn.posZ, 0, 0, 0));
+			}
 		}
 	}
 

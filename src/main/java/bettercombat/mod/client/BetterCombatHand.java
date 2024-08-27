@@ -4,7 +4,7 @@ import java.util.Random;
 
 import bettercombat.mod.util.ConfigurationHandler;
 import bettercombat.mod.util.ConfigurationHandler.Animation;
-import bettercombat.mod.util.ConfigurationHandler.CustomWeapon;
+import bettercombat.mod.util.ConfigurationHandler.ConfigWeapon;
 import bettercombat.mod.util.ConfigurationHandler.SoundType;
 import bettercombat.mod.util.ConfigurationHandler.WeaponProperty;
 import net.minecraft.enchantment.Enchantment;
@@ -13,7 +13,10 @@ import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.nbt.NBTTagList;
 import net.minecraft.util.math.MathHelper;
+import net.minecraftforge.fml.relauncher.Side;
+import net.minecraftforge.fml.relauncher.SideOnly;
 
+@SideOnly(Side.CLIENT)
 public class BetterCombatHand
 {
 	public BetterCombatHand()
@@ -21,12 +24,12 @@ public class BetterCombatHand
 		this.resetBetterCombatWeapon();
 	}
 	
-	public void setBetterCombatWeapon( CustomWeapon customWeapon, ItemStack itemStack, int cooldownTicks )
+	public void setBetterCombatWeapon( ConfigWeapon configWeapon, ItemStack itemStack, int equipSoundCooldownTicks )
 	{
-		this.customWeapon = customWeapon;
+		this.configWeapon = configWeapon;
 		
 		/* Get the total sweep for the weapon */
-		int sweepMod = customWeapon.sweepMod;
+		int sweepMod = configWeapon.sweepMod;
 		
 		NBTTagList nbttaglist = itemStack.getEnchantmentTagList();
 		
@@ -45,18 +48,18 @@ public class BetterCombatHand
 			}
 		}
 		
-		this.canWeaponParry = customWeapon.parry;
+		this.canWeaponParry = configWeapon.parry;
 		this.sweep = sweepMod;
 				
-		int cd = MathHelper.clamp(cooldownTicks, ConfigurationHandler.minimumAttackSpeedTicks, 15);
+		int cd = MathHelper.clamp(equipSoundCooldownTicks, ConfigurationHandler.minimumAttackSpeedTicks, 15);
 
 		this.equipTimerIncrement = 1.0F / (3.0F * (cd));
 		this.equipSoundTimer = cd / 2;
 	}
 	
-	public boolean hasCustomWeapon()
+	public boolean hasConfigWeapon()
 	{
-		return this.customWeapon != null;
+		return this.configWeapon != null;
 	}
 	
 	public void tick()
@@ -66,24 +69,24 @@ public class BetterCombatHand
 	
 	public WeaponProperty getWeaponProperty()
 	{
-		if ( this.hasCustomWeapon() )
+		if ( this.hasConfigWeapon() )
 		{
-			return this.getCustomWeapon().property;
+			return this.getConfigWeapon().property;
 		}
 		
 		return WeaponProperty.ONEHAND;
 	}
 	
-	private CustomWeapon getCustomWeapon()
+	private ConfigWeapon getConfigWeapon()
 	{
-		return this.customWeapon;
+		return this.configWeapon;
 	}
 
 	public Animation getAnimation()
 	{
-		if ( this.hasCustomWeapon() )
+		if ( this.hasConfigWeapon() )
 		{
-			return this.getCustomWeapon().animation;
+			return this.getConfigWeapon().animation;
 		}
 		
 		return Animation.NONE;
@@ -91,9 +94,9 @@ public class BetterCombatHand
 	
 	public SoundType getSoundType()
 	{
-		if ( this.hasCustomWeapon() )
+		if ( this.hasConfigWeapon() )
 		{
-			return this.getCustomWeapon().soundType;
+			return this.getConfigWeapon().soundType;
 		}
 		
 		return SoundType.NONE;
@@ -101,9 +104,9 @@ public class BetterCombatHand
 	
 	public double getFatigue()
 	{
-		if ( this.hasCustomWeapon() )
+		if ( this.hasConfigWeapon() )
 		{
-			if ( this.getCustomWeapon().property == WeaponProperty.VERSATILE )
+			if ( this.getConfigWeapon().property == WeaponProperty.VERSATILE )
 			{
 				return ConfigurationHandler.versatileFatigueAmount;
 			}
@@ -114,9 +117,9 @@ public class BetterCombatHand
 	
 	public double getAdditionalReach()
 	{
-		if ( this.hasCustomWeapon() )
+		if ( this.hasConfigWeapon() )
 		{
-			return this.getCustomWeapon().additionalReachMod;
+			return this.getConfigWeapon().additionalReachMod;
 		}
 		
 		return -ConfigurationHandler.fistAndNonWeaponReachReduction;
@@ -139,12 +142,12 @@ public class BetterCombatHand
 	
 	public void resetBetterCombatWeapon()
 	{
-		this.customWeapon = null;
+		this.configWeapon = null;
 		
 		this.canWeaponParry = false;
 		this.sweep = 0;
 		
-		this.swingTimer = 0;
+		this.resetSwingTimer();
 		this.swingTimerCap = 0;
 		this.swingTimerIncrement = 0.0F;
 
@@ -157,17 +160,17 @@ public class BetterCombatHand
 		this.mining = false;
 	}
 	
-	/* The custom weapon */
-	CustomWeapon customWeapon = null;
+	/* The config weapon */
+	ConfigWeapon configWeapon = null;
 	
 	private boolean canWeaponParry = false;
 	
-	/* The weapons custom reach amount */
+	/* The weapons config reach amount */
 	private int sweep = 0;
 
 	/* How long the swing timer is in ticks, counting down to 0 */
 	private int swingTimer = 0;
-	/* The value the swing timer started at in ticks */
+	/* The value the swing timer started at, in ticks */
 	private int swingTimerCap = 0;
 	/* How fast the animation counts down, in partial ticks */
 	private float swingTimerIncrement = 0.0F;
@@ -227,7 +230,17 @@ public class BetterCombatHand
 	
 	public void stopAttack()
 	{
+		this.resetSwingTimer();
+	}
+	
+	public void resetSwingTimer()
+	{
 		this.swingTimer = 0;
+	}
+	
+	public boolean isSwinging()
+	{
+		return this.swingTimer > 0;
 	}
 	
 	public boolean soundReady()
@@ -242,9 +255,9 @@ public class BetterCombatHand
 	
 	public void initiateAnimation( int i )
 	{
-		if ( this.hasCustomWeapon() )
+		if ( this.hasConfigWeapon() )
 		{
-			switch( this.getCustomWeapon().animation )
+			switch( this.getConfigWeapon().animation )
 			{
 				case SWEEP:
 				{
@@ -351,8 +364,8 @@ public class BetterCombatHand
 		this.swingTimerCap = this.swingTimer;
 		this.swingTimerIncrement = 1.0F/this.swingTimer;
 		
-		this.swingTimestampSound = 8;
-		this.swingTimestampDamage = 9;
+		this.swingTimestampSound = 0;
+		this.swingTimestampDamage = 0;
 		
 		this.randomizeVariances();
 	}
@@ -365,8 +378,8 @@ public class BetterCombatHand
 		this.swingTimerCap = this.swingTimer;
 		this.swingTimerIncrement = 0.1F;
 		
-		this.swingTimestampSound = 8;
-		this.swingTimestampDamage = 9;
+		this.swingTimestampSound = 5;
+		this.swingTimestampDamage = 7;
 	}
 	
 	/* How long the swing is in ticks, counting down to 0 */
@@ -375,6 +388,7 @@ public class BetterCombatHand
 		return this.swingTimer;
 	}
 	
+	/* The increment of the swing timer = 1.0F/this.swingTimer */
 	public float getSwingTimerIncrement()
 	{
 		return this.swingTimerIncrement;

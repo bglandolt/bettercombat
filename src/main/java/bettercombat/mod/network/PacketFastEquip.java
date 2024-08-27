@@ -1,7 +1,7 @@
 package bettercombat.mod.network;
 
 import bettercombat.mod.util.ConfigurationHandler;
-import bettercombat.mod.util.ConfigurationHandler.CustomWeapon;
+import bettercombat.mod.util.ConfigurationHandler.ConfigWeapon;
 import bettercombat.mod.util.ConfigurationHandler.WeaponProperty;
 import io.netty.buffer.ByteBuf;
 import net.minecraft.entity.player.EntityPlayer;
@@ -74,7 +74,7 @@ public class PacketFastEquip implements IMessage
 			{
 				String s = currentOffhandItem.getItem().getRegistryName().toString();
 				
-				for ( CustomWeapon weapon : ConfigurationHandler.weapons )
+				for ( ConfigWeapon weapon : ConfigurationHandler.weapons )
 				{
 					if ( s.contains(weapon.name) )
 					{
@@ -109,7 +109,7 @@ public class PacketFastEquip implements IMessage
 			{
 				String s = currentMainhandItem.weapon.getItem().getRegistryName().toString();
 
-				for ( CustomWeapon weapon : ConfigurationHandler.weapons )
+				for ( ConfigWeapon weapon : ConfigurationHandler.weapons )
 				{
 					if ( s.contains(weapon.name) )
 					{
@@ -144,7 +144,7 @@ public class PacketFastEquip implements IMessage
 					{
 						String s = itemStack.getItem().getRegistryName().toString();
 
-						for ( CustomWeapon weapon : ConfigurationHandler.weapons )
+						for ( ConfigWeapon weapon : ConfigurationHandler.weapons )
 						{
 							if ( s.contains(weapon.name) )
 							{
@@ -174,7 +174,7 @@ public class PacketFastEquip implements IMessage
 						{
 							String mainString = itemStack.getItem().getRegistryName().toString();
 
-							for ( CustomWeapon weapon : ConfigurationHandler.weapons )
+							for ( ConfigWeapon weapon : ConfigurationHandler.weapons )
 							{
 								if ( mainString.contains(weapon.name) )
 								{
@@ -211,7 +211,7 @@ public class PacketFastEquip implements IMessage
 						{
 							String s = itemStack.getItem().getRegistryName().toString();
 
-							for ( CustomWeapon weapon : ConfigurationHandler.weapons )
+							for ( ConfigWeapon weapon : ConfigurationHandler.weapons )
 							{
 								if ( s.contains(weapon.name) )
 								{
@@ -247,7 +247,7 @@ public class PacketFastEquip implements IMessage
 							{
 								String s = itemStack.getItem().getRegistryName().toString();
 			
-								for ( CustomWeapon weapon : ConfigurationHandler.weapons )
+								for ( ConfigWeapon weapon : ConfigurationHandler.weapons )
 								{
 									if ( s.contains(weapon.name) )
 									{
@@ -317,7 +317,7 @@ public class PacketFastEquip implements IMessage
 						{
 							String s = itemStack.getItem().getRegistryName().toString();
 
-							for ( CustomWeapon weapon : ConfigurationHandler.weapons )
+							for ( ConfigWeapon weapon : ConfigurationHandler.weapons )
 							{
 								if ( s.contains(weapon.name) )
 								{
@@ -351,7 +351,7 @@ public class PacketFastEquip implements IMessage
 						{
 							String s = itemStack.getItem().getRegistryName().toString();
 
-							for ( CustomWeapon weapon : ConfigurationHandler.weapons )
+							for ( ConfigWeapon weapon : ConfigurationHandler.weapons )
 							{
 								if ( s.contains(weapon.name) )
 								{
@@ -407,7 +407,7 @@ public class PacketFastEquip implements IMessage
 						{
 							String s = itemStack.getItem().getRegistryName().toString();
 
-							for ( CustomWeapon weapon : ConfigurationHandler.weapons )
+							for ( ConfigWeapon weapon : ConfigurationHandler.weapons )
 							{
 								if ( s.contains(weapon.name) )
 								{
@@ -441,7 +441,7 @@ public class PacketFastEquip implements IMessage
 						{
 							String s = itemStack.getItem().getRegistryName().toString();
 
-							for ( CustomWeapon weapon : ConfigurationHandler.weapons )
+							for ( ConfigWeapon weapon : ConfigurationHandler.weapons )
 							{
 								if ( s.contains(weapon.name) )
 								{
@@ -481,7 +481,7 @@ public class PacketFastEquip implements IMessage
 
 		public static boolean isWeapon( ItemStack itemStack )
 		{
-			return !itemStack.isEmpty() && ConfigurationHandler.isItemClassWhiteList(itemStack.getItem()) && !isToolOrHoe(itemStack);
+			return !itemStack.isEmpty() && ConfigurationHandler.isConfigWeapon(itemStack.getItem()) && !isToolOrHoe(itemStack);
 		}
 		
 		public static boolean isToolOrHoe( ItemStack itemStack )

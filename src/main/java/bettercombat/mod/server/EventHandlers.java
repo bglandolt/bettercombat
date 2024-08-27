@@ -1,4 +1,4 @@
-package bettercombat.mod.util;
+package bettercombat.mod.server;
 
 import java.lang.reflect.Field;
 import java.util.List;
@@ -6,15 +6,20 @@ import java.util.List;
 import javax.annotation.Nullable;
 
 import bettercombat.mod.client.ClientProxy;
+import bettercombat.mod.client.SoundHandler;
 import bettercombat.mod.enchantment.BetterCombatEnchantments;
 import bettercombat.mod.enchantment.EnchantmentLightning;
 import bettercombat.mod.enchantment.EnchantmentWebbing;
+import bettercombat.mod.network.PacketDamageTilt;
 import bettercombat.mod.network.PacketHandler;
 import bettercombat.mod.network.PacketParried;
 import bettercombat.mod.network.PacketParrying;
 import bettercombat.mod.potion.BetterCombatPotions;
 import bettercombat.mod.potion.PotionAetherealized;
+import bettercombat.mod.util.ConfigurationHandler;
 import bettercombat.mod.util.ConfigurationHandler.CustomBow;
+import bettercombat.mod.util.Helpers;
+import bettercombat.mod.util.Reference;
 import net.minecraft.block.Block;
 import net.minecraft.block.BlockDirt;
 import net.minecraft.block.BlockGrass;
@@ -80,52 +85,21 @@ import net.minecraftforge.fml.common.eventhandler.Event.Result;
 import net.minecraftforge.fml.common.eventhandler.EventPriority;
 import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
 
-import static com.elenai.elenaidodge2.api.FeathersHelper.decreaseFeathers;
-
 public class EventHandlers
 {
 	public static final IAttribute CRIT_CHANCE = (new RangedAttribute(null, Reference.MOD_ID + ".critChance", ConfigurationHandler.baseCritPercentChance, 0.0D, 1.0D)).setDescription("Critical strike chance").setShouldWatch(true);
 	public static final IAttribute CRIT_DAMAGE = (new RangedAttribute(null, Reference.MOD_ID + ".critDamage", ConfigurationHandler.baseCritPercentDamage, 0.0D, Double.MAX_VALUE)).setDescription("Critical strike damage").setShouldWatch(true);
-
+	
 	public EventHandlers()
 	{
 
 	}
-	
-	/*
-	    EntityPlayer.attackEntityFrom(DamageSource, float) > ForgeHooks.onPlayerAttack(this, source, amount) > LivingAttackEvent (damage)
-	    
-	    EntityPlayer.attackTargetEntityWithCurrentItem(Entity ) > ForgeHooks.onPlayerAttackTarget(this, targetEntity) > AttackEntityEvent (attack)
-	    
-	    
-		public static boolean onPlayerAttackTarget(EntityPlayer player, Entity target)
-	    {
-	        if (MinecraftForge.EVENT_BUS.post(new AttackEntityEvent(player, target))) return false;
-	        ItemStack stack = player.getHeldItemMainhand();
-	        return stack.isEmpty() || !stack.getItem().onLeftClickEntity(stack, player, target);
-	    }
-	    
-	    (Item)
-	    
-	    Called when the player Left Clicks (attacks) an entity.
-	    Processed before damage is done, if the return value is TRUE, further processing is canceled and the entity is NOT attacked!
-	     
-	    @param stack The Item being used
-	    @param player The player that is attacking
-	    @param entity The entity being attacked
-	    @return True to cancel the rest of the interaction.
-     
-	    public boolean onLeftClickEntity(ItemStack stack, EntityPlayer player, Entity entity)
-	    {
-	        return false;
-	    }
-	/* 
     
 	/* AttackEntityEvent is responsible for calling LivingHurtEvent */
 	@SubscribeEvent(priority = EventPriority.HIGHEST, receiveCanceled = true)
 	public void cancelAttackEntityEvent(AttackEntityEvent event)
 	{
-		/* If both hands are empty, */
+		/* If both hands are empty, or if the mainhand weapon is NOT blacklisted */
 		if ( (event.getEntityPlayer().getHeldItemMainhand().isEmpty() && event.getEntityPlayer().getHeldItemOffhand().isEmpty()) || !ConfigurationHandler.isBlacklisted(event.getEntityPlayer().getHeldItemMainhand().getItem()) )
 		{
 			/* Set the hurtResistantTime to cancel the damage, rather than completely cancelling the attack! */
@@ -136,14 +110,9 @@ public class EventHandlers
 			
 			/* Count the attack as a "hit" for the CarryOn mod! */
 			event.getEntityLiving().hitByEntity(event.getEntityPlayer());
-			
-			return;
 		}
 				
-		/* Cancel the event, this attack deals no damage and does not count as a hit! */
-		// event.setCanceled(true);
-		
-		return;
+		/* event.setCanceled(true) will cancel the event, making this attack deal no damage and not counting it as a hit */
 	}
 
 	@SubscribeEvent
@@ -227,8 +196,6 @@ public class EventHandlers
 		}
 	}
 	
-	/* For whatever reason I cannot get this to work correctly on player respawn/ join world/ whatever so
-	 * I am just going to add it to all these events and wrap this ***** in a try catch and say **** it */
 	public void registerCritAttributes( EntityPlayer player )
 	{
 		try
@@ -242,7 +209,7 @@ public class EventHandlers
 		}
 	}
 	
-	@SubscribeEvent(priority = EventPriority.LOW, receiveCanceled = true) /* EntityLivingBase */
+	@SubscribeEvent(priority = EventPriority.LOW, receiveCanceled = true)
 	public void knockBack( LivingKnockBackEvent event )
 	{
 		if ( ConfigurationHandler.betterKnockback )
@@ -275,10 +242,9 @@ public class EventHandlers
 		            
 		            if ( entityLivingBase.onGround )
 		            {
-		            	entityLivingBase.motionY *= 0.5D;
-		            	entityLivingBase.motionY += strength * ConfigurationHandler.knockUpStrengthMultiplier;
+		            	entityLivingBase.motionY = strength * ConfigurationHandler.knockUpStrengthMultiplier;
 
-		                if (entityLivingBase.motionY > 0.4D)
+		                if ( entityLivingBase.motionY > 0.4D )
 		                {
 		                	entityLivingBase.motionY = 0.4D;
 		                }
@@ -334,13 +300,13 @@ public class EventHandlers
 		{
 			EntityCreature creature = (EntityCreature) (event.getEntityLiving());
 
-			if (creature.height <= ConfigurationHandler.nauseaAffectsMobs )
+			if ( creature.height <= ConfigurationHandler.nauseaAffectsMobs )
 			{
-				if (creature.isPotionActive(MobEffects.NAUSEA) || creature.isPotionActive(MobEffects.BLINDNESS))
+				if ( creature.isPotionActive(MobEffects.NAUSEA) || creature.isPotionActive(MobEffects.BLINDNESS) )
 				{
 					boolean flag = false;
 
-					for (EntityAITaskEntry task : creature.tasks.taskEntries)
+					for ( EntityAITaskEntry task : creature.tasks.taskEntries )
 					{
 						if (task.getClass().equals(EntityAINausea.class))
 						{
@@ -349,102 +315,37 @@ public class EventHandlers
 						}
 					}
 
-					if (!flag)
+					if ( !flag )
 					{
 						creature.tasks.addTask(0, new EntityAINausea(creature));
 					}
-					else if (creature.world.rand.nextBoolean())
+					else if ( creature.world.rand.nextBoolean() )
 					{
 						creature.setAttackTarget(null);
 					}
 				}
 			}
-
-//			if ( ConfigurationHandler.stackableBleeds && event.getPotionEffect().getPotion().equals(BetterCombatPotions.BLEEDING) && creature.isPotionActive(BetterCombatPotions.BLEEDING) )
-//			{
-//				// event.getPotionEffect().getPotion().equals(BetterCombatPotions.BLEEDING)
-//				// creature.isPotionActive(BetterCombatPotions.BLEEDING
-//
-//				PotionEffect p0 = event.getPotionEffect();
-//				PotionEffect p1 = creature.getActivePotionEffect(BetterCombatPotions.BLEEDING);
-//				
-//				p0.combine(p1);
-//				
-//		        if ( p0.getAmplifier() > p1.getAmplifier() )
-//		        {
-//		            p0.amplifier = p1.amplifier;
-//		        }
-//		        else if (other.amplifier == this.amplifier && this.duration < other.duration)
-//		        {
-//		            this.duration = other.duration;
-//		        }
-//		        else if (!other.isAmbient && this.isAmbient)
-//		        {
-//		            this.isAmbient = other.isAmbient;
-//		        }
-//
-//		        this.showParticles = other.showParticles;
-//		    }
 		}
+		
+		if ( event.getPotionEffect().getPotion().equals(BetterCombatPotions.BLEEDING) && event.getEntityLiving().isPotionActive(BetterCombatPotions.BLEEDING) && ConfigurationHandler.stackableBleeds )
+		{
+			PotionEffect newBleed = event.getPotionEffect();
+			PotionEffect currentBleed = event.getEntityLiving().getActivePotionEffect(BetterCombatPotions.BLEEDING);
+			
+			/* Remove the current potion */
+			event.getEntityLiving().removePotionEffect(currentBleed.getPotion());
+			
+			/* Add the new potion */
+			event.getEntityLiving().addPotionEffect(new PotionEffect
+			( BetterCombatPotions.BLEEDING,
+				
+				newBleed.getDuration() > currentBleed.getDuration() ? newBleed.getDuration() : currentBleed.getDuration(),
+				newBleed.getAmplifier() + currentBleed.getAmplifier(),
+				currentBleed.getIsAmbient(),
+				currentBleed.doesShowParticles())
+			);
+	    }
 	}
-	
-	
-
-// ROTM
-//	@SubscribeEvent( priority = EventPriority.LOW )
-//	public static void applyMobOffenseEffect( LivingHurtEvent event )
-//	{
-//
-//		if ( !event.getEntityLiving().world.isRemote && event.getAmount() > 0 )
-//		{
-//			EntityLivingBase entity = event.getEntityLiving();
-//			DamageSource source = event.getSource();
-//
-//			if ( source.getTrueSource() instanceof EntityLivingBase )
-//			{
-//				EntityLivingBase attacker = (EntityLivingBase) event.getSource().getTrueSource();
-//
-//				if ( entity.isActiveItemStackBlocking() )
-//				{
-//					Vec3d vec3d = attacker.getPositionVector();
-//
-//					if ( vec3d != null )
-//					{
-//						Vec3d vec3d1 = entity.getLook(1.0F);
-//						Vec3d vec3d2 = vec3d.subtractReverse(new Vec3d(entity.posX, entity.posY, entity.posZ)).normalize();
-//						vec3d2 = new Vec3d(vec3d2.x, 0.0D, vec3d2.z);
-//
-//						if ( vec3d2.dotProduct(vec3d1) < 0.0D )
-//						{
-//							return;
-//						}
-//
-//					}
-//				}
-//				
-//				Collection<MobOffenseType> offenseTypes = ModConfigs.entityConfigs.mobOffense.get(Utils.getEntityName(attacker));
-//				
-//				for ( MobOffenseType type : offenseTypes )
-//				{
-//					if ( type.canApplyToEntity(attacker) && (type.damageType.isEmpty() || type.damageType.equalsIgnoreCase(source.getDamageType())) )
-//					{
-//						PotionEffect effect = new PotionEffect(ForgeRegistries.POTIONS.getValue(type.potion), type.duration, type.level);
-//						entity.addPotionEffect(effect);
-//
-//						if ( type.sound != null )
-//						{
-//							entity.world.playSound(null, attacker.getPosition(), ForgeRegistries.SOUND_EVENTS.getValue(type.sound), SoundCategory.HOSTILE, 1, 1);
-//						}
-//
-//					}
-//
-//				}
-//
-//			}
-//
-//		}
-//
-//	}
 	
 	/* HEAL EVENT */
 	@SubscribeEvent(priority=EventPriority.HIGH, receiveCanceled=true)
@@ -537,7 +438,7 @@ public class EventHandlers
 					attacker.hurtResistantTime = 0;
 					attacker.attackEntityFrom(DamageSource.causeIndirectMagicDamage(event.getEntityLiving(), event.getEntityLiving()),ConfigurationHandler.silverArmorDamagesUndeadAttackers * armorPieces);
 					attacker.hurtResistantTime = 0;
-					playSilverArmorEffect(attacker);
+					Helpers.silverArmorParticles(attacker);
 				}
 			}
 		}
@@ -551,7 +452,6 @@ public class EventHandlers
 			event.setCanceled(true);
 		}
     }
-	
 
 	private boolean cancelTools( EntityPlayer entityPlayer, Block block )
 	{
@@ -660,7 +560,7 @@ public class EventHandlers
 
 	@SubscribeEvent(priority = EventPriority.LOWEST, receiveCanceled = true)
 	public void livingAttackEvent( LivingAttackEvent event )
-	{		
+	{
 		if ( event.getEntityLiving() == null || event.getSource() == null )
 		{
 			return;
@@ -674,30 +574,33 @@ public class EventHandlers
 				if ( event.getEntityLiving() instanceof EntityPlayerMP && event.getSource().getTrueSource() instanceof EntityLivingBase )
 				{
 					EntityPlayerMP player = (EntityPlayerMP)event.getEntityLiving();
+					EntityLivingBase source = (EntityLivingBase)event.getSource().getTrueSource();
 					
-					if ( player.getActiveHand().equals(EnumHand.MAIN_HAND) && player.getEntityData().hasKey("isParrying") && player.getEntityData().getBoolean("isParrying") && ConfigurationHandler.isItemClassWhiteList(player.getHeldItemMainhand().getItem()) )
-					{
-						PacketHandler.instance.sendTo(new PacketParried(), player);
-						
-						Helpers.applySwingInteria(player);
-						
-			            player.swingArm(EnumHand.MAIN_HAND);
+					if ( player.getActiveHand().equals(EnumHand.MAIN_HAND) && player.getEntityData().hasKey("isParrying") && player.getEntityData().getBoolean("isParrying") && ConfigurationHandler.isConfigWeapon(player.getHeldItemMainhand().getItem()) )
+					{						
 						double attackDamage = 1.0D + Helpers.getMainhandAttackDamage(player, player.getHeldItemMainhand());
 						
+						PacketHandler.instance.sendTo(new PacketDamageTilt(PacketDamageTilt.getDamageTilt(player, source)), player);
+
+						// if ( attackDamage >= 0.0D && event.getAmount() > player.world.rand.nextInt((int)(attackDamage*ConfigurationHandler.parryChanceEffectivness)) )
+
 						/* Not Parried */
-						if ( attackDamage >= 0.0D && event.getAmount() > player.world.rand.nextInt((int)(attackDamage*ConfigurationHandler.parryChanceEffectivness)) )
+						if ( event.getAmount() <= attackDamage && event.getAmount() > player.world.rand.nextInt(1+(int)(attackDamage*ConfigurationHandler.parryChanceEffectivness)) )
 						{
 							player.getCooldownTracker().setCooldown(player.getHeldItemMainhand().getItem(), (int)(event.getAmount()*ConfigurationHandler.critsDisableShield));							
 							PacketHandler.instance.sendTo(new PacketParrying(false), player);
+							PacketHandler.instance.sendTo(new PacketParried(false), player);
 						}
 						/* Parried */
 						else
 						{
 			                event.setCanceled(true);
-			                
+				            player.swingArm(EnumHand.MAIN_HAND);
+							PacketHandler.instance.sendTo(new PacketParried(true), player);
 				            SoundHandler.playImpactArmorMetalSound(event.getEntityLiving(), SoundHandler.getRandomShieldBlockVolume(), SoundHandler.getRandomImpactPitch());
-
-							player.knockBack(event.getSource().getTrueSource(), ConfigurationHandler.parryKnockbackAmount, (double)-MathHelper.sin(player.rotationYaw * 0.017453292F), (double)(MathHelper.cos(player.rotationYaw * 0.017453292F)));
+							
+				            /* Knockback the player, from the attacking entity */
+				            player.knockBack(event.getSource().getTrueSource(), ConfigurationHandler.parryKnockbackAmount*0.2F, (double)-MathHelper.sin(player.rotationYaw * 0.017453292F), (double)(MathHelper.cos(player.rotationYaw * 0.017453292F)));
 							
 							if ( player.world instanceof WorldServer )
 							{
@@ -707,12 +610,12 @@ public class EventHandlers
 									((WorldServer) player.world).spawnParticle(EnumParticleTypes.CRIT, player.posX + (double)-MathHelper.sin(player.rotationYaw * 0.017453292F), player.posY + player.height * 0.6F, player.posZ + (double)(MathHelper.cos(player.rotationYaw * 0.017453292F)), k, 0.2D, 0.1D, 0.2D, 0.25D);
 								}
 							}
-							
-							player.getHeldItemMainhand().damageItem(1, player);
 						}
 						
+						player.getHeldItemMainhand().damageItem(ConfigurationHandler.parryingItemDamage, player);
+						
 						/* Knockback the attacking entity, from the player */
-						((EntityLivingBase)event.getSource().getTrueSource()).knockBack(player, ConfigurationHandler.parryKnockbackAmount, (double)MathHelper.sin(player.rotationYaw * 0.017453292F), (double)(-MathHelper.cos(player.rotationYaw * 0.017453292F)));
+						source.knockBack(player, ConfigurationHandler.parryKnockbackAmount, (double)MathHelper.sin(player.rotationYaw * 0.017453292F), (double)(-MathHelper.cos(player.rotationYaw * 0.017453292F)));
 						
 			            return;
 		            }
@@ -763,6 +666,13 @@ public class EventHandlers
 			/* Add sounds for blocking - ALL */
 			else if ( this.canBlockDamageSource(event.getSource(), event.getEntityLiving()) )
 			{
+				if ( event.getEntityLiving() instanceof EntityPlayerMP && event.getSource().getTrueSource() instanceof EntityLivingBase )
+				{
+					EntityPlayerMP player = (EntityPlayerMP)event.getEntityLiving();
+					EntityLivingBase source = (EntityLivingBase)event.getSource().getTrueSource();
+					PacketHandler.instance.sendTo(new PacketDamageTilt(PacketDamageTilt.getDamageTilt(player, source)), player);
+				}
+
 				float f = event.getEntityLiving().getMaxHealth() * 0.25F;
 				
 				if ( f > 0.0F && event.getAmount() / f > event.getEntityLiving().world.rand.nextFloat() )
@@ -774,6 +684,28 @@ public class EventHandlers
 		            SoundHandler.blockMetalLight(event.getEntityLiving(), SoundHandler.getRandomShieldBlockVolume(), SoundHandler.getRandomImpactPitch());
 				}
 			}
+//			else if ( event.getEntityLiving() instanceof EntityPlayerMP ) // TODO
+//			{
+//				EntityPlayerMP player = (EntityPlayerMP)event.getEntityLiving();
+//
+//				if ( event.getSource().getTrueSource() instanceof EntityLivingBase )
+//				{
+//					EntityLivingBase source = (EntityLivingBase)event.getSource().getTrueSource();
+//					
+//					if ( event.getAmount() >= 1.0F )
+//					{
+//						PacketHandler.instance.sendTo(new PacketDamageTilt(PacketDamageTilt.getDamageTilt(player, source)), player);
+//					}
+//					else
+//					{
+//						PacketHandler.instance.sendTo(new PacketDamageTilt(PacketDamageTilt.getNoDamageTilt()), player);
+//					}
+//				}
+//				else
+//				{
+//					PacketHandler.instance.sendTo(new PacketDamageTilt(PacketDamageTilt.getNoDamageTilt()), player); // TODO
+//				}
+//			}
         }
 	}
 	
@@ -1300,7 +1232,7 @@ public class EventHandlers
 						if (ConfigurationHandler.rangedSilverDamageMultiplier != 1.0F && victim.isEntityUndead())
 						{
 							arrow.setDamage(arrow.getDamage() * ConfigurationHandler.rangedSilverDamageMultiplier);
-							this.playSilverArrowEffect(arrow);
+							Helpers.silverArrowParticles(arrow);
 						}
 
 					}
@@ -1348,7 +1280,7 @@ public class EventHandlers
 
 								float healAmount = i * ConfigurationHandler.healingArrowAmplifier;
 								victim.heal(healAmount);
-								playHealEffect(victim, Math.round(healAmount));
+								Helpers.healParticles(victim, Math.round(healAmount));
 							}
 							else
 							{
@@ -1411,7 +1343,7 @@ public class EventHandlers
 
 								float healAmount = i * ConfigurationHandler.healingArrowAmplifier;
 								victim.heal(healAmount);
-								playHealEffect(victim, Math.round(healAmount));
+								Helpers.healParticles(victim, Math.round(healAmount));
 							}
 
 						}
@@ -1471,7 +1403,7 @@ public class EventHandlers
 
 									float healAmount = i * ConfigurationHandler.healingArrowAmplifier;
 									victim.heal(healAmount);
-									playHealEffect(victim, Math.round(healAmount));
+									Helpers.healParticles(victim, Math.round(healAmount));
 								}
 
 							}
@@ -1518,7 +1450,7 @@ public class EventHandlers
 
 									float healAmount = i * ConfigurationHandler.healingArrowAmplifier;
 									victim.heal(healAmount);
-									playHealEffect(victim, Math.round(healAmount));
+									Helpers.healParticles(victim, Math.round(healAmount));
 								}
 
 							}
@@ -1562,7 +1494,7 @@ public class EventHandlers
 						victim.hurtResistantTime = 0;
 						victim.attackEntityFrom(DamageSource.WITHER, ConfigurationHandler.dragonboneBowWitherDamage);
 						victim.hurtResistantTime = 0;
-						this.playDragonEffect(arrow);
+						Helpers.dragonArrowParticles(arrow);
 						arrow.setDead();
 					}
 				}
@@ -1688,86 +1620,32 @@ public class EventHandlers
 //        		 elb.world.rayTraceBlocks(new Vec3d(elb.posX, elb.posY+elb.height, elb.posZ), new Vec3d(potion.posX, potion.posY+potion.getEyeHeight(), potion.posZ), false, true, false) == null );
 //	}
 
-	public void playDragonEffect(Entity e)
-	{
 
-		if (e.world instanceof WorldServer)
-		{
-
-			for (int i = 12; i > 0; i--)
-			{
-				((WorldServer) e.world).spawnParticle(EnumParticleTypes.SMOKE_NORMAL,
-				e.posX + e.world.rand.nextGaussian() * 0.12D, e.posY + e.world.rand.nextGaussian() * 0.18D,
-				e.posZ + e.world.rand.nextGaussian() * 0.12D, 1, e.world.rand.nextGaussian() * 0.06D,
-				e.world.rand.nextGaussian() * 0.06D, e.world.rand.nextGaussian() * 0.06D,
-				e.world.rand.nextDouble() * 0.08D, new int[0]);
-			}
-
-			for (int i = 4; i > 0; i--)
-			{
-				((WorldServer) e.world).spawnParticle(EnumParticleTypes.SMOKE_LARGE,
-				e.posX + e.world.rand.nextGaussian() * 0.12D, e.posY + e.world.rand.nextGaussian() * 0.18D,
-				e.posZ + e.world.rand.nextGaussian() * 0.12D, 1, e.world.rand.nextGaussian() * 0.06D,
-				e.world.rand.nextGaussian() * 0.06D, e.world.rand.nextGaussian() * 0.06D,
-				e.world.rand.nextDouble() * 0.08D, new int[0]);
-			}
-
-		}
-
-	}
-
-	public void playSilverArrowEffect(Entity e)
-	{
-
-		if (e.world instanceof WorldServer)
-		{
-
-			for (int i = 12; i > 0; i--)
-			{
-				((WorldServer) e.world).spawnParticle(EnumParticleTypes.CRIT_MAGIC,
-				e.posX + e.world.rand.nextGaussian() * e.width, e.posY + e.world.rand.nextGaussian() * e.height,
-				e.posZ + e.world.rand.nextGaussian() * e.width, 1, e.world.rand.nextGaussian() * 0.01D,
-				e.world.rand.nextGaussian() * 0.01D, e.world.rand.nextGaussian() * 0.01D,
-				e.world.rand.nextDouble() * 0.02D, new int[0]);
-			}
-
-		}
-
-	}
-
-	public static void playSilverArmorEffect(Entity e)
-	{
-
-		if (e.world instanceof WorldServer)
-		{
-
-			for (int i = 12; i > 0; i--)
-			{
-				((WorldServer) e.world).spawnParticle(EnumParticleTypes.CRIT_MAGIC,
-				e.posX + e.world.rand.nextGaussian() * e.width, e.posY + e.world.rand.nextGaussian() * e.height,
-				e.posZ + e.world.rand.nextGaussian() * e.width, 1, e.world.rand.nextGaussian() * 0.06D,
-				e.world.rand.nextGaussian() * 0.06D, e.world.rand.nextGaussian() * 0.06D,
-				e.world.rand.nextDouble() * 0.06D, new int[0]);
-			}
-
-		}
-
-	}
-
-	public static void playHealEffect(Entity e, int amount)
-	{
-		if (e.world instanceof WorldServer)
-		{
-			for (int i = 0; i < amount; i++)
-			{
-				double d0 = e.world.rand.nextGaussian() * 0.02D;
-				double d1 = e.world.rand.nextGaussian() * 0.02D;
-				double d2 = e.world.rand.nextGaussian() * 0.02D;
-				((WorldServer) e.world).spawnParticle(EnumParticleTypes.HEART,
-				e.posX + (double) (e.world.rand.nextFloat() * e.width * 2.0F) - (double) e.width,
-				e.posY + 0.5D + (double) (e.world.rand.nextFloat() * e.height),
-				e.posZ + (double) (e.world.rand.nextFloat() * e.width * 2.0F) - (double) e.width, d0, d1, d2);
-			}
-		}
-	}
+	
+	/*
+	    EntityPlayer.attackEntityFrom(DamageSource, float) > ForgeHooks.onPlayerAttack(this, source, amount) > LivingAttackEvent (damage)
+	    
+	    EntityPlayer.attackTargetEntityWithCurrentItem(Entity ) > ForgeHooks.onPlayerAttackTarget(this, targetEntity) > AttackEntityEvent (attack)
+	    
+		public static boolean onPlayerAttackTarget(EntityPlayer player, Entity target)
+	    {
+	        if (MinecraftForge.EVENT_BUS.post(new AttackEntityEvent(player, target))) return false;
+	        ItemStack stack = player.getHeldItemMainhand();
+	        return stack.isEmpty() || !stack.getItem().onLeftClickEntity(stack, player, target);
+	    }
+	    
+	    (Item)
+	    
+	    Called when the player Left Clicks (attacks) an entity.
+	    Processed before damage is done, if the return value is TRUE, further processing is canceled and the entity is NOT attacked!
+	     
+	    @param stack The Item being used
+	    @param player The player that is attacking
+	    @param entity The entity being attacked
+	    @return True to cancel the rest of the interaction.
+	    public boolean onLeftClickEntity(ItemStack stack, EntityPlayer player, Entity entity)
+	    {
+	        return false;
+	    }
+    */
 }

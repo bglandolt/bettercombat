@@ -13,19 +13,25 @@ public class ParticleBlood extends Particle
 {
 	private final float lavaParticleScale;
 
+	//effect @e bettercombat:bleeding 100 1
 	protected ParticleBlood(World worldIn, double xCoordIn, double yCoordIn, double zCoordIn)
 	{
 		super(worldIn, xCoordIn, yCoordIn, zCoordIn, 0.0D, 0.0D, 0.0D);
-		this.motionX *= 0.800000011920929D;
-		this.motionY *= 0.800000011920929D;
-		this.motionZ *= 0.800000011920929D;
-		this.motionY = (double) (this.rand.nextFloat() * 0.4F + 0.05F);
-		this.particleRed = 1.0F;
-		this.particleGreen = 0.5F;
-		this.particleBlue = 0.5F;
-		this.particleScale *= this.rand.nextFloat() * 2.0F + 0.2F;
+		
+		double d = this.world.getWorldTime() * Math.PI * 0.1D;
+		double dirX = Math.cos(d) * 0.1D;
+		double dirZ = Math.sin(d) * 0.1D;
+		this.motionX = this.motionX * 0.2D + dirX;
+		this.motionY = this.rand.nextDouble() * 0.3D;
+		this.motionZ = this.motionZ * 0.2D + dirZ;
+		
+		float f = this.rand.nextFloat() * 0.1F;
+		this.particleRed = 0.85F - f;
+		this.particleGreen = 0.25F - f;
+		this.particleBlue = 0.45F - f;
+		this.particleScale = this.rand.nextFloat() + 0.2F;
 		this.lavaParticleScale = this.particleScale;
-		this.particleMaxAge = (int) (16.0D / (Math.random() * 0.8D + 0.2D));
+		this.particleMaxAge = this.rand.nextInt(65) + 16;
 		this.setParticleTextureIndex(49);
 	}
 
@@ -64,14 +70,14 @@ public class ParticleBlood extends Particle
 
 		this.motionY -= 0.03D;
 		this.move(this.motionX, this.motionY, this.motionZ);
-		this.motionX *= 0.9990000128746033D;
-		this.motionY *= 0.9990000128746033D;
-		this.motionZ *= 0.9990000128746033D;
+		this.motionX *= 0.99D;
+		this.motionY *= 0.99D;
+		this.motionZ *= 0.99D;
 
 		if (this.onGround)
 		{
-			this.motionX *= 0.699999988079071D;
-			this.motionZ *= 0.699999988079071D;
+			this.motionX *= 0.7D;
+			this.motionZ *= 0.7D;
 		}
 
 	}

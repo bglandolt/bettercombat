@@ -11,7 +11,6 @@ import net.minecraftforge.fml.common.network.simpleimpl.MessageContext;
 
 public class PacketParrying implements IMessage
 {
-//	private Integer entityId;
 	private boolean parrying;
 
 	public PacketParrying()
@@ -19,31 +18,18 @@ public class PacketParrying implements IMessage
 
 	}
 	
-	public PacketParrying( boolean b ) //, int damage, int knockback )
+	public PacketParrying( boolean b )
 	{
-//		this.entityId = entId;
 		this.parrying = b;
 	}
 
 	public void fromBytes( ByteBuf buf )
 	{
-//		if ( buf.readBoolean() )
-//		{
-//			this.entityId = ByteBufUtils.readVarInt(buf, 4);
-//		}
-		
 		this.parrying = buf.readBoolean();
 	}
 
 	public void toBytes( ByteBuf buf )
 	{
-//		buf.writeBoolean(this.entityId != null);
-//		
-//		if ( this.entityId != null )
-//		{
-//			ByteBufUtils.writeVarInt(buf, this.entityId, 4);
-//		}
-		
 		buf.writeBoolean(this.parrying);
 	}
 

@@ -26,7 +26,7 @@ public class EnchantmentLightning extends Enchantment
 {
 	public EnchantmentLightning()
 	{
-		super(Rarity.VERY_RARE, BetterCombatEnchantments.THROWING_WEAPON, new EntityEquipmentSlot[]
+		super(Rarity.VERY_RARE, BetterCombatEnchantments.RANGED_WEAPON, new EntityEquipmentSlot[]
 		{
 			EntityEquipmentSlot.MAINHAND, EntityEquipmentSlot.OFFHAND
 		});

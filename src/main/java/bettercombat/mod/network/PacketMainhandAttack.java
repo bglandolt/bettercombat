@@ -1,5 +1,9 @@
 package bettercombat.mod.network;
 
+import static bettercombat.mod.util.ConfigurationHandler.elanaiDodgeCompat;
+import static bettercombat.mod.util.ConfigurationHandler.elanaiDodgeMainHandFeatherCost;
+import static com.elenai.elenaidodge2.api.FeathersHelper.decreaseFeathers;
+
 import bettercombat.mod.util.Helpers;
 import io.netty.buffer.ByteBuf;
 import net.minecraft.entity.Entity;
@@ -10,12 +14,6 @@ import net.minecraftforge.fml.common.network.ByteBufUtils;
 import net.minecraftforge.fml.common.network.simpleimpl.IMessage;
 import net.minecraftforge.fml.common.network.simpleimpl.IMessageHandler;
 import net.minecraftforge.fml.common.network.simpleimpl.MessageContext;
-import scala.Console;
-
-import static bettercombat.mod.util.ConfigurationHandler.elanaiDodgeCompat;
-import static bettercombat.mod.util.ConfigurationHandler.elanaiDodgeMainHandFeatherCost;
-import static com.elenai.elenaidodge2.api.FeathersHelper.decreaseFeathers;
-import static com.elenai.elenaidodge2.api.FeathersHelper.getFeatherLevel;
 
 public class PacketMainhandAttack implements IMessage
 {
@@ -61,17 +59,16 @@ public class PacketMainhandAttack implements IMessage
 
 		private static void handle( PacketMainhandAttack message, MessageContext ctx )
 		{
-
 			EntityPlayerMP player = ctx.getServerHandler().player;
 
-
-			if (elanaiDodgeCompat && Loader.isModLoaded("elenaidodge2")) {
-				if (getFeatherLevel(player) < elanaiDodgeMainHandFeatherCost) {
-					return;
-				}
+			if ( elanaiDodgeCompat && Loader.isModLoaded("elenaidodge2") )
+			{
+//				if ( getFeatherLevel(player) < elanaiDodgeMainHandFeatherCost )
+//				{
+//					return;
+//				}
 
 				decreaseFeathers(player, elanaiDodgeMainHandFeatherCost);
-
 			}
 
 			if ( message.entityId != null )
@@ -85,19 +82,6 @@ public class PacketMainhandAttack implements IMessage
 			}
 
 			Helpers.applySwingInteria(player);
-			
-//			if ( ConfigurationHandler.momentumOnAttack != 0.0F )
-//			{
-//				if ( player.onGround )
-//				{
-//					player.motionY += 0.001D;
-//				}
-//		
-//				player.motionX -= ConfigurationHandler.momentumOnAttack*MathHelper.sin(player.rotationYaw * 0.017453292F);
-//				player.motionZ += ConfigurationHandler.momentumOnAttack*MathHelper.cos(player.rotationYaw * 0.017453292F);
-//				
-//				player.velocityChanged = true;
-//			}
 		}
 	}
 }

@@ -65,9 +65,11 @@ dependencies {
     // Specify the version of Minecraft to use, If this is any group other then 'net.minecraft' it is assumed
     // that the dep is a ForgeGradle 'patcher' dependency. And it's patches will be applied.
     // The userdev artifact is a special name and will get all sorts of transformations applied to it.
+	
 	minecraft 'net.minecraftforge:forge:1.12.2-14.23.5.2860'
+	//compileOnly 'org.ow2.asm:asm:9.4'
+	//implementation "curse.maven:feathers-442962:3343308"
 
-    implementation "curse.maven:feathers-442962:3343308"
     // You may put jars on which you depend on in ./libs or you may define them like so..
     // compile "some.group:artifact:version:classifier"
     // compile "some.group:artifact:version"
@@ -92,13 +94,15 @@ dependencies {
 jar {
     manifest {
         attributes([
-            "Specification-Title": "examplemod",
-            "Specification-Vendor": "examplemodsareus",
-            "Specification-Version": "1", // We are version 1 of ourselves
-            "Implementation-Title": project.name,
-            "Implementation-Version": "${version}",
-            "Implementation-Vendor" :"examplemodsareus",
-            "Implementation-Timestamp": new Date().format("yyyy-MM-dd'T'HH:mm:ssZ")
+		'FMLCorePluginContainsFMLMod': 'true',
+		'FMLCorePlugin': 'com.bettercombat.util.asm.CustomASMTransformer',
+            	"Specification-Title": "bettercombat",
+            	"Specification-Vendor": "bettercombat",
+            	"Specification-Version": "1", // We are version 1 of ourselves
+            	"Implementation-Title": project.name,
+            	"Implementation-Version": "${version}",
+            	"Implementation-Vendor" :"bettercombat",
+            	"Implementation-Timestamp": new Date().format("yyyy-MM-dd'T'HH:mm:ssZ")
         ])
     }
 }
