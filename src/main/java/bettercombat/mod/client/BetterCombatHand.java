@@ -208,7 +208,7 @@ public class BetterCombatHand
 		this.moveUpVariance = this.randomMoveVariance();
 		this.moveCloseVariance = this.randomMoveVariance();
 
-		this.rotateUpVariance = this.randomRotationVariance();
+		this.rotateUpVariance = this.randomPreciseRotationVariance();
 		this.rotateCounterClockwiseVariance = this.randomRotationVariance();
 		this.rotateLeftVariance = this.randomRotationVariance();
 	}

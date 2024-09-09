@@ -42,6 +42,8 @@ public class CustomScreenOverlay
 	@SubscribeEvent
 	public void onRenderGameOverlay(RenderGameOverlayEvent.Post event)
 	{
+		if ( true) return;
+		
 		/* Mainhand */
 		if ( event.getType() == RenderGameOverlayEvent.ElementType.CROSSHAIRS && ConfigurationHandler.attackSweepOverlay )
 		{
@@ -126,11 +128,24 @@ public class CustomScreenOverlay
 	/* - */
 	public void renderScreenOverlayMainhandSweep1( ScaledResolution scaledRes )
 	{
-		float scaleX = scaledRes.getScaledHeight() / 128.0F;
-	    float scaleY = scaledRes.getScaledHeight() / 256.0F;
-	    
-        int x = (scaledRes.getScaledWidth()+75)>>1;
-		int y = (scaledRes.getScaledHeight()-50)>>1;
+		float scaleX = scaledRes.getScaledHeight() / 96.0F;
+	    float scaleY = scaledRes.getScaledHeight() / 192.0F;
+		
+		int x;
+		int y;
+		
+		if ( scaledRes.getScaleFactor() > 1 )
+		{
+			x = (scaledRes.getScaledWidth()-20)>>1;
+			y = (scaledRes.getScaledHeight()-40)>>1;
+		}
+		else
+		{
+			x = (scaledRes.getScaledWidth()-35)>>1;
+			y = (scaledRes.getScaledHeight()-45)>>1;
+		}
+		
+		// System.out.println(x + " " + y + " " + scaledRes.getScaledWidth() + " " + scaledRes.getScaledHeight() + " " + scaledRes.getScaleFactor());
 		
         this.mc.getTextureManager().bindTexture(MAINHAND_SWEEP_1);
 
@@ -143,6 +158,7 @@ public class CustomScreenOverlay
         GlStateManager.tryBlendFuncSeparate(GlStateManager.SourceFactor.SRC_ALPHA, GlStateManager.DestFactor.ONE_MINUS_SRC_ALPHA, GlStateManager.SourceFactor.ONE, GlStateManager.DestFactor.ZERO);
         GlStateManager.translate(x - this.currentFrameMainhand * 4.0F, y - this.currentFrameMainhand * 0.5F, 0.0F);
         GlStateManager.scale(scaleX, scaleY, 1.0F);
+                
         this.mc.ingameGUI.drawTexturedModalRect(0, 0, startX, startY, FRAME_SIZE, FRAME_SIZE);
         
         GlStateManager.disableBlend();
@@ -152,11 +168,22 @@ public class CustomScreenOverlay
 	/* \ */
 	public void renderScreenOverlayMainhandSweep2( ScaledResolution scaledRes )
 	{
-		float scaleX = scaledRes.getScaledHeight() / 128.0F;
-	    float scaleY = scaledRes.getScaledHeight() / 256.0F;
-        
-		int x = (scaledRes.getScaledWidth()-150)>>1;
-		int y = (scaledRes.getScaledHeight()-110)>>1;
+		float scaleX = scaledRes.getScaledHeight() / 96.0F;
+	    float scaleY = scaledRes.getScaledHeight() / 192.0F;
+		
+		int x;
+		int y;
+		
+		if ( scaledRes.getScaleFactor() > 1 )
+		{
+			x = (scaledRes.getScaledWidth()-130)>>1;
+			y = (scaledRes.getScaledHeight()-80)>>1;
+		}
+		else
+		{
+			x = (scaledRes.getScaledWidth()-160)>>1;
+			y = (scaledRes.getScaledHeight()-125)>>1;
+		}
 		
         this.mc.getTextureManager().bindTexture(MAINHAND_SWEEP_2);
 
@@ -183,11 +210,22 @@ public class CustomScreenOverlay
 	/* - */
 	public void renderScreenOverlayOffhandSweep1( ScaledResolution scaledRes )
 	{
-		float scaleX = scaledRes.getScaledHeight() / 128.0F;
-	    float scaleY = scaledRes.getScaledHeight() / 256.0F;
-	    
-        int x = (scaledRes.getScaledWidth()-520)>>1;
-		int y = (scaledRes.getScaledHeight()-55)>>1;
+		float scaleX = scaledRes.getScaledHeight() / 96.0F;
+	    float scaleY = scaledRes.getScaledHeight() / 192.0F;
+		
+		int x;
+		int y;
+		
+		if ( scaledRes.getScaleFactor() > 1 )
+		{
+			x = (scaledRes.getScaledWidth()-310)>>1;
+			y = (scaledRes.getScaledHeight()-30)>>1;
+		}
+		else
+		{
+			x = (scaledRes.getScaledWidth()-540)>>1;
+			y = (scaledRes.getScaledHeight()-65)>>1;
+		}
 		
         this.mc.getTextureManager().bindTexture(OFFHAND_SWEEP_1);
 
@@ -209,12 +247,25 @@ public class CustomScreenOverlay
 	/* \ */
 	public void renderScreenOverlayOffhandSweep2( ScaledResolution scaledRes )
 	{
-		float scaleX = scaledRes.getScaledHeight() / 128.0F;
-	    float scaleY = scaledRes.getScaledHeight() / 256.0F;
-        
-		int x = (scaledRes.getScaledWidth()-275)>>1;
-		int y = (scaledRes.getScaledHeight()-45)>>1;
+		float scaleX = scaledRes.getScaledHeight() / 96.0F;
+	    float scaleY = scaledRes.getScaledHeight() / 192.0F;
 		
+		int x;
+		int y;
+		
+		if ( scaledRes.getScaleFactor() > 1 )
+		{
+			x = (scaledRes.getScaledWidth()-205)>>1;
+			y = (scaledRes.getScaledHeight()-20)>>1;
+		}
+		else
+		{
+			x = (scaledRes.getScaledWidth()-335)>>1;
+			y = (scaledRes.getScaledHeight()-45)>>1;
+		}
+		
+		// System.out.println(x + " " + y + " " + scaledRes.getScaledWidth() + " " + scaledRes.getScaledHeight() + " " + scaledRes.getScaleFactor());
+
         this.mc.getTextureManager().bindTexture(OFFHAND_SWEEP_2);
 
         int startX = (this.currentFrameOffhand % FRAMES) * FRAME_SIZE;

@@ -114,6 +114,8 @@ public class AnimationHandler
 	/*															Event
 	/* ========================================================================================================================= */
 	
+	boolean breathingApplied = false;
+	
 	@SubscribeEvent
 	public void disableVanillaHandRender( RenderSpecificHandEvent event )
 	{
@@ -198,7 +200,7 @@ public class AnimationHandler
 	    		if ( Helpers.isHandActive(ClientProxy.EHC_INSTANCE.mc.player, EnumHand.MAIN_HAND) )
 	    		{
 	    			/* Default rendering, such as bow, eat, or drink! */
-					this.positionBreathing();
+					this.positionBreathingMainhand();
 					return;
 	    		}
 	    		
@@ -208,7 +210,8 @@ public class AnimationHandler
 			else
 			{
 				/* Default rendering! */
-				this.positionBreathing();
+				this.breathingApplied = true;
+				this.positionBreathingMainhand();
 				return;
 			}
         }
@@ -242,6 +245,7 @@ public class AnimationHandler
     		else if ( ClientProxy.EHC_INSTANCE.betterCombatOffhand.hasConfigWeapon() )
 			{
     			this.customOffhandRender(event);
+    			this.breathingApplied = false;
     			return;
 			}
     		else if ( ClientProxy.EHC_INSTANCE.itemStackOffhand.getItem() instanceof ItemShield )
@@ -263,7 +267,7 @@ public class AnimationHandler
 
     			/* Shield custom rendering! */
     			this.customShieldRender(event);
-    			
+    			this.breathingApplied = false;
     			return;
     		}
     		else
@@ -272,7 +276,8 @@ public class AnimationHandler
     		}
 
     		/* Default rendering! */
-			this.positionBreathing();
+    		this.positionBreathingOffhand();
+    		this.breathingApplied = false;
 			return;
         }
     }
@@ -299,7 +304,7 @@ public class AnimationHandler
 
         this.positionMainWeapon();
 		this.positionMainhandAwayIfOffhandAttacking();
-        this.positionBreathing();
+        this.positionBreathingMainhand();
 
 		/* Mining */
 		if ( ClientProxy.EHC_INSTANCE.betterCombatMainhand.isMining() && (isMainhandAttacking() || ClientProxy.EHC_INSTANCE.startedMining || ClientProxy.EHC_INSTANCE.holdingLeftClick || this.miningEnergy > 0.0F) ) // todo
@@ -347,7 +352,7 @@ public class AnimationHandler
 	        		if ( ClientProxy.EHC_INSTANCE.betterCombatMainhand.alternateAnimation )
 	        		{
 	        			this.animationSweepMainhand2(this.calculateMainhandEnergy(event));
-	        			System.out.println(this.mainhandEnergy); // TODO
+	        			// System.out.println(this.mainhandEnergy); // TODO
 	        		}
 	        		else
 	        		{
@@ -532,7 +537,7 @@ public class AnimationHandler
 	
 	protected float calculateMiningEnergy(RenderSpecificHandEvent event)
 	{
-		return this.miningEnergy += ClientProxy.EHC_INSTANCE.betterCombatMainhand.getSwingTimerIncrement() * partialIncrement; // * 0.05D; // TODO
+		return this.miningEnergy += ClientProxy.EHC_INSTANCE.betterCombatMainhand.getSwingTimerIncrement() * partialIncrement; // TODO
 	}
 	
 	protected void resetMiningEnergy()
@@ -602,8 +607,8 @@ public class AnimationHandler
 			{
 				/* (RETURN) HIGHEST | 0.4 -> 1.0 */
 				/* ======= */
-				float f = this.miningEnergy - 0.4F; /* 1 . 0 | fast to slow */
-				float ff = 1.0F - MathHelper.sin(f*PI*0.83333333F);
+				float f = this.miningEnergy - 0.4F;
+				float ff = 1.0F - MathHelper.sin(f*PI*0.83333333F); /* 1 . 0 | fast to slow */
 				
 				moveRight = ff * -0.7F;
 				moveClose = ff * closeCap;
@@ -777,7 +782,7 @@ public class AnimationHandler
 		
 		if ( ClientProxy.EHC_INSTANCE.holdingLeftClick )
 		{
-			if ( this.miningEnergy > 0.8F )
+			if ( this.miningEnergy > 0.75F )
 			{
 				this.miningEnergy = 1.0F - this.miningEnergy;
 			}
@@ -791,109 +796,152 @@ public class AnimationHandler
 		float moveUp = 0.0F; /* +up */
 		float moveClose = 0.0F; /* +zoom */
 		
-		float rotateUp = 0.0F; /* +up   |||   twist */
-		float rotateCounterClockwise = 0.0F; /* +counter-clockwise   \|/   side-to-side */
-		float rotateLeft = 0.0F; /* +left   |   scoop */
+		float twist = 0.0F; /* +up   |||   twist */
+		float sway = 0.0F; /* +counter-clockwise   \|/   side-to-side */
+		float scoop = 0.0F; /* +left   |   scoop */
+		
+		
+//		float xx = (float)ClientProxy.EHC_INSTANCE.mc.player.posX;
+//		float yy = (float)ClientProxy.EHC_INSTANCE.mc.player.posY - 50;
+//		float zz = (float)ClientProxy.EHC_INSTANCE.mc.player.posZ; // XXX
 		
 	    float closeCap = (0.5F - this.tooCloseIntensity);
 		
-		if ( this.miningEnergy > 0.2F )
+		if ( this.miningEnergy > 0.25F )
 		{
-			if ( this.miningEnergy > 0.4F )
+			if ( this.miningEnergy > 0.45F )
 			{
-				if ( this.miningEnergy > 0.8F )
+				if ( this.miningEnergy > 0.55F )
 				{
-					/* (RETURN) HIGHEST | 0.8F -> 1.0 */
-					/* ======= */
-					float f = this.miningEnergy - 0.8F;
-					
-					/* Move +Close */
-			        moveClose = (0.2F - f) * (closeCap * 2.5F);
-			        
-					/* Move +Right */
-			        moveRight = (-0.2F + f) * (1.25F);
-					
-					/* Move +Right */
-					moveUp = moveRight;
-					
-					rotateUp = 10.0F - f * 50.0F;
-					rotateCounterClockwise = -80.0F + f * 400.0F;
-				    rotateLeft = 60.0F - f * 300.0F;
+					if ( this.miningEnergy > 0.75F )
+					{
+						/* (RETURN) HIGHEST | 0.75F -> 1.0 */
+						/* ======= */
+						float f = this.miningEnergy - 0.75F;
+						
+						/* Move +Close */
+				        moveClose = (0.25F - f) * (closeCap * 2.5F);
+				        
+						/* Move +Right */
+				        moveRight = (-0.55F + f * 2.2F);
+						
+						/* Move +Right */
+						moveUp = (0.25F - f);
+						
+						twist = -110.0F + f * 440.0F;
+						sway = 70.0F - f * 280.0F;
+						scoop = 80.0F - f * 320.0F;
+					}
+					else
+					{
+				        /* =============================================== */
+
+						/* (DOWN) | 0.55F -> 0.75F */
+						/* ==== */
+						
+						float f = this.miningEnergy - 0.35F;
+						
+						float ff = MathHelper.sin(f*PI*2.5F); /* 0 . 1 . 0 */
+						
+						ff *= ff;
+
+						/* Move +Right */
+				        moveRight = (-0.55F - ff * 0.2F);
+						
+						/* Move +Right */
+						moveUp = (0.25F - ff * 0.2F);
+						
+						twist = -110.0F - ff * 20.0F;
+						sway = 70.0F - ff * 20.0F;
+						scoop = 80.0F - ff * 15.0F;
+						
+						/* Move +Close */
+				        moveClose = (0.25F - ff * 0.5F) * (closeCap * 2.5F);
+					}
 				}
 				else
 				{
-					/* (SCOOP) HIGH | 0.4F -> 0.8F */
+					/* (HOLD) | 0.45F -> 0.55F */
 					/* ==== */
-					float f = this.miningEnergy - 0.4F;
-					float ff = MathHelper.sin(f * PI * 2.5F); /* 0 . 1 . 0 */
-					
-					/* Move +Close */
-					moveClose = (-0.4F + f * 1.5F) * (closeCap * 2.5F);
+					// float f = this.miningEnergy - 0.35F;
+
+					// float ff = MathHelper.sin(f*PI*10.0F); /* 0 . 1 . 0 */
 					
 					/* Move +Right */
-					moveRight = (-0.4F + f * 0.5F) * (1.25F);
+			        moveRight = (-0.75F);
+			        
+			        moveUp = (0.05F);
 					
-					/* Move +Up */
-					moveUp = moveRight;
+					twist = -130.0F;
+					sway = 50.0F;
+					scoop = 65.0F;
 					
-					rotateUp = f * 25.0F;
-					rotateCounterClockwise = -80.0F;
-				    rotateLeft = 60.0F - ff * 30.0F;
+					/* Move +Close */
+			        moveClose = (-0.25F) * (closeCap * 2.5F);
+//			        moveClose = (-0.25F + ff * 0.2F) * (closeCap * 3.0F);
 				}
 			}
 			else
 			{
-				/* (THRUST) LOW | 0.2F -> 0.4F */
-				/* === */
-				float f = this.miningEnergy - 0.2F;
+				/* (UP) | 0.25F -> 0.45F */
+				/* ==== */
+				float f = this.miningEnergy - 0.25F;
 				
-				/* Move -Away */
-				moveClose = (0.2F - f * 3.0F) * (closeCap * 2.5F);
+				float ff = MathHelper.sin(f*PI*2.5F); /* 0 . 1 . 0 */
+
+				/* Move +Right */
+		        moveRight = (-0.55F - ff * 0.2F);
 				
-				/* Move -Left */
-				moveRight = (-this.miningEnergy) * (1.25F);
+				/* Move +Right */
+				moveUp = (0.25F - ff * 0.2F);
 				
-				/* Move -Down */
-				moveUp = moveRight;
+				twist = -110.0F - ff * 20.0F;
+				sway = 70.0F - ff * 20.0F;
+				scoop = 80.0F - ff * 15.0F;
 				
-				rotateUp = 10.0F - f * 50.0F;
-			    rotateCounterClockwise = -80.0F;
-			    rotateLeft = 60.0F;
+				ff *= ff;
+				
+				/* Move +Close */
+		        moveClose = (0.25F - ff * 0.5F) * (closeCap * 2.5F);
+		        
+		        /* =============================================== */
 			}
 		}
 		else
 		{
-			/* (READY) LOWEST | 0.0F -> 0.2F */
+			/* (READY) LOWEST | 0.0F -> 0.25F */
 			
 			/* Move +Close */
 			moveClose = (this.miningEnergy) * (closeCap * 2.5F);
 			
 			/* Move -Left */
-			moveRight = (-this.miningEnergy) * (1.25F);
+			moveRight = (-this.miningEnergy * 2.2F);
 
 			/* Move -Down */
-			moveUp = moveRight;
+			// float ff = MathHelper.sin(f*PI*2.5F); /* 0 . 1 . 0 */
+			moveUp = (this.miningEnergy);
 			
-		    rotateUp = this.miningEnergy * 50.0F; /* 10 */
-		    rotateCounterClockwise = -this.miningEnergy * 400.0F; /* -80 */
-		    rotateLeft = this.miningEnergy * 300.0F; /* 60 */
+			twist = -this.miningEnergy * 440.0F; /* -110 */
+		    sway = this.miningEnergy * 280.0F; /* 70 */
+		    scoop = this.miningEnergy * 320.0F; /* 80 */
 		}
 		
-//		System.out.println("moveRight " + moveRight);
-//		System.out.println("moveUp " + moveUp);
-//		System.out.println("moveClose " + moveClose);
-//		System.out.println("rotateUp " + rotateUp);
-//		System.out.println("rotateCounterClockwise " + rotateCounterClockwise);
-//		System.out.println("rotateLeft " + rotateLeft);
-		
 		GlStateManager.translate(
-		1.5F * moveRight,
+		moveRight,
 		0.4F * moveUp,
 		moveClose);
 		
-    	GlStateManager.rotate(4.0F * rotateUp, 1.0F, 0.0F, 0.0F);
-    	GlStateManager.rotate(rotateCounterClockwise, 0.0F, 1.0F, 0.0F);
-    	GlStateManager.rotate(1.5F * rotateLeft, 0.0F, 0.0F, 1.0F);
+//		float xx = (float)ClientProxy.EHC_INSTANCE.mc.player.posX;
+//		float yy = (float)ClientProxy.EHC_INSTANCE.mc.player.posY - 50;
+//		float zz = (float)ClientProxy.EHC_INSTANCE.mc.player.posZ; // XXX
+		
+//    	GlStateManager.rotate(twist + xx, 1.0F, 0.0F, 0.0F);
+//    	GlStateManager.rotate(sway + yy, 0.0F, 1.0F, 0.0F);
+//    	GlStateManager.rotate(scoop + zz, 0.0F, 0.0F, 1.0F);
+		
+    	GlStateManager.rotate(twist, 1.0F, 0.0F, 0.0F);
+    	GlStateManager.rotate(sway, 0.0F, 1.0F, 0.0F);
+    	GlStateManager.rotate(scoop, 0.0F, 0.0F, 1.0F);
 	}
 	
 	/* ------------------------------------------------------------------------------------------------------------------------- */
@@ -1027,9 +1075,9 @@ public class AnimationHandler
 		float f = ClientProxy.EHC_INSTANCE.betterCombatMainhand.getSwingTimerCap() * partialCameraSwing;
 
 		/* Camera */
-    	float rotation = MathHelper.cos(-1.0F + this.mainhandEnergy * 2.0F * PI);
+    	float rotation = MathHelper.cos(-1.0F + this.mainhandEnergy * 1.9F * PI);
     	
-    	System.out.println(rotation);
+    	// System.out.println(rotation);
     	
 		ClientProxy.EHC_INSTANCE.mc.player.cameraPitch -= rotation * ConfigurationHandler.cameraPitchSwing * f; /* +right */
 		ClientProxy.EHC_INSTANCE.mc.player.rotationYaw -= rotation * ConfigurationHandler.rotationYawSwing * f; /* +down */
@@ -1123,10 +1171,6 @@ public class AnimationHandler
        	/* X */ 0.75F * moveRight * ClientProxy.EHC_INSTANCE.betterCombatMainhand.moveRightVariance,
        	/* Y */ 1.15F * moveUp * ClientProxy.EHC_INSTANCE.betterCombatMainhand.moveUpVariance,
        	/* Z */ moveClose * ClientProxy.EHC_INSTANCE.betterCombatMainhand.moveCloseVariance);
-       	
-//		float xx = (float)ClientProxy.EHC_INSTANCE.mc.player.posX;
-//		float yy = (float)ClientProxy.EHC_INSTANCE.mc.player.posY - 50;
-//		float zz = (float)ClientProxy.EHC_INSTANCE.mc.player.posZ;
 		
 		GlStateManager.rotate(rotateUp * ClientProxy.EHC_INSTANCE.betterCombatMainhand.rotateUpVariance, 1.0F, 0.0F, 0.0F);
     	GlStateManager.rotate(rotateCounterClockwise * ClientProxy.EHC_INSTANCE.betterCombatMainhand.rotateCounterClockwiseVariance, 0.0F, 1.0F, 0.0F);
@@ -1223,22 +1267,22 @@ public class AnimationHandler
 		float f = ClientProxy.EHC_INSTANCE.betterCombatMainhand.getSwingTimerCap() * partialCameraSwing;
 		
 		/* Camera */
-    	float rotation = MathHelper.sin(-1.8F + this.mainhandEnergy * 2.07209465F * PI);
-		ClientProxy.EHC_INSTANCE.mc.player.cameraPitch -= rotation * ConfigurationHandler.cameraPitchSwing * 2.0F * f;
-		ClientProxy.EHC_INSTANCE.mc.player.rotationYaw += rotation * ConfigurationHandler.rotationYawSwing * 0.2F * f;
+//    	float rotation = MathHelper.sin(-1.8F + this.mainhandEnergy * 2.0F * PI);
+//		ClientProxy.EHC_INSTANCE.mc.player.cameraPitch -= rotation * ConfigurationHandler.cameraPitchSwing * 2.0F * f;
+//		ClientProxy.EHC_INSTANCE.mc.player.rotationYaw += rotation * ConfigurationHandler.rotationYawSwing * 0.2F * f;
 
-//    	float rotation = MathHelper.cos(1.0F + this.mainhandEnergy * 2.2F * PI);
-//
-//    	if ( rotation > 0.0F )
-//    	{
-//    		ClientProxy.EHC_INSTANCE.mc.player.cameraPitch -= rotation * ConfigurationHandler.cameraPitchSwing * f;
-//    	}
-//    	else
-//    	{
-//    		ClientProxy.EHC_INSTANCE.mc.player.cameraPitch -= rotation * ConfigurationHandler.cameraPitchSwing * 2.0F * f;
-//    	}
-//    	
-//		ClientProxy.EHC_INSTANCE.mc.player.rotationYaw += rotation*ConfigurationHandler.rotationYawSwing * 0.2F * f;
+    	float rotation = MathHelper.cos(1.0F + this.mainhandEnergy * 2.2F * PI);
+
+    	if ( rotation > 0.0F )
+    	{
+    		ClientProxy.EHC_INSTANCE.mc.player.cameraPitch -= rotation * ConfigurationHandler.cameraPitchSwing * f;
+    	}
+    	else
+    	{
+    		ClientProxy.EHC_INSTANCE.mc.player.cameraPitch -= rotation * ConfigurationHandler.cameraPitchSwing * 2.0F * f;
+    	}
+    	
+		ClientProxy.EHC_INSTANCE.mc.player.rotationYaw += rotation*ConfigurationHandler.rotationYawSwing * 0.2F * f;
 	}
 	
 	/* ------------------------------------------------------------------------------------------------------------------------- */
@@ -1371,7 +1415,7 @@ public class AnimationHandler
 		/* Animate the shield bash */
         this.positionOffShield();
 
-        this.positionBreathingShield();
+        this.positionBreathingOffhand();
         this.positionEquippedProgressOffhand();
         this.renderOffShield();
         GlStateManager.popMatrix();
@@ -1447,7 +1491,7 @@ public class AnimationHandler
 	private void animationShieldBashCameraOffhand()
 	{
 		/* Camera */
-    	float rotation = MathHelper.cos(-0.4F + this.offhandEnergy * 2.07209465F * PI);
+    	float rotation = MathHelper.cos(-0.4F + this.offhandEnergy * 2.0F * PI);
 		ClientProxy.EHC_INSTANCE.mc.player.cameraPitch -= rotation*ConfigurationHandler.cameraPitchSwing;
 		ClientProxy.EHC_INSTANCE.mc.player.rotationYaw += rotation*ConfigurationHandler.rotationYawSwing;
 	}
@@ -1478,10 +1522,10 @@ public class AnimationHandler
         return this.blockingTimer > 0;
     }
 	
-    private void positionBreathing()
+    private void positionBreathingMainhand()
 	{
     	GlStateManager.translate(0.0F, MathHelper.sin(this.breatheTicks) * ConfigurationHandler.breathingAnimationIntensity, this.tooCloseIntensity*0.6F);
-    	
+
     	// TODO - more breathing if out of feathers
 //    	if ( true )
 //    	{
@@ -1491,10 +1535,18 @@ public class AnimationHandler
 //    	}
 	}
     
-    private void positionBreathingShield()
-    {
-    	GlStateManager.translate(0.0F, MathHelper.sin(this.breatheTicks) * ConfigurationHandler.breathingAnimationIntensity, -this.tooCloseIntensity*0.6F);
+    private void positionBreathingOffhand()
+	{
+    	if ( !this.breathingApplied )
+    	{
+    		this.positionBreathingMainhand();
+    	}
 	}
+    
+//    private void positionBreathingShield()
+//    {
+//    	GlStateManager.translate(0.0F, MathHelper.sin(this.breatheTicks) * ConfigurationHandler.breathingAnimationIntensity, -this.tooCloseIntensity*0.6F);
+//	}
 
 	/* ========================================================================================================================= */
 	/*															 Offhand
@@ -1523,7 +1575,7 @@ public class AnimationHandler
         	this.positionOffhandAwayIfMainhandAttacking();
         }
         
-        this.positionBreathing();
+        this.positionBreathingOffhand();
         
 		if ( isOffhandAttacking() )
 		{    		
@@ -1814,22 +1866,22 @@ public class AnimationHandler
 		float f = ClientProxy.EHC_INSTANCE.betterCombatOffhand.getSwingTimerCap() * partialCameraSwing; // todo
 		
 		/* Camera */
-    	float rotation = MathHelper.sin(-1.8F + this.offhandEnergy * 2.07209465F * PI);
-		ClientProxy.EHC_INSTANCE.mc.player.cameraPitch -= rotation * ConfigurationHandler.cameraPitchSwing * 2.0F * f;
-		ClientProxy.EHC_INSTANCE.mc.player.rotationYaw -= rotation * ConfigurationHandler.rotationYawSwing * 0.2F * f;
+//    	float rotation = MathHelper.sin(-1.8F + this.offhandEnergy * 2.0F * PI);
+//		ClientProxy.EHC_INSTANCE.mc.player.cameraPitch -= rotation * ConfigurationHandler.cameraPitchSwing * 2.0F * f;
+//		ClientProxy.EHC_INSTANCE.mc.player.rotationYaw -= rotation * ConfigurationHandler.rotationYawSwing * 0.2F * f;
 
-//    	float rotation = MathHelper.cos(1.0F + this.offhandEnergy * 2.07209465F * PI);
-//    	
-//    	if ( rotation > 0.0F )
-//    	{
-//    		ClientProxy.EHC_INSTANCE.mc.player.cameraPitch -= rotation * ConfigurationHandler.cameraPitchSwing * f;
-//    	}
-//    	else
-//    	{
-//    		ClientProxy.EHC_INSTANCE.mc.player.cameraPitch -= rotation * ConfigurationHandler.cameraPitchSwing * 2.0F * f;
-//    	}
-//    	
-//		ClientProxy.EHC_INSTANCE.mc.player.rotationYaw -= rotation*ConfigurationHandler.rotationYawSwing * 0.2F * f;
+    	float rotation = MathHelper.cos(1.0F + this.offhandEnergy * 2.2F * PI);
+    	
+    	if ( rotation > 0.0F )
+    	{
+    		ClientProxy.EHC_INSTANCE.mc.player.cameraPitch -= rotation * ConfigurationHandler.cameraPitchSwing * f;
+    	}
+    	else
+    	{
+    		ClientProxy.EHC_INSTANCE.mc.player.cameraPitch -= rotation * ConfigurationHandler.cameraPitchSwing * 2.0F * f;
+    	}
+    	
+		ClientProxy.EHC_INSTANCE.mc.player.rotationYaw -= rotation*ConfigurationHandler.rotationYawSwing * 0.2F * f;
 	}
 	
 	/* ------------------------------------------------------------------------------------------------------------------------- */
@@ -1889,7 +1941,7 @@ public class AnimationHandler
 		float f = ClientProxy.EHC_INSTANCE.betterCombatOffhand.getSwingTimerCap() * partialCameraSwing;
 
 		/* Camera */
-    	float rotation = MathHelper.cos(-0.4F + this.offhandEnergy * 2.07209465F * PI);
+    	float rotation = MathHelper.cos(-0.4F + this.offhandEnergy * 1.9F * PI);
     	
 		ClientProxy.EHC_INSTANCE.mc.player.cameraPitch -= rotation * ConfigurationHandler.cameraPitchSwing * f;
 		ClientProxy.EHC_INSTANCE.mc.player.rotationYaw -= rotation * ConfigurationHandler.rotationYawSwing * f;
@@ -2138,6 +2190,19 @@ public class AnimationHandler
 	/*															 (+) GUI
 	/* ========================================================================================================================= */
 	
+	private int currentFrameMainhand = 0;
+	private int currentFrameOffhand = 0;
+	
+	private final ResourceLocation MAINHAND_SWEEP_1 = new ResourceLocation(Reference.MOD_ID, "textures/gui/mainhand_sweep_1.png");
+	private final ResourceLocation MAINHAND_SWEEP_2 = new ResourceLocation(Reference.MOD_ID, "textures/gui/mainhand_sweep_2.png");
+	
+	private final ResourceLocation OFFHAND_SWEEP_1 = new ResourceLocation(Reference.MOD_ID, "textures/gui/offhand_sweep_1.png");
+	private final ResourceLocation OFFHAND_SWEEP_2 = new ResourceLocation(Reference.MOD_ID, "textures/gui/offhand_sweep_2.png");
+	
+    private final int FRAME_SIZE_X = 64;
+    private final int FRAME_SIZE_Y = 32;
+    private final int FRAMES = 4;
+    
     @SideOnly( Side.CLIENT )
     public class GuiCrosshairsBC extends Gui
     {
@@ -2150,8 +2215,7 @@ public class AnimationHandler
 
     		ClientProxy.EHC_INSTANCE.mc.getTextureManager().bindTexture(ICONS);
     		GlStateManager.enableBlend();
-    		GameSettings gamesettings = ClientProxy.EHC_INSTANCE.mc.gameSettings;
-    		
+			
     		// if ( gamesettings.thirdPersonView == 0 )
     		{
     			if ( ClientProxy.EHC_INSTANCE.mc.playerController.isSpectator() && ClientProxy.EHC_INSTANCE.mc.pointedEntity == null )
@@ -2175,15 +2239,15 @@ public class AnimationHandler
     			{
         			if ( ClientProxy.EHC_INSTANCE.betterCombatMainhand.getWeaponProperty() == WeaponProperty.TWOHAND || ClientProxy.EHC_INSTANCE.betterCombatOffhand.getWeaponProperty() == WeaponProperty.TWOHAND || ClientProxy.EHC_INSTANCE.betterCombatOffhand.getWeaponProperty() == WeaponProperty.MAINHAND )
         			{
-        				this.drawTexturedModalRect((scaledRes.getScaledWidth()-236)/2, scaledRes.getScaledHeight() - 19, 16, 0, 16, 16);
+        				this.drawTexturedModalRect((scaledRes.getScaledWidth()-236)>>1, scaledRes.getScaledHeight() - 19, 16, 0, 16, 16);
         			}
     			}
 
     			/* Show debug */
-    			if ( gamesettings.showDebugInfo && !gamesettings.hideGUI && !ClientProxy.EHC_INSTANCE.mc.player.hasReducedDebug() && !gamesettings.reducedDebugInfo )
+    			if ( ClientProxy.EHC_INSTANCE.mc.gameSettings.showDebugInfo && !ClientProxy.EHC_INSTANCE.mc.gameSettings.hideGUI && !ClientProxy.EHC_INSTANCE.mc.player.hasReducedDebug() && !ClientProxy.EHC_INSTANCE.mc.gameSettings.reducedDebugInfo )
     			{
     				GlStateManager.pushMatrix();
-    				GlStateManager.translate(scaledRes.getScaledWidth() / 2.0F, scaledRes.getScaledHeight() / 2.0F, this.zLevel);
+    				GlStateManager.translate((scaledRes.getScaledWidth()>>1), (scaledRes.getScaledHeight()>>1), this.zLevel);
     				Entity entity = ClientProxy.EHC_INSTANCE.mc.getRenderViewEntity();
     				
     				if ( entity == null )
@@ -2200,9 +2264,7 @@ public class AnimationHandler
     			else
     			{
         			/* + Show crosshair */
-    				GlStateManager.tryBlendFuncSeparate(GlStateManager.SourceFactor.ONE_MINUS_DST_COLOR, GlStateManager.DestFactor.ONE_MINUS_SRC_COLOR, GlStateManager.SourceFactor.ONE, GlStateManager.DestFactor.ZERO);
-    				GlStateManager.enableAlpha();
-    				drawTexturedModalRect(scaledRes.getScaledWidth() / 2 - 7, scaledRes.getScaledHeight() / 2 - 7, 0, 0, 16, 16);
+    				this.showPlusCrosshair(scaledRes);
 
     				/* ( ) Show attack indicator */
     				if ( ClientProxy.EHC_INSTANCE.mc.gameSettings.attackIndicator == 1 )
@@ -2213,7 +2275,7 @@ public class AnimationHandler
         					this.showMainhandCrosshair(scaledRes);
         					this.showOffhandCrosshair(scaledRes);
     					}
-    					/* (+) Shield-weilding */
+    					/* (+) Shield */
     					else if ( ConfigurationHandler.showShieldCooldownCrosshair && ClientProxy.EHC_INSTANCE.itemStackOffhand.getItem() instanceof ItemShield )
     					{
         					this.showMainhandCrosshair(scaledRes);
@@ -2229,18 +2291,98 @@ public class AnimationHandler
     		}
     		
     		GlStateManager.tryBlendFuncSeparate(GlStateManager.SourceFactor.SRC_ALPHA, GlStateManager.DestFactor.ONE_MINUS_SRC_ALPHA, GlStateManager.SourceFactor.ONE, GlStateManager.DestFactor.ZERO);
+    		
+    		this.renderSweepOverlay(scaledRes);
     	}
+    	
+    	private void renderSweepOverlay(ScaledResolution scaledRes)
+    	{			
+			if ( !ClientProxy.EHC_INSTANCE.betterCombatMainhand.isMining() )
+			{
+				if ( ClientProxy.EHC_INSTANCE.betterCombatMainhand.getAnimation() == Animation.SWEEP && AnimationHandler.isMainhandAttacking() )
+				{					
+					if ( ClientProxy.EHC_INSTANCE.betterCombatMainhand.alternateAnimation )
+					{
+						if ( ClientProxy.AH_INSTANCE.mainhandEnergy > 0.625F )
+						{
+							if ( currentFrameMainhand < 16 )
+							{
+								ClientProxy.EHC_INSTANCE.mc.getTextureManager().bindTexture(MAINHAND_SWEEP_2);
+	        		    		
+	        		    		float factor = ClientProxy.EHC_INSTANCE.mc.displayHeight / 128.0F;
+	        		    		
+	        		    		System.out.println(ClientProxy.EHC_INSTANCE.mc.displayHeight + " | " + factor);
+	        		    		
+	        		    		float scale = factor / scaledRes.getScaleFactor();
+	        		    		
+	        		    		GlStateManager.scale(scale, scale, 1);
+	        		            GlStateManager.rotate(15.0F, 0.0F, 0.0F, 1.0F);
 
+	        		    		scale = 2 * factor / scaledRes.getScaleFactor();
+	        		    		
+	        		    		int startX = (currentFrameMainhand % 4) * FRAME_SIZE_X;
+		        		        int startY = (int)(Math.ceil((currentFrameMainhand + 1) / 4.0D) - 1) * FRAME_SIZE_Y;
+
+		        		        this.drawTexturedModalRect((scaledRes.getScaledWidth()-40) / scale, (scaledRes.getScaledHeight()-192) / scale, startX, startY, FRAME_SIZE_X, FRAME_SIZE_Y);
+		        				currentFrameMainhand++;
+							}
+						}
+						else
+						{
+							currentFrameMainhand = 0;
+						}
+					}
+					else
+					{
+						if ( ClientProxy.AH_INSTANCE.mainhandEnergy > 0.25F )
+						{
+							if ( currentFrameMainhand < 16 )
+							{
+	        		    		ClientProxy.EHC_INSTANCE.mc.getTextureManager().bindTexture(MAINHAND_SWEEP_1);
+	        		    		
+	        		    		float factor = ClientProxy.EHC_INSTANCE.mc.displayHeight / 128.0F;
+	        		    		
+	        		    		System.out.println(ClientProxy.EHC_INSTANCE.mc.displayHeight + " | " + factor);
+	        		    		
+	        		    		float scale = factor / scaledRes.getScaleFactor();
+	        		    		
+	        		    		GlStateManager.scale(scale, scale, 1);
+	        		    		
+	        		    		scale = 2 * factor / scaledRes.getScaleFactor();
+	        		    		
+	        		    		int startX = (currentFrameMainhand % 4) * FRAME_SIZE_X;
+		        		        int startY = (int)(Math.ceil((currentFrameMainhand + 1) / 4.0D) - 1) * FRAME_SIZE_Y;
+
+		        		        this.drawTexturedModalRect((scaledRes.getScaledWidth()) / scale, (scaledRes.getScaledHeight()-32) / scale, startX, startY, FRAME_SIZE_X, FRAME_SIZE_Y);
+		        				currentFrameMainhand++;
+							}
+						}
+						else
+						{
+					        currentFrameMainhand = 0;
+						}
+					}
+				}
+			}
+    	}
+    	
+		private void showPlusCrosshair( ScaledResolution scaledRes )
+		{
+	    	GlStateManager.tryBlendFuncSeparate(GlStateManager.SourceFactor.ONE_MINUS_DST_COLOR, GlStateManager.DestFactor.ONE_MINUS_SRC_COLOR, GlStateManager.SourceFactor.ONE, GlStateManager.DestFactor.ZERO);
+			GlStateManager.enableAlpha();
+			this.drawTexturedModalRect((scaledRes.getScaledWidth()>>1) - 7, (scaledRes.getScaledHeight()>>1) - 7, 0, 0, 16, 16);
+		}
+		
 		private void showDefaultCrosshair( ScaledResolution scaledRes )
 		{
 			if ( ClientProxy.EHC_INSTANCE.mainhandCooldown > 0 )
 			{
-				int i = scaledRes.getScaledHeight() / 2 - 7;
-				int j = scaledRes.getScaledWidth() / 2 - 7;
+				int i = (scaledRes.getScaledHeight()>>1) - 7;
+				int j = (scaledRes.getScaledWidth()>>1) - 7;
 				int k = (int) (ClientProxy.EHC_INSTANCE.getMainhandCooledAttackStrength() * 18.0F);
 				
-				drawTexturedModalRect(j - 1, i + 12, 68, 94, 17, 8);
-				drawTexturedModalRect(j - 1, i + 12, 68, 102, k, 8);
+				this.drawTexturedModalRect(j - 1, i + 12, 68, 94, 17, 8);
+				this.drawTexturedModalRect(j - 1, i + 12, 68, 102, k, 8);
 			}			
 		}
 
@@ -2248,12 +2390,12 @@ public class AnimationHandler
 		{
 			if ( ClientProxy.EHC_INSTANCE.mainhandCooldown > 0 )
 			{
-				int i = scaledRes.getScaledHeight() / 2 - 7;
-				int j = scaledRes.getScaledWidth() / 2 - 7;
+				int i = (scaledRes.getScaledHeight()>>1) - 7;
+				int j = (scaledRes.getScaledWidth()>>1) - 7;
 				int k = (int) (ClientProxy.EHC_INSTANCE.getMainhandCooledAttackStrength() * 18.0F);
 				
-				drawTexturedModalRect(j + 15, i, 51, 94, 8, 17);
-				drawTexturedModalRect(j + 15, i + 17 - k, 59, 111 - k, 8, k);
+				this.drawTexturedModalRect(j + 15, i, 51, 94, 8, 17);
+				this.drawTexturedModalRect(j + 15, i + 17 - k, 59, 111 - k, 8, k);
 			}			
 		}
 		
@@ -2261,11 +2403,11 @@ public class AnimationHandler
 		{
 			if ( ClientProxy.EHC_INSTANCE.offhandCooldown > 0 )
 			{
-				int i = scaledRes.getScaledHeight() / 2 - 7;
-				int j = scaledRes.getScaledWidth() / 2 - 7;
+				int i = (scaledRes.getScaledHeight()>>1) - 7;
+				int j = (scaledRes.getScaledWidth()>>1) - 7;
 				int k = (int) (ClientProxy.EHC_INSTANCE.getOffhandCooledAttackStrength() * 18.0F);
-				drawTexturedModalRect(j - 8, i, 35, 94, 8, 17);
-				drawTexturedModalRect(j - 8, i + 17 - k, 43, 111 - k, 8, k);
+				this.drawTexturedModalRect(j - 8, i, 35, 94, 8, 17);
+				this.drawTexturedModalRect(j - 8, i + 17 - k, 43, 111 - k, 8, k);
 			}			
 		}
 		
@@ -2275,15 +2417,15 @@ public class AnimationHandler
 
 			if ( cooldown < 1.0F )
 			{
-				int i = scaledRes.getScaledHeight() / 2 - 7;
-				int j = scaledRes.getScaledWidth() / 2 - 7;
+				int i = (scaledRes.getScaledHeight()>>1) - 7;
+				int j = (scaledRes.getScaledWidth()>>1) - 7;
 				int k = (int) (cooldown * 18.0F);
-				drawTexturedModalRect(j - 8, i, 35, 94, 8, 17);
-				drawTexturedModalRect(j - 8, i + 17 - k, 43, 111 - k, 8, k);
+				this.drawTexturedModalRect(j - 8, i, 35, 94, 8, 17);
+				this.drawTexturedModalRect(j - 8, i + 17 - k, 43, 111 - k, 8, k);
 			}			
 		}
     }
-    
+	 
 	@SubscribeEvent( priority = EventPriority.LOWEST, receiveCanceled = true )
 	public void onRenderGameOverlay( RenderGameOverlayEvent.Pre event )
 	{

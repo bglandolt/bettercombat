@@ -270,17 +270,19 @@ public class EventHandlersClient
 					/* If the MAINHAND is ready to begin a swing animation, */
 					if (this.betterCombatMainhand.getSwingTimer() <= 0)
 					{
-
+						/* DIGGING */
 						if (tool instanceof ItemSpade)
 						{
 							/* Start the MAINHAND mining animation with a set mining speed */
-							this.betterCombatMainhand.startMining(MathHelper.clamp(11 - (int) (efficiency / 2.0F), 5, 11));
+							this.betterCombatMainhand.startMining(MathHelper.clamp(20 - (int) (efficiency / 3.0F), 10, 20));
 						}
+						/* CHOPPING */
 						else if (tool instanceof ItemAxe)
 						{
 							/* Start the MAINHAND mining animation with a set mining speed */
 							this.betterCombatMainhand.startMining(MathHelper.clamp(13 - (int) (efficiency / 2.0F), 6, 13));
 						}
+						/* MINING */
 						else if (tool instanceof ItemPickaxe)
 						{
 							/* Start the MAINHAND mining animation with a set mining speed */
@@ -2807,7 +2809,7 @@ public class EventHandlersClient
 			speed = ConfigurationHandler.fistAndNonWeaponAttackSpeed;
 		}
 		
-		System.out.println(speed);
+		//System.out.println(speed);
 
 		
 		double multiply_base = 1.0D;
@@ -2817,10 +2819,10 @@ public class EventHandlersClient
 		/* + ALL */
 		for ( AttributeModifier attribute : player.getEntityAttribute(SharedMonsterAttributes.ATTACK_SPEED).getModifiers() )
 		{
-			System.out.println(attribute);
-			System.out.println(attribute.getName());
-			System.out.println(attribute.getAmount());
-			System.out.println(attribute.toString());
+//			System.out.println(attribute);
+//			System.out.println(attribute.getName());
+//			System.out.println(attribute.getAmount());
+//			System.out.println(attribute.toString());
 
 			switch( attribute.getOperation() )
 			{
@@ -2842,7 +2844,7 @@ public class EventHandlersClient
 			}
 		}
 		
-		System.out.println(speed);
+//		System.out.println(speed);
 
 		
 		/* Adjust sword speed */
@@ -2860,7 +2862,7 @@ public class EventHandlersClient
 			}
 		}
 		
-		System.out.println(speed);
+//		System.out.println(speed);
 
 		
 		if ( !mh.isEmpty() && !oh.isEmpty() )
@@ -2875,7 +2877,7 @@ public class EventHandlersClient
 			}
 		}
 		
-		System.out.println(speed);
+//		System.out.println(speed);
 		
 		return this.calculateAttackSpeedTicks(speed, multiply_base, multiply);
 	}
