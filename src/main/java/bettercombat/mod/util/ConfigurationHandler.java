@@ -12,6 +12,7 @@ import net.minecraft.item.Item;
 import net.minecraft.potion.Potion;
 import net.minecraft.util.math.MathHelper;
 import net.minecraftforge.common.config.Configuration;
+import net.minecraftforge.fml.common.Loader;
 
 public class ConfigurationHandler
 {
@@ -28,6 +29,7 @@ public class ConfigurationHandler
 
 	/* ELANAI --------------------------------------------------------------------------------------------------------------------- */
 
+	public static boolean elanaiDodgeEnabled;
 	public static boolean elanaiDodgeCompat = true;
 	public static int elanaiDodgeMainHandFeatherCost = 1;
 	public static int elanaiDodgeOffHandFeatherCost = 1;
@@ -235,14 +237,14 @@ public class ConfigurationHandler
 	public static boolean aetherealizedDamageParticles = true;
 	public static float breathingAnimationIntensity = 0.02F;
 	public static float breathingAnimationSpeed = 0.1F;
-	public static float cameraPitchSwing = 0.08F;
-	public static float rotationYawSwing = 0.2F;
+	public static float cameraPitchSwing = 0.01F;
+	public static float rotationYawSwing = 0.025F;
 	public static boolean damageParticles = true;
 	public static boolean attackSweepParticles = true;
 	public static boolean attackSweepOverlay = true;
 	public static boolean showShieldCooldownCrosshair = true;
 	public static boolean showDefaultCrosshair = false;
-	// public static boolean inverseDamageTiltAngle = true; // TODO
+	public static boolean inverseDamageTiltAngle = true;
 
 	/* SHIELD --------------------------------------------------------------------------------------------------------------------- */
 
@@ -493,7 +495,7 @@ public class ConfigurationHandler
 		/* --------------------------------------------------------------------------------------------------------------------- */
 		String PARRYING = "Parrying";
 		
-		parryChanceEffectivness = config.get(PARRYING, "Parry Chance Effectivness", 2.0F, "Incoming attacks with attack damage less than the attack damage of a parrying weapon are always blocked. The attack damage of a weapon is used to calculate the chance of parrying an attack. This setting counts as a multiplier to attack damage for determining the chance to parry an attack. The higher the attack damage of the parry weapon, the higher chances of parrying. This increases the effectivness of parrying with two-handed weapons, which often have higher attack damage. This also lets weapon material tiers scale to difficulty. Higher damage incoming attacks have a lower the chance of parried. For example, if this setting is set at 2 and the parrying weapon has 5 attack damage, an incoming attack of 7 damage has a 7/(2*5) or 70% chance of NOT being parried.").getDouble();
+		parryChanceEffectivness = config.get(PARRYING, "Parry Chance Effectivness", 2.0F, "Incoming attacks with attack damage less than the attack damage of a parrying weapon are ALWAYS blocked. The attack damage of a weapon is used to calculate the chance of parrying an attack. This setting counts as a multiplier to attack damage for determining the chance to parry an attack. The higher the ATTACK_DAMAGE you have (whether from buffs or your weapon), the higher chances of parrying. This essentially increases the effectivness of parrying with two-handed weapons which often have higher base attack damage. This also lets weapon material tiers scale to difficulty! Higher damage incoming attacks have a lower the chance of parried. For example, if this setting is set at 2.0 and the parrying weapon has 5 attack damage, an incoming attack of 7 damage has a 7/(2.0*5) or 70% chance of NOT being parried. If this setting is set to 2.0, then a weapon with 5 attack damage can block an attack of up to 10 damage, however, those chances are very unlikely.").getDouble();
 		parryKnockbackAmount = config.getFloat("Parry Knockback Amount", PARRYING, 0.5F, 0.0F, 1.0F, "How far the attacker is knockbacked after a parry. Setting this to 2.0F is the same knockback amount as Knockback II. This value is affected by knockbackStrengthMultiplier and knockUptrengthMultiplier when betterKnockback is enabled.");
 		enableParrying = config.getBoolean("Enable Parrying", PARRYING, true, "Set to false to disable all parrying mechanics from this mod. If enabled, you must specify which weapons can and can not parry in the Custom Weapon Tweaker config.");
 		
@@ -544,7 +546,7 @@ public class ConfigurationHandler
 		/* --------------------------------------------------------------------------------------------------------------------- */
 		String UNARMED = "Unarmed";
 		
-		fistAndNonWeaponAttackSpeed = config.get(UNARMED, "Unarmed & Non-Weapon Attack Speed", 2.0D, "Attack speed for unarmed and non-weapon attacks. In vanilla, the attack speed of an unarmed and non-weapon attack is 4.0 (4 attacks per second). Setting this config value to 2.0 equals 2 attacks per second. This config is to lower the DPS of unarmed and non-weapon attacks, as they technically have a higher DPS than wooden tools when 'Hurt Resistant Time' is removed, so unarmed and non-weapon attack speed should be decreased.", 0.1D, 20.0D).getDouble();
+		fistAndNonWeaponAttackSpeed = config.get(UNARMED, "Unarmed & Non-Weapon Attack Speed", 2.0D, "Attack speed for unarmed and non-weapon attacks. In vanilla, the attack speed of an unarmed and non-weapon attack is 4.0 (4 attacks per second). Setting this config value to 2.0 equals 2 attacks per second. This config is to lower the DPS of unarmed and non-weapon attacks, as they technically have a higher DPS than wooden tools when 'Hurt Resistant Time' is removed, so unarmed and non-weapon attack speed should be decreased.", 0.1D, 4.0D).getDouble();
 		fistAndNonWeaponDamageReduction = config.get(UNARMED, "Unarmed & Non-Weapon Damage Reduction", 0.0D, "Reduce damage from unarmed and non-weapon attacks. The damage of unarmed and non-weapons is reduced by this flat amount.", 0.0D, baseAttackDamage).getDouble();
 		fistAndNonWeaponKnockbackReduction = config.get(UNARMED, "Unarmed & Non-Weapon Knockback Reduction", 0.5D, "Reduce the knockback from unarmed and non-weapon attacks. The knockback of unarmed and non-weapons is reduced by this flat amount.", 0.0D, baseKnockback).getDouble();
 		fistAndNonWeaponReachReduction = config.get(UNARMED, "Unarmed & Non-Weapon Reach Reduction", 0.5D, "Reduce the attack range from unarmed and non-weapon attacks. The range of unarmed and non-weapons is reduced by this flat amount.", 0.0D, 4.0D).getDouble();
@@ -556,6 +558,7 @@ public class ConfigurationHandler
 		breathingAnimationIntensity = config.getFloat("Breathing Animation Intensity", VISUAL, 0.02F, 0.0F, 1.0F, "How fast items move up and down for the breathing animation.");
 		breathingAnimationSpeed = config.getFloat("Breathing Animation Speed", VISUAL, 0.1F, 0.0F, 1.0F, "How far items move up and down for the breathing animation.");
 		showShieldCooldownCrosshair = config.getBoolean("Show Shield Cooldown on Crosshair", VISUAL, false, "Set to true to show the shield cooldown/energy indicator. This setting does nothing when showDefaultCrosshair is set to true.");
+		inverseDamageTiltAngle = config.getBoolean("Inverse Blocking/Parrying Tilt", VISUAL, true, "Inverse the angle for Damage Tilt for blocking and parrying.");
 		//showWeaponCooldownCrosshair = config.getBoolean("Show Weapon Cooldown on Crosshair", VISUAL, false, "Set to true to show the weapon cooldown/energy crosshair. This setting does nothing when showDefaultCrosshair is set to true.");
 		showDefaultCrosshair = config.getBoolean("Show Default Crosshair", VISUAL, false, "Set to true to completely disable the new crosshair, and show the default crosshair. The attack energy/cooldown indicator can also be enabled/disabled in the Minecraft settings.");
 		cameraPitchSwing = config.getFloat("Camera Pitch Swing", VISUAL, 0.08F, 0.0F, 1.0F, "This value controls the up-and-down (vertical) rotation of the camera when you swing a weapon. May cause slight motion sickness if set too high. Set to 0.0F to disable.");
@@ -718,7 +721,7 @@ public class ConfigurationHandler
 		String BWLISTS = "White/Black Lists";
 
 		itemClassWhitelist = config.getStringList("(Class) Item Weapon Whitelist", BWLISTS, itemClassWhitelist, "(Class) Item Whitelist.\nWhitelisted item classes for attacking. This is an advanced setting. If an item is added to this list, it will function as an Immersive Combat weapon. The Custom Weapons config is for editing the values and attributes of weapons. The class net.minecraft.item.ItemSword and anything that extends it is added by default. If a weapon from a mod is not behaving like an Immersive Combat weapon, add the class to this list.");
-		itemClassBlacklist = config.getStringList("(Class) Item Left/Right Click Blacklist", BWLISTS, itemClassBlacklist, "(Class) Item Blacklist.\nBlacklisted item classes. This setting allows the items to have their default left-click and right-click functionality. This is an advanced setting, as it requires you to look through the source code of the mod that you are trying to add the class from. If an item is added to this list, it will have the default left-click and right-click behavior. This setting is useful for gun mods, or items that need to have their default left-click and right-click functionality. Example config value:    com.flansmod.common.guns.ItemGun    com.mrcrayfish.guns.item.ItemGun    techguns.items.guns.GenericGun    com.paneedah.mwc.weapons.Guns    com.jozufozu.yoyos.common.ItemYoyo");
+		itemClassBlacklist = config.getStringList("(Class) Item Left/Right Click Blacklist", BWLISTS, itemClassBlacklist, "(Class) Item Blacklist.\nBlacklisted item classes. This setting allows the items to have their default left-click and right-click functionality. This is an advanced setting, as it requires you to look through the source code of the mod that you are trying to add the class from. If an item is added to this list, it will have the default left-click and right-click behavior. This setting is useful for gun mods, or items that need to have their default left-click and right-click functionality. Example config value:    vazkii.akashictome.TomeItem    com.flansmod.common.guns.ItemGun    com.mrcrayfish.guns.item.ItemGun    techguns.items.guns.GenericGun    com.paneedah.mwc.weapons.Guns    com.jozufozu.yoyos.common.ItemYoyo");
 		itemBlacklist = config.getStringList("(Resource Location) Item Left/Right Click Blacklist", BWLISTS, itemBlacklist, "(Resource Location) Item Blacklist.\nBlacklisted items. This setting allows the items to have their default left-click and right-click functionality. Use CraftTweaker to get the syntax of the item in your hand. The command is /ct hand). This is similar to Item Class Blacklist, however, it instead uses a resource location for specific items, such as:    mrcrayfish:gun");
 		entityBlacklist = config.getStringList("(Class) Entity Offhand Blacklist", BWLISTS, entityBlacklist, "Entity Class Blacklist.\nBlacklisted entity classes for attacking with offhand or sweep. You will not be able to attack any entity that extends this class with your offhand, and they will not be hit by sweep! This is to prevent you from accidentally attacking or killing certain entities. Please note that entities extending IEntityOwnable are by default blacklisted, when the entity is owned by the attacker.");
 		
@@ -1021,6 +1024,8 @@ public class ConfigurationHandler
 					+ "\n================================================================\n\n");
 			}
 		}
+		
+		elanaiDodgeEnabled = Loader.isModLoaded("elenaidodge2") & elanaiDodgeCompat;
 	}
 
 	private static float getPotionChance( String potionEffectList )

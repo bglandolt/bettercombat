@@ -1,5 +1,7 @@
 package bettercombat.mod.client;
 
+import static com.elenai.elenaidodge2.api.FeathersHelper.getWeight;
+
 import java.util.Random;
 
 import bettercombat.mod.util.ConfigurationHandler;
@@ -7,6 +9,8 @@ import bettercombat.mod.util.ConfigurationHandler.Animation;
 import bettercombat.mod.util.ConfigurationHandler.ConfigWeapon;
 import bettercombat.mod.util.ConfigurationHandler.SoundType;
 import bettercombat.mod.util.ConfigurationHandler.WeaponProperty;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.entity.EntityPlayerSP;
 import net.minecraft.enchantment.Enchantment;
 import net.minecraft.init.Enchantments;
 import net.minecraft.item.ItemStack;
@@ -24,13 +28,33 @@ public class BetterCombatHand
 		this.resetBetterCombatWeapon();
 	}
 	
-	public void setBetterCombatWeapon( ConfigWeapon configWeapon, ItemStack itemStack, int equipSoundCooldownTicks )
+	public void setBetterCombatWeapon( EntityPlayerSP player, ConfigWeapon configWeapon, ItemStack mh, ItemStack oh, boolean mainhand )
 	{
 		this.configWeapon = configWeapon;
 		
+		if ( mainhand )
+		{
+			this.setAttackCooldown(ClientProxy.EHC_INSTANCE.getMainhandCooldown(player, mh, oh));
+			this.sweep = this.getSweepMod(configWeapon, mh);
+		}
+		else
+		{
+			this.setAttackCooldown(ClientProxy.EHC_INSTANCE.getOffhandCooldown(player, mh, oh));
+			this.sweep = this.getSweepMod(configWeapon, oh);
+		}
+		
+		this.equipTimerIncrement = 2.0F / this.getAttackCooldown();
+		this.equipSoundTimer = this.getAttackCooldown()>>1;
+		
+		this.canWeaponParry = configWeapon.parry;
+	}
+	
+	public int getSweepMod(ConfigWeapon configWeapon, ItemStack itemStack)
+	{
 		/* Get the total sweep for the weapon */
 		int sweepMod = configWeapon.sweepMod;
 		
+		/* Then, get the enchantments */
 		NBTTagList nbttaglist = itemStack.getEnchantmentTagList();
 		
 		for ( int i = 0; i < nbttaglist.tagCount(); ++i )
@@ -48,13 +72,7 @@ public class BetterCombatHand
 			}
 		}
 		
-		this.canWeaponParry = configWeapon.parry;
-		this.sweep = sweepMod;
-				
-		int cd = MathHelper.clamp(equipSoundCooldownTicks, ConfigurationHandler.minimumAttackSpeedTicks, 15);
-
-		this.equipTimerIncrement = 1.0F / (3.0F * (cd));
-		this.equipSoundTimer = cd / 2;
+		return sweepMod;
 	}
 	
 	public boolean hasConfigWeapon()
@@ -149,10 +167,11 @@ public class BetterCombatHand
 		
 		this.resetSwingTimer();
 		this.swingTimerCap = 0;
-		this.swingTimerIncrement = 0.0F;
+		this.swingTimerIncrement = 0;
 
-		this.equipSoundTimer = 0;
-		this.equipTimerIncrement = 0.5F;
+		this.attackCooldown = ConfigurationHandler.minimumAttackSpeedTicks;
+		this.equipSoundTimer = -1;
+		this.equipTimerIncrement = 1.0F;
 		
 		this.swingTimestampSound = 0;
 		this.swingTimestampDamage = 0;
@@ -165,6 +184,8 @@ public class BetterCombatHand
 	
 	private boolean canWeaponParry = false;
 	
+	public int attackCooldown = ConfigurationHandler.minimumAttackSpeedTicks;
+
 	/* The weapons config reach amount */
 	private int sweep = 0;
 
@@ -176,9 +197,9 @@ public class BetterCombatHand
 	private float swingTimerIncrement = 0.0F;
 	
 	/* How long the equip sound timer is in ticks after equipping a weapon, counting down to 0, This is only used for determining equip/sheathe sounds */
-	public int equipSoundTimer = 0;
-	/* How long the equip animation is, in partial ticks */
-	private float equipTimerIncrement = 0.5F;
+	public int equipSoundTimer = -1;
+	
+	private float equipTimerIncrement = 1.0F;
 	
 	/* When the swingTimer reaches this number, make a swing sound */
 	private int swingTimestampSound = 0;
@@ -409,8 +430,37 @@ public class BetterCombatHand
 		return swingTimestampDamage;
 	}
 
-	public float getSwingTimerCap()
+	public int getSwingTimerCap()
 	{
 		return this.swingTimerCap;
+	}
+
+	public void setSwingTimer(int i)
+	{
+		this.swingTimer = i;
+	}
+	
+	public int getAttackCooldown()
+	{
+		return this.attackCooldown;
+	}
+	
+	public int setAttackCooldown(int cd)
+	{
+		if ( ConfigurationHandler.elanaiDodgeEnabled && EventHandlersClient.calculateFeatherLevel(Minecraft.getMinecraft().player) - getWeight(Minecraft.getMinecraft().player) <= ConfigurationHandler.elanaiDodgeMainHandFeatherCost )
+		{
+			cd = cd<<1;
+		}
+		
+		if ( cd < ConfigurationHandler.minimumAttackSpeedTicks )
+		{
+			this.attackCooldown = ConfigurationHandler.minimumAttackSpeedTicks;
+		}
+		else
+		{
+			this.attackCooldown = cd;
+		}
+		
+		return this.attackCooldown;
 	}
 }

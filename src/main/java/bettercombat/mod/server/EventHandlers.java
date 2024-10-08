@@ -10,10 +10,10 @@ import bettercombat.mod.client.SoundHandler;
 import bettercombat.mod.enchantment.BetterCombatEnchantments;
 import bettercombat.mod.enchantment.EnchantmentLightning;
 import bettercombat.mod.enchantment.EnchantmentWebbing;
-import bettercombat.mod.network.PacketDamageTilt;
 import bettercombat.mod.network.PacketHandler;
-import bettercombat.mod.network.PacketParried;
-import bettercombat.mod.network.PacketParrying;
+import bettercombat.mod.network.client.PacketDamageTilt;
+import bettercombat.mod.network.client.PacketParried;
+import bettercombat.mod.network.server.PacketParrying;
 import bettercombat.mod.potion.BetterCombatPotions;
 import bettercombat.mod.potion.PotionAetherealized;
 import bettercombat.mod.util.ConfigurationHandler;
@@ -156,13 +156,9 @@ public class EventHandlers
 								}
 							}
 						}
-
 					}
-
 				}
-
 			}
-
 		}
 		else if ( event.getEntity() instanceof EntityPlayer )
 		{
@@ -176,6 +172,8 @@ public class EventHandlers
 			if ( player.world.isRemote && player == ClientProxy.EHC_INSTANCE.mc.player )
 			{
 				ClientProxy.EHC_INSTANCE.checkItemstacksChanged(true);
+				ClientProxy.EHC_INSTANCE.resetMainhandCooldown(ClientProxy.EHC_INSTANCE.mc.player);
+				ClientProxy.EHC_INSTANCE.resetOffhandCooldown(ClientProxy.EHC_INSTANCE.mc.player);
 			}
 		}
 	}
@@ -568,145 +566,111 @@ public class EventHandlers
 		
 		if ( event.getAmount() > 0.0F )
         {
-			if ( this.canParryDamageSource(event.getSource(),event.getEntityLiving()) )
+			/* PARRY AN ATTACK */
+			if ( this.parryAttack(event) )
 			{
-				/* Player is being attacked by an EntityLivingBase */
-				if ( event.getEntityLiving() instanceof EntityPlayerMP && event.getSource().getTrueSource() instanceof EntityLivingBase )
+				
+			}
+			/* BLOCK AN ATTACK */
+			else
+			{
+				this.blockAttack(event);
+			}
+        }
+	}
+	
+	private boolean parryAttack(LivingAttackEvent event)
+	{
+		/* PARRY AN ATTACK */
+		if ( this.canParryDamageSource(event.getSource(),event.getEntityLiving()) )
+		{
+			/* Player is being attacked by an EntityLivingBase */
+			if ( event.getEntityLiving() instanceof EntityPlayerMP && event.getSource().getTrueSource() instanceof EntityLivingBase )
+			{
+				EntityPlayerMP player = (EntityPlayerMP)event.getEntityLiving();
+				EntityLivingBase source = (EntityLivingBase)event.getSource().getTrueSource();
+				
+				if ( player.getActiveHand().equals(EnumHand.MAIN_HAND) && player.getEntityData().hasKey("isParrying") && player.getEntityData().getBoolean("isParrying") && ConfigurationHandler.isConfigWeapon(player.getHeldItemMainhand().getItem()) )
 				{
-					EntityPlayerMP player = (EntityPlayerMP)event.getEntityLiving();
-					EntityLivingBase source = (EntityLivingBase)event.getSource().getTrueSource();
+					double attackDamage = Helpers.getMainhandAttackDamage(player, player.getHeldItemMainhand());
 					
-					if ( player.getActiveHand().equals(EnumHand.MAIN_HAND) && player.getEntityData().hasKey("isParrying") && player.getEntityData().getBoolean("isParrying") && ConfigurationHandler.isConfigWeapon(player.getHeldItemMainhand().getItem()) )
-					{						
-						double attackDamage = 1.0D + Helpers.getMainhandAttackDamage(player, player.getHeldItemMainhand());
+					PacketHandler.instance.sendTo(new PacketDamageTilt(PacketDamageTilt.getDamageTilt(player, source)), player);
+					
+					/* Not Parried */
+					if ( event.getAmount() > attackDamage && event.getAmount() > player.world.rand.nextFloat() * ConfigurationHandler.parryChanceEffectivness * attackDamage )
+					{
+						player.getCooldownTracker().setCooldown(player.getHeldItemMainhand().getItem(), (int)(event.getAmount()*ConfigurationHandler.critsDisableShield));							
+						PacketHandler.instance.sendTo(new PacketParrying(false), player);
+						PacketHandler.instance.sendTo(new PacketParried(false), player);
+					}
+					/* Parried */
+					else
+					{
+		                event.setCanceled(true);
+			            player.swingArm(EnumHand.MAIN_HAND);
+						PacketHandler.instance.sendTo(new PacketParried(true), player);
+			            SoundHandler.playImpactArmorMetalSound(event.getEntityLiving(), SoundHandler.getRandomShieldBlockVolume(), SoundHandler.getRandomImpactPitch());
 						
-						PacketHandler.instance.sendTo(new PacketDamageTilt(PacketDamageTilt.getDamageTilt(player, source)), player);
-
-						// if ( attackDamage >= 0.0D && event.getAmount() > player.world.rand.nextInt((int)(attackDamage*ConfigurationHandler.parryChanceEffectivness)) )
-
-						/* Not Parried */
-						if ( event.getAmount() <= attackDamage && event.getAmount() > player.world.rand.nextInt(1+(int)(attackDamage*ConfigurationHandler.parryChanceEffectivness)) )
+			            /* Knockback the player, from the attacking entity */
+			            player.knockBack(event.getSource().getTrueSource(), ConfigurationHandler.parryKnockbackAmount*0.2F, (double)-MathHelper.sin(player.rotationYaw * 0.017453292F), (double)(MathHelper.cos(player.rotationYaw * 0.017453292F)));
+						
+						if ( player.world instanceof WorldServer )
 						{
-							player.getCooldownTracker().setCooldown(player.getHeldItemMainhand().getItem(), (int)(event.getAmount()*ConfigurationHandler.critsDisableShield));							
-							PacketHandler.instance.sendTo(new PacketParrying(false), player);
-							PacketHandler.instance.sendTo(new PacketParried(false), player);
-						}
-						/* Parried */
-						else
-						{
-			                event.setCanceled(true);
-				            player.swingArm(EnumHand.MAIN_HAND);
-							PacketHandler.instance.sendTo(new PacketParried(true), player);
-				            SoundHandler.playImpactArmorMetalSound(event.getEntityLiving(), SoundHandler.getRandomShieldBlockVolume(), SoundHandler.getRandomImpactPitch());
-							
-				            /* Knockback the player, from the attacking entity */
-				            player.knockBack(event.getSource().getTrueSource(), ConfigurationHandler.parryKnockbackAmount*0.2F, (double)-MathHelper.sin(player.rotationYaw * 0.017453292F), (double)(MathHelper.cos(player.rotationYaw * 0.017453292F)));
-							
-							if ( player.world instanceof WorldServer )
+							if ( event.getAmount() >= 1.0D )
 							{
-								if ( event.getAmount() >= 1.0D )
-								{
-									int k = 3 + (int)(event.getAmount() * 0.5F);
-									((WorldServer) player.world).spawnParticle(EnumParticleTypes.CRIT, player.posX + (double)-MathHelper.sin(player.rotationYaw * 0.017453292F), player.posY + player.height * 0.6F, player.posZ + (double)(MathHelper.cos(player.rotationYaw * 0.017453292F)), k, 0.2D, 0.1D, 0.2D, 0.25D);
-								}
+								int k = 3 + (int)(event.getAmount() * 0.5F);
+								((WorldServer) player.world).spawnParticle(EnumParticleTypes.CRIT, player.posX + (double)-MathHelper.sin(player.rotationYaw * 0.017453292F), player.posY + player.height * 0.6F, player.posZ + (double)(MathHelper.cos(player.rotationYaw * 0.017453292F)), k, 0.2D, 0.1D, 0.2D, 0.25D);
 							}
 						}
-						
-						player.getHeldItemMainhand().damageItem(ConfigurationHandler.parryingItemDamage, player);
-						
-						/* Knockback the attacking entity, from the player */
-						source.knockBack(player, ConfigurationHandler.parryKnockbackAmount, (double)MathHelper.sin(player.rotationYaw * 0.017453292F), (double)(-MathHelper.cos(player.rotationYaw * 0.017453292F)));
-						
-			            return;
-		            }
-				}
-				
-//				else if ( victim.getActiveHand().equals(EnumHand.MAIN_HAND) && victim.getEntityData().hasKey("isParrying") && victim.getEntityData().getBoolean("isParrying") && configWeapon )
-//					{
-//						Vec3d vec3d = player.getPositionVector();
-		//
-//						if ( vec3d != null )
-//						{
-//							Vec3d vec3d1 = victim.getLook(1.0F);
-//							Vec3d vec3d2 = vec3d.subtractReverse(new Vec3d(victim.posX, victim.posY, victim.posZ)).normalize();
-//							vec3d2 = new Vec3d(vec3d2.x, 0.0D, vec3d2.z);
-		//
-//							/* Blocked */
-//							if ( vec3d2.dotProduct(vec3d1) < 0.0D )
-//							{
-//								int disableDuration = 0;
-//								
-//								for ( CustomAxe axe : ConfigurationHandler.axes )
-//								{
-//									if ( weapon.getItem().getRegistryName().toString().contains(axe.name) )
-//									{
-//										disableDuration += axe.disableDuration;
-//										break;
-//									}
-//								}
-//								
-//								if ( isCrit )
-//								{
-//									disableDuration += damage * ConfigurationHandler.critsDisableShield;
-//								}
-//								
-//								if ( disableDuration > 0 )
-//								{
-//									if ( victim instanceof EntityPlayer )
-//									{
-//										((EntityPlayer) victim).getCooldownTracker().setCooldown(activeItem.getItem(), disableDuration);
-//									}
-//									
-//									PacketHandler.instance.sendToServer(new PacketParrying(false));
-//								}
-//							}
-//						}
-//					}
+					}
+					
+					player.getHeldItemMainhand().damageItem(ConfigurationHandler.parryingItemDamage, player);
+					
+					/* Knockback the attacking entity, from the player */
+					source.knockBack(player, ConfigurationHandler.parryKnockbackAmount, (double)MathHelper.sin(player.rotationYaw * 0.017453292F), (double)(-MathHelper.cos(player.rotationYaw * 0.017453292F)));
+					
+		            return true;
+	            }
 			}
-			/* Add sounds for blocking - ALL */
-			else if ( this.canBlockDamageSource(event.getSource(), event.getEntityLiving()) )
+		}
+		
+		return false;
+	}
+	
+	private boolean blockAttack(LivingAttackEvent event)
+	{
+		if ( this.canBlockDamageSource(event.getSource(), event.getEntityLiving()) )
+		{
+			if ( event.getEntityLiving() instanceof EntityPlayerMP )
 			{
-				if ( event.getEntityLiving() instanceof EntityPlayerMP && event.getSource().getTrueSource() instanceof EntityLivingBase )
+				EntityPlayerMP player = (EntityPlayerMP)event.getEntityLiving();
+				
+				if ( event.getSource().getTrueSource() instanceof EntityLivingBase )
 				{
-					EntityPlayerMP player = (EntityPlayerMP)event.getEntityLiving();
 					EntityLivingBase source = (EntityLivingBase)event.getSource().getTrueSource();
 					PacketHandler.instance.sendTo(new PacketDamageTilt(PacketDamageTilt.getDamageTilt(player, source)), player);
 				}
-
-				float f = event.getEntityLiving().getMaxHealth() * 0.25F;
-				
-				if ( f > 0.0F && event.getAmount() / f > event.getEntityLiving().world.rand.nextFloat() )
-				{
-		            SoundHandler.blockMetalHeavy(event.getEntityLiving(), SoundHandler.getRandomShieldBlockVolume(), SoundHandler.getRandomImpactPitch());
-				}
 				else
 				{
-		            SoundHandler.blockMetalLight(event.getEntityLiving(), SoundHandler.getRandomShieldBlockVolume(), SoundHandler.getRandomImpactPitch());
+					PacketHandler.instance.sendTo(new PacketDamageTilt(player.rotationYaw), player);
 				}
 			}
-//			else if ( event.getEntityLiving() instanceof EntityPlayerMP ) // TODO
-//			{
-//				EntityPlayerMP player = (EntityPlayerMP)event.getEntityLiving();
-//
-//				if ( event.getSource().getTrueSource() instanceof EntityLivingBase )
-//				{
-//					EntityLivingBase source = (EntityLivingBase)event.getSource().getTrueSource();
-//					
-//					if ( event.getAmount() >= 1.0F )
-//					{
-//						PacketHandler.instance.sendTo(new PacketDamageTilt(PacketDamageTilt.getDamageTilt(player, source)), player);
-//					}
-//					else
-//					{
-//						PacketHandler.instance.sendTo(new PacketDamageTilt(PacketDamageTilt.getNoDamageTilt()), player);
-//					}
-//				}
-//				else
-//				{
-//					PacketHandler.instance.sendTo(new PacketDamageTilt(PacketDamageTilt.getNoDamageTilt()), player); // TODO
-//				}
-//			}
-        }
+
+			float f = event.getEntityLiving().getMaxHealth() * 0.25F;
+			
+			if ( f > 0.0F && event.getAmount() / f > event.getEntityLiving().world.rand.nextFloat() )
+			{
+	            SoundHandler.blockMetalHeavy(event.getEntityLiving(), SoundHandler.getRandomShieldBlockVolume(), SoundHandler.getRandomImpactPitch());
+			}
+			else
+			{
+	            SoundHandler.blockMetalLight(event.getEntityLiving(), SoundHandler.getRandomShieldBlockVolume(), SoundHandler.getRandomImpactPitch());
+			}
+			
+			return true;
+		}
+		
+		return false;
 	}
 	
 	private boolean canBlockDamageSource(DamageSource damageSourceIn, EntityLivingBase elb)

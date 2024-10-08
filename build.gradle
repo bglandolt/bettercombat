@@ -68,7 +68,8 @@ dependencies {
 	
 	minecraft 'net.minecraftforge:forge:1.12.2-14.23.5.2860'
 	//compileOnly 'org.ow2.asm:asm:9.4'
-	//implementation "curse.maven:feathers-442962:3343308"
+	implementation "curse.maven:feathers-442962:3343308"
+
 
     // You may put jars on which you depend on in ./libs or you may define them like so..
     // compile "some.group:artifact:version:classifier"

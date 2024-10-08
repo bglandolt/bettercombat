@@ -4,15 +4,15 @@ mouseSensitivity:0.5
 fov:0.0
 gamma:0.0
 saturation:0.0
-renderDistance:12
-guiScale:0
+renderDistance:2
+guiScale:1
 particles:0
 bobView:true
 anaglyph3d:false
-maxFps:120
+maxFps:200
 fboEnable:true
 difficulty:2
-fancyGraphics:true
+fancyGraphics:false
 ao:2
 renderClouds:true
 resourcePacks:[]
@@ -26,7 +26,7 @@ chatLinksPrompt:true
 chatOpacity:1.0
 snooperEnabled:true
 fullscreen:false
-enableVsync:true
+enableVsync:false
 useVbo:true
 hideServerAddress:false
 advancedItemTooltips:false
@@ -39,7 +39,7 @@ chatHeightFocused:1.0
 chatHeightUnfocused:0.44366196
 chatScale:1.0
 chatWidth:1.0
-mipmapLevels:4
+mipmapLevels:0
 forceUnicodeFont:false
 reducedDebugInfo:false
 useNativeTransport:true
@@ -68,7 +68,7 @@ key_key.playerlist:15
 key_key.pickItem:-98
 key_key.command:53
 key_key.screenshot:60
-key_key.togglePerspective:63
+key_key.togglePerspective:38
 key_key.smoothCamera:0
 key_key.fullscreen:87
 key_key.spectatorOutlines:0
@@ -86,7 +86,8 @@ key_key.hotbar.7:8
 key_key.hotbar.8:9
 key_key.hotbar.9:10
 key_key.fastEquip.desc:45
-soundCategory_master:1.0
+key_key.elenaidodge2.dodge:56
+soundCategory_master:0.27152318
 soundCategory_music:0.0
 soundCategory_record:1.0
 soundCategory_weather:1.0

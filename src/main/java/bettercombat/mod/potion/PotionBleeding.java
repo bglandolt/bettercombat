@@ -1,8 +1,8 @@
 package bettercombat.mod.potion;
 
 import bettercombat.mod.client.ParticleBlood;
-import bettercombat.mod.network.PacketBleeding;
 import bettercombat.mod.network.PacketHandler;
+import bettercombat.mod.network.client.PacketBleeding;
 import bettercombat.mod.util.ConfigurationHandler;
 import bettercombat.mod.util.Reference;
 import net.minecraft.client.Minecraft;

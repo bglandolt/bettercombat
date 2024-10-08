@@ -13,7 +13,6 @@ import net.minecraft.client.gui.ScaledResolution;
 import net.minecraft.client.renderer.GlStateManager;
 import net.minecraft.client.renderer.RenderItem;
 import net.minecraft.client.renderer.block.model.ItemCameraTransforms;
-import net.minecraft.client.settings.GameSettings;
 import net.minecraft.entity.Entity;
 import net.minecraft.inventory.IInventory;
 import net.minecraft.item.Item;
@@ -70,43 +69,40 @@ public class AnimationHandler
 	public float breatheTicks = 0.0F;
 	
 	/* Shift the mainhand weapon forward when sprinting, capped at 20 degrees */
-	public int mainhandSprintingTimer = 0;
-	
-	/* Shift the offhand weapon forward when sprinting, capped at 20 degrees */
-	public int offhandSprintingTimer = 0;
+	public float mainhandSprintingEnergy = 0.0F;
+	public boolean mainhandSprinting = false;
 
-	/* If the item is too close, set in EventHandlersClient */
+	/* Shift the offhand weapon forward when sprinting, capped at 20 degrees */
+	public float offhandSprintingEnergy = 0.0F;
+	public boolean offhandSprinting = false;
+
 	public boolean tooClose = false;
-	
-	/* Capped at 0.4, set in EventHandlersClient */
-	public double tooCloseAmount = 0.0D;
-	
-	/* 0.0 (not close) to 0.4 (close) */
-	public float tooCloseIntensity = 0.0F;
-	
+	public float tooCloseTicker = 0.0F;
+	public float tooCloseTimer = 0.0F;
+	public float tooCloseEnergy = 0.0F;
+
 	/*
 	 * How long the player has been blocking for, up to 10 frames (3.33 ticks)
-	 * blockingTimer is -1 if there is no shield in the offhandA
+	 * blockingEnergy is -1 if there is no shield in the offhandA
 	 */
-	public int blockingTimer = 0;
+	public int blockingEnergy = 0;
 	
 	/* 0 to 10 */
-	public int parryingAnimationTimer = 0;
+	public float parryingAnimationEnergy = 0.0F;
 	
 	/* Animate when an attack is parried, set in PacketParried */
-	public int parriedTimer = 0;
+	public float parriedEnergy = 0.0F;
 	
 	/* Float version of PI */
 	public static final float PI = (float)Math.PI;
 	
-	/* Partial tick amount for miningEnergy calculations */
-	public static final float partialIncrement = 0.1666667F;
-	
-	/* Partial tick amount for camera swing calculations */
-	public static final float partialCameraSwing = 0.0833333F;
-	
 	/* Similar to mainhand energy, except only used for mining */
 	public float miningEnergy = 0.0F;
+	
+	public float partialTicks = 0.66666666F;
+
+	/* EventHandlersClient */
+	public float featherLevelModifier = 1.0F;
 	
 //	float xx,yy,zz;
 	
@@ -115,83 +111,114 @@ public class AnimationHandler
 	/* ========================================================================================================================= */
 	
 	boolean breathingApplied = false;
+
+	public boolean blocking = false;
+
+	public double tooCloseCap = 0;
 	
 	@SubscribeEvent
 	public void disableVanillaHandRender( RenderSpecificHandEvent event )
 	{
-//		ClientProxy.EHC_INSTANCE.mc.player.hurtTime = 0; // event.getPartialTicks();
-//		ClientProxy.EHC_INSTANCE.mc.player.maxHurtTime = 1000;
-//		ClientProxy.EHC_INSTANCE.mc.player.attackedAtYaw = 0;
-//		xx = (float)ClientProxy.EHC_INSTANCE.mc.player.posX;
-//		yy = (float)ClientProxy.EHC_INSTANCE.mc.player.posY - 50;
-//		zz = (float)ClientProxy.EHC_INSTANCE.mc.player.posZ;
-				
-		/* ItemRenderer */		
+		/* ItemRenderer */
 		if ( event.getHand() == EnumHand.MAIN_HAND )
         {
-			if ( ClientProxy.EHC_INSTANCE.mc.player.isSprinting() && this.equippedProgressMainhand != -1.0F && !isMainhandAttacking() )
-			{
-				if ( this.mainhandSprintingTimer < 20 )
-				{
-					this.mainhandSprintingTimer += 2;
-				}
-			}
-			else if ( this.mainhandSprintingTimer > 0 )
-			{
-				this.mainhandSprintingTimer -= 2;
-				
-				if ( this.mainhandSprintingTimer > 0 && isMainhandAttacking() )
-				{
-					this.mainhandSprintingTimer -= 2;
-				}
-			}
+			this.breatheTicks += ConfigurationHandler.breathingAnimationSpeed * this.featherLevelModifier * this.partialTicks;
 			
-			if ( this.tooClose )
+			/* Sprinting */
+			if ( this.mainhandSprinting )
 			{
-				if ( this.tooCloseIntensity < this.tooCloseAmount * 0.7D )
+				if ( this.mainhandSprintingEnergy >= 20 )
 				{
-					this.tooCloseIntensity += 0.015F;
+					this.mainhandSprintingEnergy = 20;
 				}
-				else if ( this.tooCloseIntensity > this.tooCloseAmount * 1.3D )
+				else
 				{
-					this.tooCloseIntensity -= 0.01F;
+					this.mainhandSprintingEnergy += this.partialTicks * 4.0F;
 				}
 			}
 			else
 			{
-				if ( this.tooCloseIntensity > 0.0F )
+				if ( this.mainhandSprintingEnergy <= 0 )
 				{
-					this.tooCloseIntensity -= 0.02F;
-					
-					if ( this.tooCloseIntensity < 0.0F )
-					{
-						this.tooCloseIntensity = 0.0F;
-					}
+					this.mainhandSprintingEnergy = 0;
 				}
 				else
 				{
-					this.tooCloseIntensity = 0.0F;
+					this.mainhandSprintingEnergy -= this.partialTicks * 3.0F;
 				}
 			}
 			
+			if ( this.offhandSprinting )
+			{
+				if ( this.offhandSprintingEnergy >= 20 )
+				{
+					this.offhandSprintingEnergy = 20;
+				}
+				else
+				{
+					this.offhandSprintingEnergy += this.partialTicks * 4.0F;
+				}
+			}
+			else
+			{
+				if ( this.offhandSprintingEnergy <= 0 )
+				{
+					this.offhandSprintingEnergy = 0;
+				}
+				else
+				{
+					this.offhandSprintingEnergy -= this.partialTicks * 3.0F;
+				}
+			}
+			
+			/* Wall-aware */
+			if ( this.tooCloseCap > 0 )
+			{
+				if ( this.tooCloseEnergy < this.tooCloseCap * 0.8D )
+				{
+					this.tooCloseEnergy += this.partialTicks * 0.04F;
+				}
+				else if ( this.tooCloseEnergy > this.tooCloseCap * 1.2D )
+				{
+					this.tooCloseEnergy -= this.partialTicks * 0.03F;
+				}
+			}
+			else if ( this.tooCloseEnergy > 0 )
+			{
+				if ( (this.tooCloseEnergy -= this.partialTicks * 0.05F) <= 0 )
+				{
+					this.tooCloseEnergy = 0;
+				}
+			}
+			
+			/* Parrying */
 			if ( ClientProxy.EHC_INSTANCE.parrying )
 			{
-				if ( this.parryingAnimationTimer < 10 )
+				if ( this.parryingAnimationEnergy < 10 )
 				{
-					this.parryingAnimationTimer++;
+					if ( (this.parryingAnimationEnergy += this.partialTicks * 3) > 10 )
+					{
+						this.parryingAnimationEnergy = 10;
+					}
 				}
 			}
 			else
 			{				
-				if ( this.parryingAnimationTimer > 0 )
+				if ( this.parryingAnimationEnergy > 0 )
 				{
-					this.parryingAnimationTimer--;
+					if ( (this.parryingAnimationEnergy -= this.partialTicks * 3) < 0 )
+					{
+						this.parryingAnimationEnergy = 0;
+					}
 				}
 			}
 			
-			if ( this.parriedTimer > 0 )
+			if ( this.parriedEnergy > 0 )
 			{
-				this.parriedTimer--;
+				if ( (this.parriedEnergy -= this.partialTicks) < 0 )
+				{
+					this.parriedEnergy = 0;
+				}
 			}
 			
 			if ( ClientProxy.EHC_INSTANCE.betterCombatMainhand.hasConfigWeapon() )
@@ -217,23 +244,6 @@ public class AnimationHandler
         }
 		else if ( event.getHand() == EnumHand.OFF_HAND )
         {
-			if ( ClientProxy.EHC_INSTANCE.mc.player.isSprinting() && this.equippedProgressOffhand != -1.0F && !isOffhandAttacking() )
-			{
-				if ( this.offhandSprintingTimer < 20 )
-				{
-					this.offhandSprintingTimer += 2;
-				}
-			}
-			else if ( this.offhandSprintingTimer > 0 )
-			{
-				this.offhandSprintingTimer -= 2;
-				
-				if ( this.offhandSprintingTimer > 0 && isOffhandAttacking() )
-				{
-					this.offhandSprintingTimer -= 2;
-				}
-			}
-			
 			/* If the OFFHAND OR MAINHAND has a TWOHAND, or the OFFHAND has a MAINHAND, */
     		if ( ClientProxy.EHC_INSTANCE.betterCombatOffhand.getWeaponProperty() == WeaponProperty.TWOHAND || ClientProxy.EHC_INSTANCE.betterCombatMainhand.getWeaponProperty() == WeaponProperty.TWOHAND || ClientProxy.EHC_INSTANCE.betterCombatOffhand.getWeaponProperty() == WeaponProperty.MAINHAND )
     		{
@@ -250,19 +260,22 @@ public class AnimationHandler
 			}
     		else if ( ClientProxy.EHC_INSTANCE.itemStackOffhand.getItem() instanceof ItemShield )
     		{
-    	    	if ( Helpers.isHandActive(ClientProxy.EHC_INSTANCE.mc.player, EnumHand.OFF_HAND) && ( !ConfigurationHandler.disableBlockingWhileAttacking || ClientProxy.EHC_INSTANCE.isMainhandAttackReady() ) ) // && !isMainhandAttacking() && this.equippedProgressMainhand >= 0.0F )
+    	    	if ( this.blocking )
     			{
-					/* Block animation takes 10 frames (3.33 ticks) */
-					if ( this.blockingTimer < 10 )
+					if ( this.blockingEnergy < 10 )
 					{
-	    				// System.out.println("++");
-						this.blockingTimer++;
+						if ( (this.blockingEnergy += this.partialTicks) > 10 )
+						{
+							this.blockingEnergy = 10;
+						}
 					}
         		}
-				else if ( this.blockingTimer > 0 )
+				else if ( this.blockingEnergy > 0 )
     			{
-    				// System.out.println("--");
-    				this.blockingTimer--;
+					if ( (this.blockingEnergy -= this.partialTicks) < 0 )
+					{
+						this.blockingEnergy = 0;
+					}
     			}
 
     			/* Shield custom rendering! */
@@ -272,7 +285,7 @@ public class AnimationHandler
     		}
     		else
     		{
-    			this.blockingTimer = -1;
+    			this.blockingEnergy = -1;
     		}
 
     		/* Default rendering! */
@@ -281,6 +294,113 @@ public class AnimationHandler
 			return;
         }
     }
+	
+	/* ========================================================================================================================= */
+	/*															Camera
+	/* ========================================================================================================================= */
+
+	/* ------------------------------------------------------------------------------------------------------------------------- */
+	/*															Mainhand
+	/* ------------------------------------------------------------------------------------------------------------------------- */
+	
+	private void animationSweepCameraMainhand()
+	{
+		/* Adjust speed of the camera based on the speed of the attack swing */
+		float f = ClientProxy.EHC_INSTANCE.betterCombatMainhand.getSwingTimerCap() * this.partialTicks;
+
+		/* Camera */
+    	float rotation = MathHelper.sin(-0.3F + this.mainhandEnergy * 2.09549297F * PI);
+		
+		ClientProxy.EHC_INSTANCE.mc.player.cameraPitch -= rotation * ConfigurationHandler.cameraPitchSwing * f;
+		ClientProxy.EHC_INSTANCE.mc.player.rotationYaw -= rotation * ConfigurationHandler.rotationYawSwing * f;
+	}
+	
+	private void animationStabCameraMainhand()
+	{
+		/* Adjust speed of the camera based on the speed of the attack swing */
+		float f = ClientProxy.EHC_INSTANCE.betterCombatMainhand.getSwingTimerCap() * this.partialTicks;
+		
+		float rotation = MathHelper.sin(-1.8F + this.mainhandEnergy * PI);
+		
+		ClientProxy.EHC_INSTANCE.mc.player.cameraPitch += rotation * ConfigurationHandler.cameraPitchSwing * f;
+		ClientProxy.EHC_INSTANCE.mc.player.rotationYaw -= rotation * ConfigurationHandler.rotationYawSwing * f;
+	}
+	
+	private void animationChopCameraMainhand()
+	{
+		/* Adjust speed of the camera based on the speed of the attack swing */
+		float f = ClientProxy.EHC_INSTANCE.betterCombatMainhand.getSwingTimerCap() * this.partialTicks;
+		
+		/* Camera */
+    	float rotation = MathHelper.cos(1.0F + this.mainhandEnergy * 2.18169F * PI);
+
+    	if ( rotation > 0.0F )
+    	{
+    		ClientProxy.EHC_INSTANCE.mc.player.cameraPitch -= rotation * ConfigurationHandler.cameraPitchSwing * f;
+    	}
+    	else
+    	{
+    		ClientProxy.EHC_INSTANCE.mc.player.cameraPitch -= rotation * ConfigurationHandler.cameraPitchSwing * 2.0F * f;
+    	}
+    	
+		ClientProxy.EHC_INSTANCE.mc.player.rotationYaw += rotation*ConfigurationHandler.rotationYawSwing * 0.2F * f;
+	}
+	
+	/* ------------------------------------------------------------------------------------------------------------------------- */
+	/*															Offhand
+	/* ------------------------------------------------------------------------------------------------------------------------- */
+	
+	private void animationSweepCameraOffhand()
+	{
+		/* Adjust speed of the camera based on the speed of the attack swing */
+		float f = ClientProxy.EHC_INSTANCE.betterCombatOffhand.getSwingTimerCap() * this.partialTicks;
+
+		/* Camera */
+    	float rotation = MathHelper.sin(-0.3F + this.offhandEnergy * 2.09549297F * PI);
+		
+		ClientProxy.EHC_INSTANCE.mc.player.cameraPitch -= rotation * ConfigurationHandler.cameraPitchSwing * f;
+		ClientProxy.EHC_INSTANCE.mc.player.rotationYaw += rotation * ConfigurationHandler.rotationYawSwing * f;
+	}
+	
+	private void animationStabCameraOffhand()
+	{
+		/* Adjust speed of the camera based on the speed of the attack swing */
+		float f = ClientProxy.EHC_INSTANCE.betterCombatOffhand.getSwingTimerCap() * this.partialTicks;
+		
+		float rotation = MathHelper.sin(-1.8F + this.offhandEnergy * PI);
+		ClientProxy.EHC_INSTANCE.mc.player.cameraPitch -= rotation*ConfigurationHandler.cameraPitchSwing * f;
+		ClientProxy.EHC_INSTANCE.mc.player.rotationYaw += rotation*ConfigurationHandler.rotationYawSwing * f;
+	}
+	
+	private void animationChopCameraOffhand()
+	{
+		/* Adjust speed of the camera based on the speed of the attack swing */
+		float f = ClientProxy.EHC_INSTANCE.betterCombatOffhand.getSwingTimerCap() * this.partialTicks;
+
+    	float rotation = MathHelper.cos(1.0F + this.offhandEnergy * 2.18169F * PI);
+    	
+    	if ( rotation > 0.0F )
+    	{
+    		ClientProxy.EHC_INSTANCE.mc.player.cameraPitch -= rotation * ConfigurationHandler.cameraPitchSwing * f;
+    	}
+    	else
+    	{
+    		ClientProxy.EHC_INSTANCE.mc.player.cameraPitch -= rotation * ConfigurationHandler.cameraPitchSwing * 2.0F * f;
+    	}
+    	
+		ClientProxy.EHC_INSTANCE.mc.player.rotationYaw -= rotation*ConfigurationHandler.rotationYawSwing * 0.2F * f;
+	}
+	
+	private void animationShieldBashCameraOffhand()
+	{
+		/* Adjust speed of the camera based on the speed of the attack swing */
+		float f = ClientProxy.EHC_INSTANCE.betterCombatOffhand.getSwingTimerCap() * this.partialTicks;
+		
+		/* Camera */
+    	float rotation = MathHelper.cos(-0.4F + this.offhandEnergy * 2.0F * PI);
+		ClientProxy.EHC_INSTANCE.mc.player.cameraPitch -= rotation*ConfigurationHandler.cameraPitchSwing * f;
+		ClientProxy.EHC_INSTANCE.mc.player.rotationYaw += rotation*ConfigurationHandler.rotationYawSwing * f * 2.0F;
+	}
 	
 	/* ========================================================================================================================= */
 	/*															Mainhand
@@ -307,42 +427,38 @@ public class AnimationHandler
         this.positionBreathingMainhand();
 
 		/* Mining */
-		if ( ClientProxy.EHC_INSTANCE.betterCombatMainhand.isMining() && (isMainhandAttacking() || ClientProxy.EHC_INSTANCE.startedMining || ClientProxy.EHC_INSTANCE.holdingLeftClick || this.miningEnergy > 0.0F) ) // todo
-		{
-			// !(ClientProxy.EHC_INSTANCE.holdingLeftClick) || !(ClientProxy.EHC_INSTANCE.startedMining)
-			
+        if ( ClientProxy.EHC_INSTANCE.betterCombatMainhand.isMining() && (isMainhandAttacking() || ClientProxy.EHC_INSTANCE.startedMining || ClientProxy.EHC_INSTANCE.holdingLeftClick || this.miningEnergy > 0) )
+		{			
 			this.resetMainhandEnergy();
 			
 			Item tool = ClientProxy.EHC_INSTANCE.itemStackMainhand.getItem();
 			
 			if ( tool instanceof ItemSpade )
 			{
+				this.calculateMiningEnergy(event);
 	        	this.animationDiggingMainhand(event);
+            	this.noReequipAnimationMainhand();
 			}
 			else if ( tool instanceof ItemAxe )
 			{
-				if ( this.calculateMiningEnergy(event) >= 1.0F )
-				{
-					this.resetMiningEnergy();
-				}
-				
+				this.calculateMiningEnergy(event);
 				this.animationWoodcuttingMainhand(this.miningEnergy);
 				this.reequipAnimationMainhand();
 			}
 			else if ( ClientProxy.EHC_INSTANCE.betterCombatMainhand.getAnimation().equals(Animation.STAB) )
 			{
-				if ( this.calculateMiningEnergy(event) >= 1.0F )
-				{
-					this.resetMiningEnergy();
-				}
-				
         		this.animationStabMainhand(this.miningEnergy);
+        		this.resetMiningEnergy();
+            	this.noReequipAnimationMainhand();
 			}
 			else /* Sword, Pickaxe, Axe */
 			{
+				this.calculateMiningEnergy(event);
 				this.animationMiningMainhand(event);
+            	this.noReequipAnimationMainhand();
 			}
 		}
+		/* Attacking */
 		else if ( isMainhandAttacking() )
 		{
 			switch ( ClientProxy.EHC_INSTANCE.betterCombatMainhand.getAnimation() )
@@ -386,29 +502,31 @@ public class AnimationHandler
 	        		break;
 	        	}
 			}
+			
+			this.resetMiningEnergy();
 		}
 		else
 		{
-			if ( this.parryingAnimationTimer > 0 )
+			if ( this.parryingAnimationEnergy > 0 )
 			{	        	
 				float x;
 				
-				if ( this.parryingAnimationTimer < 5 )
+				if ( this.parryingAnimationEnergy < 5 )
 				{
-					x = (1.0F - MathHelper.cos(this.parryingAnimationTimer*PI*0.1F)) * 0.5F;
+					x = (1.0F - MathHelper.cos(this.parryingAnimationEnergy*PI*0.1F)) * 0.5F;
 				}
 				else
 				{
-					x = (2.0F - MathHelper.sin(this.parryingAnimationTimer*PI*0.1F)) * 0.5F;
+					x = (2.0F - MathHelper.sin(this.parryingAnimationEnergy*PI*0.1F)) * 0.5F;
 				}
 				
-	        	GlStateManager.rotate(x*40.0F, -15.0F, 45.0F, 75.0F);
+	        	GlStateManager.rotate(x*40.0F, -15.0F, 50.0F, 85.0F);
 	        	GlStateManager.translate(-x*0.35F, x*0.2F, x*0.01F);
 			}
 			
-			if ( this.parriedTimer > 0 )
+			if ( this.parriedEnergy > 0 )
 			{				
-	        	GlStateManager.translate(0.0F, -MathHelper.sin(this.parriedTimer*PI/10.0F)*0.2F, 0.0F);
+	        	GlStateManager.translate(0.0F, -MathHelper.sin(this.parriedEnergy*PI/10.0F)*0.2F, 0.0F);
 			}
 			
 			this.resetMainhandEnergy();
@@ -436,7 +554,7 @@ public class AnimationHandler
         /* If the weapon is an axe, position it upwards */
     	if ( ClientProxy.EHC_INSTANCE.betterCombatMainhand.getAnimation().equals(Animation.CHOP) )
     	{
-        	GlStateManager.rotate(-11.0F-this.mainhandSprintingTimer,1.0F,0.0F,0.0F); /* Chopping rotation */
+        	GlStateManager.rotate(-11.0F-this.mainhandSprintingEnergy,1.0F,0.0F,0.0F); /* Chopping rotation */
     		/* Position the weapon in default position */
             GlStateManager.translate(0.02F, 0.08F, 0.0F);
         	GlStateManager.rotate(-16.0F,0.0F,1.0F,0.0F);
@@ -445,12 +563,12 @@ public class AnimationHandler
         /* If the weapon is a spear, rotate it accordingly */
     	else if ( ClientProxy.EHC_INSTANCE.betterCombatMainhand.getAnimation().equals(Animation.STAB) )
         {
-        	GlStateManager.rotate(-44.0F-this.mainhandSprintingTimer,1.0F,0.0F,0.0F); /* Chopping rotation */
-        	GlStateManager.translate(0.0F, -this.tooCloseIntensity, 0.0F);
+        	GlStateManager.rotate(-44.0F-this.mainhandSprintingEnergy,1.0F,0.0F,0.0F); /* Chopping rotation */
+        	GlStateManager.translate(0.0F, -this.tooCloseEnergy, 0.0F);
         }
         else
         {
-        	GlStateManager.rotate(-13.0F-this.mainhandSprintingTimer,1.0F,0.0F,0.0F); /* Chopping rotation */
+        	GlStateManager.rotate(-13.0F-this.mainhandSprintingEnergy,1.0F,0.0F,0.0F); /* Chopping rotation */
         	GlStateManager.rotate(-13.0F,0.0F,1.0F,0.0F);
         	GlStateManager.rotate(-13.0F,0.0F,0.0F,1.0F);
         }
@@ -458,11 +576,11 @@ public class AnimationHandler
     	/* Position this weapon away when the player is blocking */
     	if ( this.isBlocking() )
     	{
-            GlStateManager.translate(this.blockingTimer*0.016F, -this.blockingTimer*0.012F, 0.0F);
+            GlStateManager.translate(this.blockingEnergy*0.016F, -this.blockingEnergy*0.012F, 0.0F);
     	}
     	// todo
 //    	/* Position this weapon away when the player shield bashing */
-//    	else if ( !this.blockingTimerActive() && this.isOffhandAttacking() )
+//    	else if ( !this.blockingEnergyActive() && this.isOffhandAttacking() )
 //    	{
 //			float f = MathHelper.sin(energy*energy*PI)*0.5F;
 //            GlStateManager.translate(f, -f * 0.5F, 0.0F);
@@ -507,18 +625,17 @@ public class AnimationHandler
 	/* Re-equip the main-hand weapon after an attack or item change */
     private void positionEquippedProgressMainhand()
     {    	
-        if ( this.equippedProgressMainhand < 0.0F && (this.equippedProgressMainhand += ClientProxy.EHC_INSTANCE.betterCombatMainhand.getEquipTimerIncrement()) < 0.0F )
+        if ( this.equippedProgressMainhand < 0 )
 		{
-        	if ( this.equippedProgressMainhand > 0.0F )
+        	if ( (this.equippedProgressMainhand += ClientProxy.EHC_INSTANCE.betterCombatMainhand.getEquipTimerIncrement() * this.partialTicks) >= 0 )
 			{
-				this.equippedProgressMainhand = 0.0F;
+				this.equippedProgressMainhand = 0;
 			}
         	else
         	{
-        		GlStateManager.translate(0.0F,this.equippedProgressMainhand,0.0F);
-    			GlStateManager.translate(0.0F,0.0F,this.equippedProgressMainhand*-0.25F);
+        		GlStateManager.translate(0.0F,this.equippedProgressMainhand,this.equippedProgressMainhand*-0.25F);
         	}
-		} 
+        } 
     }
 
 	/* ------------------------------------------------------------------------------------------------------------------------- */
@@ -527,7 +644,9 @@ public class AnimationHandler
 	
 	protected float calculateMainhandEnergy(RenderSpecificHandEvent event)
 	{
-		return this.mainhandEnergy = 1.0F + (event.getPartialTicks() - ClientProxy.EHC_INSTANCE.betterCombatMainhand.getSwingTimer() - 0.5F) * ClientProxy.EHC_INSTANCE.betterCombatMainhand.getSwingTimerIncrement();
+		return this.mainhandEnergy = 1.0F + (event.getPartialTicks() - ClientProxy.EHC_INSTANCE.betterCombatMainhand.getSwingTimer()) * ClientProxy.EHC_INSTANCE.betterCombatMainhand.getSwingTimerIncrement();
+//		return this.mainhandEnergy = 1.0F + (event.getPartialTicks() - ClientProxy.EHC_INSTANCE.betterCombatMainhand.getSwingTimer() - 0.5F) * ClientProxy.EHC_INSTANCE.betterCombatMainhand.getSwingTimerIncrement();
+//		return this.mainhandEnergy += ClientProxy.EHC_INSTANCE.betterCombatMainhand.getSwingTimerIncrement() * this.partialTicks;
 	}
 	
 	protected void resetMainhandEnergy()
@@ -537,7 +656,7 @@ public class AnimationHandler
 	
 	protected float calculateMiningEnergy(RenderSpecificHandEvent event)
 	{
-		return this.miningEnergy += ClientProxy.EHC_INSTANCE.betterCombatMainhand.getSwingTimerIncrement() * partialIncrement; // TODO
+		return this.miningEnergy += ClientProxy.EHC_INSTANCE.betterCombatMainhand.getSwingTimerIncrement() * this.partialTicks;
 	}
 	
 	protected void resetMiningEnergy()
@@ -576,14 +695,14 @@ public class AnimationHandler
 	/* ------------------------------------------------------------------------------------------------------------------------- */
 	
 	private void animationMiningMainhand(RenderSpecificHandEvent event)
-	{
-		this.calculateMiningEnergy(event);
-		
+	{		
 		if ( ClientProxy.EHC_INSTANCE.holdingLeftClick )
 		{
 			if ( this.miningEnergy >= 0.7F )
 			{
+				//ClientProxy.EHC_INSTANCE.betterCombatMainhand.setSwingTimer( (int) ((1.0F-this.miningEnergy)*0.33333333F*ClientProxy.EHC_INSTANCE.betterCombatMainhand.getSwingTimerCap()) );
 				this.miningEnergy = (1.0F - this.miningEnergy) * 0.33333333F;
+				this.calculateMiningEnergy(event);
 			}
 		}
 		else if ( this.miningEnergy >= 1.0F )
@@ -599,7 +718,7 @@ public class AnimationHandler
 		float rotateCounterClockwise = 5.0F;
 		float rotateLeft = 25.0F;
 		
-		float closeCap = this.tooCloseIntensity - 0.5F;
+		float closeCap = this.tooCloseEnergy - 0.5F;
 		
 		if ( this.miningEnergy > 0.2F )
 		{
@@ -662,7 +781,7 @@ public class AnimationHandler
 		/* MathHelper.cos( (0.0 to 2.0) *PI*2.5F) 1 to 0 | slow to fast */
 
 	    GlStateManager.translate(
-	    1.2F * moveRight,
+	    1.2F * moveRight + this.tooCloseEnergy * 0.4F,
 	    moveUp,
 	    moveClose);
        	
@@ -699,7 +818,7 @@ public class AnimationHandler
 //		float rotateCounterClockwise = 15.0F;
 //		float rotateLeft = 30.0F;
 //		
-//		float closeCap = this.tooCloseIntensity - 0.4F;
+//		float closeCap = this.tooCloseEnergy - 0.4F;
 //		
 //		if ( this.miningEnergy > 0.2F )
 //		{
@@ -777,14 +896,14 @@ public class AnimationHandler
 	/* ------------------------------------------------------------------------------------------------------------------------- */
 	
 	private void animationDiggingMainhand(RenderSpecificHandEvent event)
-	{
-		this.calculateMiningEnergy(event);
-		
+	{		
 		if ( ClientProxy.EHC_INSTANCE.holdingLeftClick )
 		{
 			if ( this.miningEnergy > 0.75F )
 			{
-				this.miningEnergy = 1.0F - this.miningEnergy;
+//				ClientProxy.EHC_INSTANCE.betterCombatMainhand.setSwingTimer( (int) ((1.0F-this.miningEnergy)*ClientProxy.EHC_INSTANCE.betterCombatMainhand.getSwingTimerCap()) );
+				this.miningEnergy = 1.0F-this.miningEnergy;
+				this.calculateMiningEnergy(event);
 			}
 		}
 		else if ( this.miningEnergy >= 1.0F )
@@ -805,7 +924,7 @@ public class AnimationHandler
 //		float yy = (float)ClientProxy.EHC_INSTANCE.mc.player.posY - 50;
 //		float zz = (float)ClientProxy.EHC_INSTANCE.mc.player.posZ; // XXX
 		
-	    float closeCap = (0.5F - this.tooCloseIntensity);
+	    float closeCap = (0.5F - this.tooCloseEnergy);
 		
 		if ( this.miningEnergy > 0.25F )
 		{
@@ -957,7 +1076,7 @@ public class AnimationHandler
 	    float rotateCounterClockwise = 0.0F;
 	    float rotateLeft = 0.0F;
 	    
-	    float closeCap = 0.2F - this.tooCloseIntensity;
+	    float closeCap = 0.2F - this.tooCloseEnergy;
 	    
 	    rotateUp = -clampMultiplier(energy, 6.0F, 140.0F + closeCap * 50.0F); /* Sweep = Up */
 	    
@@ -1010,7 +1129,7 @@ public class AnimationHandler
 	    float rotateCounterClockwise = 0.0F;
 	    float rotateLeft = 0.0F;
 	    
-	    float closeCap = 0.4F - this.tooCloseIntensity;
+	    float closeCap = 0.4F - this.tooCloseEnergy;
 	    
 	    rotateUp = -clampMultiplier(energy, 6.0F, 140.0F + closeCap * 40.0F); /* Sweep = Up */
 	    rotateCounterClockwise = clampMultiplier(energy, 12.0F, 150.0F) - clampMultiplier(energy, 3.0F, 50.0F + closeCap * 100.0F) - energy * 15.0F; /* Sweep = Left and To */
@@ -1069,20 +1188,6 @@ public class AnimationHandler
 //		  }
 //	}
 	
-	private void animationSweepCameraMainhand()
-	{
-		/* Adjust speed of the camera based on the speed of the attack swing */
-		float f = ClientProxy.EHC_INSTANCE.betterCombatMainhand.getSwingTimerCap() * partialCameraSwing;
-
-		/* Camera */
-    	float rotation = MathHelper.cos(-1.0F + this.mainhandEnergy * 1.9F * PI);
-    	
-    	// System.out.println(rotation);
-    	
-		ClientProxy.EHC_INSTANCE.mc.player.cameraPitch -= rotation * ConfigurationHandler.cameraPitchSwing * f; /* +right */
-		ClientProxy.EHC_INSTANCE.mc.player.rotationYaw -= rotation * ConfigurationHandler.rotationYawSwing * f; /* +down */
-	}
-	
 	/* ------------------------------------------------------------------------------------------------------------------------- */
 	/*													  Sweep Animation 2
 	/* ------------------------------------------------------------------------------------------------------------------------- */
@@ -1096,7 +1201,7 @@ public class AnimationHandler
 	    float rotateCounterClockwise = 0.0F;
 	    float rotateLeft = 0.0F;
 	    	    
-	    float closeCap = 1.0F - this.tooCloseIntensity * 2.5F;
+	    float closeCap = 1.0F - this.tooCloseEnergy * 2.5F;
 	    
 	    if ( energy > 0.2F )
 		{
@@ -1191,7 +1296,7 @@ public class AnimationHandler
 		float rotateCounterClockwise = clamp(energy*300.0F,15.0F) - energy*15.0F;
 		float rotateLeft = clamp(energy*100.0F,30.0F); /* +left */
 
-	    float closeCap = this.tooCloseIntensity - 0.4F;
+	    float closeCap = this.tooCloseEnergy - 0.4F;
 		
 		if ( energy > 0.2F )
 		{
@@ -1262,29 +1367,6 @@ public class AnimationHandler
     	GlStateManager.rotate(rotateLeft * ClientProxy.EHC_INSTANCE.betterCombatMainhand.rotateLeftVariance, 0.0F, 0.0F, 1.0F);
 	}
 	
-	private void animationChopCameraMainhand()
-	{
-		float f = ClientProxy.EHC_INSTANCE.betterCombatMainhand.getSwingTimerCap() * partialCameraSwing;
-		
-		/* Camera */
-//    	float rotation = MathHelper.sin(-1.8F + this.mainhandEnergy * 2.0F * PI);
-//		ClientProxy.EHC_INSTANCE.mc.player.cameraPitch -= rotation * ConfigurationHandler.cameraPitchSwing * 2.0F * f;
-//		ClientProxy.EHC_INSTANCE.mc.player.rotationYaw += rotation * ConfigurationHandler.rotationYawSwing * 0.2F * f;
-
-    	float rotation = MathHelper.cos(1.0F + this.mainhandEnergy * 2.2F * PI);
-
-    	if ( rotation > 0.0F )
-    	{
-    		ClientProxy.EHC_INSTANCE.mc.player.cameraPitch -= rotation * ConfigurationHandler.cameraPitchSwing * f;
-    	}
-    	else
-    	{
-    		ClientProxy.EHC_INSTANCE.mc.player.cameraPitch -= rotation * ConfigurationHandler.cameraPitchSwing * 2.0F * f;
-    	}
-    	
-		ClientProxy.EHC_INSTANCE.mc.player.rotationYaw += rotation*ConfigurationHandler.rotationYawSwing * 0.2F * f;
-	}
-	
 	/* ------------------------------------------------------------------------------------------------------------------------- */
 	/*														Stab Animation
 	/* ------------------------------------------------------------------------------------------------------------------------- */
@@ -1299,7 +1381,7 @@ public class AnimationHandler
 		float rotateCounterClockwise = 0.0F; /* +counter-clockwise */
 		float rotateLeft = 0.0F; /* +left */
 		
-	    float closeCap = (0.6F - this.tooCloseIntensity);
+	    float closeCap = (0.6F - this.tooCloseEnergy);
 		
 		rotateUp = -clamp(energy * 240.0F, 60.0F);
 		
@@ -1378,20 +1460,6 @@ public class AnimationHandler
     	GlStateManager.rotate(rotateLeft * ClientProxy.EHC_INSTANCE.betterCombatMainhand.rotateLeftVariance, 0.0F, 0.0F, 1.0F);
 	}
 	
-	private void animationStabCameraMainhand()
-	{
-		/* Reduce momentum based off attack speed */
-		float f = ClientProxy.EHC_INSTANCE.betterCombatMainhand.getSwingTimerCap() * partialCameraSwing;
-		
-		/* Camera */
-//		float rotation = MathHelper.sin(-0.4F + this.mainhandEnergy * 2.0F * PI);
-//		ClientProxy.EHC_INSTANCE.mc.player.cameraPitch += rotation*ConfigurationHandler.cameraPitchSwing * f;
-		
-		float rotation = MathHelper.sin(-1.8F + this.mainhandEnergy * PI);
-		ClientProxy.EHC_INSTANCE.mc.player.cameraPitch += rotation * ConfigurationHandler.cameraPitchSwing * f;
-		ClientProxy.EHC_INSTANCE.mc.player.rotationYaw -= rotation * ConfigurationHandler.rotationYawSwing * f;
-	}
-	
     /* ====================================================================================================================================================== */
     /*																		SHIELD 																			  */
     /* ====================================================================================================================================================== */
@@ -1415,7 +1483,7 @@ public class AnimationHandler
 		/* Animate the shield bash */
         this.positionOffShield();
 
-        this.positionBreathingOffhand();
+        this.positionBreathingOffhandShield();
         this.positionEquippedProgressOffhand();
         this.renderOffShield();
         GlStateManager.popMatrix();
@@ -1428,7 +1496,7 @@ public class AnimationHandler
 		/* If the offhandEnergy is greater than 0, the player is shield bashing */
         if ( this.offhandEnergy > 0.0F )
         {
-        	// this.blockingTimer = 10; // todo
+        	// this.blockingEnergy = 10; // todo
         	
         	float shieldBashProgress = MathHelper.sin(this.offhandEnergy*PI)*1.25F;
         	
@@ -1454,19 +1522,19 @@ public class AnimationHandler
         }
         
         /* Blocking Animation */
-        if ( this.blockingTimer > 0 )
+        if ( this.blockingEnergy > 0 )
         {
         	/* Clockwise */
-        	GlStateManager.rotate(-this.blockingTimer*0.75F, 0.0F, 1.0F, 0.0F);
+        	GlStateManager.rotate(-this.blockingEnergy*0.75F, 0.0F, 1.0F, 0.0F);
         	
         	/* Rotate up */
-        	GlStateManager.rotate(this.blockingTimer*1.25F, 1.0F, 0.0F, 0.0F);
+        	GlStateManager.rotate(this.blockingEnergy*1.25F, 1.0F, 0.0F, 0.0F);
         	
         	/* Rotate right */
-        	GlStateManager.rotate(-this.blockingTimer*1.5F, 0.0F, 0.0F, 1.0F);
+        	GlStateManager.rotate(-this.blockingEnergy*1.5F, 0.0F, 0.0F, 1.0F);
         	
         	/* Position right, Position up, Zoom in */
-    		GlStateManager.translate(this.blockingTimer*0.06F, this.blockingTimer*0.008F, this.blockingTimer*0.04F); // todo 0.04 0.06
+    		GlStateManager.translate(this.blockingEnergy*0.06F, this.blockingEnergy*0.008F, this.blockingEnergy*0.04F); // todo 0.04 0.06
     	}
         
         /* Position Shield */
@@ -1487,15 +1555,6 @@ public class AnimationHandler
 			GlStateManager.translate(1.0F, -0.52F, 1.8F);
 		}
 	}
-	
-	private void animationShieldBashCameraOffhand()
-	{
-		/* Camera */
-    	float rotation = MathHelper.cos(-0.4F + this.offhandEnergy * 2.0F * PI);
-		ClientProxy.EHC_INSTANCE.mc.player.cameraPitch -= rotation*ConfigurationHandler.cameraPitchSwing;
-		ClientProxy.EHC_INSTANCE.mc.player.rotationYaw += rotation*ConfigurationHandler.rotationYawSwing;
-	}
-	
     
     public void reequipAnimationMainhand()
     {
@@ -1519,20 +1578,12 @@ public class AnimationHandler
     
     public boolean isBlocking()
     {
-        return this.blockingTimer > 0;
+        return this.blockingEnergy > 0;
     }
 	
     private void positionBreathingMainhand()
 	{
-    	GlStateManager.translate(0.0F, MathHelper.sin(this.breatheTicks) * ConfigurationHandler.breathingAnimationIntensity, this.tooCloseIntensity*0.6F);
-
-    	// TODO - more breathing if out of feathers
-//    	if ( true )
-//    	{
-//    		float f = 1.0F + MathHelper.clamp((10 - getFeatherLevel(ClientProxy.EHC_INSTANCE.mc.player)),0,10) * 0.5F;
-//
-//        	GlStateManager.translate(0.0F, MathHelper.sin(this.breatheTicks) * ConfigurationHandler.breathingAnimationIntensity * f, this.tooCloseIntensity*0.6F);
-//    	}
+    	GlStateManager.translate(0.0F, MathHelper.sin(this.breatheTicks) * ConfigurationHandler.breathingAnimationIntensity, this.tooCloseEnergy*0.6F);
 	}
     
     private void positionBreathingOffhand()
@@ -1543,9 +1594,17 @@ public class AnimationHandler
     	}
 	}
     
+    private void positionBreathingOffhandShield()
+	{
+    	if ( !this.breathingApplied )
+    	{
+        	GlStateManager.translate(0.0F, MathHelper.sin(this.breatheTicks) * ConfigurationHandler.breathingAnimationIntensity, -this.tooCloseEnergy*0.6F);
+    	}
+	}
+    
 //    private void positionBreathingShield()
 //    {
-//    	GlStateManager.translate(0.0F, MathHelper.sin(this.breatheTicks) * ConfigurationHandler.breathingAnimationIntensity, -this.tooCloseIntensity*0.6F);
+//    	GlStateManager.translate(0.0F, MathHelper.sin(this.breatheTicks) * ConfigurationHandler.breathingAnimationIntensity, -this.tooCloseEnergy*0.6F);
 //	}
 
 	/* ========================================================================================================================= */
@@ -1671,7 +1730,7 @@ public class AnimationHandler
 		/* If the weapon is an axe, position it upwards */
     	if ( ClientProxy.EHC_INSTANCE.betterCombatOffhand.getAnimation().equals(Animation.CHOP) )
     	{
-        	GlStateManager.rotate(-11.0F-this.offhandSprintingTimer,1.0F,0.0F,0.0F); /* Chopping rotation */
+        	GlStateManager.rotate(-11.0F-this.offhandSprintingEnergy,1.0F,0.0F,0.0F); /* Chopping rotation */
     		/* Position the weapon in default position */
             GlStateManager.translate(-0.02F, 0.08F, 0.0F);
         	GlStateManager.rotate(16.0F,0.0F,1.0F,0.0F);
@@ -1680,12 +1739,12 @@ public class AnimationHandler
         /* If the weapon is a spear, rotate it accordingly */
     	else if ( ClientProxy.EHC_INSTANCE.betterCombatOffhand.getAnimation().equals(Animation.STAB) )
         {
-        	GlStateManager.rotate(-44.0F-this.offhandSprintingTimer,1.0F,0.0F,0.0F); /* Chopping rotation */
-        	GlStateManager.translate(0.0F, -this.tooCloseIntensity, 0.0F);
+        	GlStateManager.rotate(-44.0F-this.offhandSprintingEnergy,1.0F,0.0F,0.0F); /* Chopping rotation */
+        	GlStateManager.translate(0.0F, -this.tooCloseEnergy, 0.0F);
         }
         else
         {
-        	GlStateManager.rotate(-13.0F-this.offhandSprintingTimer,1.0F,0.0F,0.0F); /* Chopping rotation */
+        	GlStateManager.rotate(-13.0F-this.offhandSprintingEnergy,1.0F,0.0F,0.0F); /* Chopping rotation */
         	GlStateManager.rotate(13.0F,0.0F,1.0F,0.0F);
         	GlStateManager.rotate(13.0F,0.0F,0.0F,1.0F);
         }
@@ -1746,21 +1805,20 @@ public class AnimationHandler
     	}
 	}
 
-	/* Re-equip the Off-hand weapon after an attack or item change */
+	/* Re-equip the off-hand weapon after an attack or item change */
     private void positionEquippedProgressOffhand()
-    {
-        if ( this.equippedProgressOffhand < 0.0F && (this.equippedProgressOffhand += ClientProxy.EHC_INSTANCE.betterCombatOffhand.getEquipTimerIncrement()) < 0.0F )
+    {    	
+        if ( this.equippedProgressOffhand < 0 )
 		{
-        	if ( this.equippedProgressOffhand > 0.0F )
+        	if ( (this.equippedProgressOffhand += ClientProxy.EHC_INSTANCE.betterCombatOffhand.getEquipTimerIncrement() * this.partialTicks) >= 0 )
 			{
-				this.equippedProgressOffhand = 0.0F;
+				this.equippedProgressOffhand = 0;
 			}
         	else
         	{
-				GlStateManager.translate(0.0F,this.equippedProgressOffhand,0.0F);
-				GlStateManager.translate(0.0F,0.0F,this.equippedProgressOffhand*-0.25F);
+        		GlStateManager.translate(0.0F,this.equippedProgressOffhand,this.equippedProgressOffhand*-0.25F);
         	}
-		}
+		} 
     }
 	
 	/* ------------------------------------------------------------------------------------------------------------------------- */
@@ -1791,7 +1849,7 @@ public class AnimationHandler
 		float rotateCounterClockwise = clamp(energy*300.0F,15.0F) - energy*15.0F;
 		float rotateLeft = clamp(energy*100.0F,30.0F); /* +left */
 		
-	    float closeCap = this.tooCloseIntensity - 0.4F;
+	    float closeCap = this.tooCloseEnergy - 0.4F;
 
 		if ( energy > 0.2F )
 		{
@@ -1861,29 +1919,6 @@ public class AnimationHandler
     	GlStateManager.rotate(-rotateLeft * ClientProxy.EHC_INSTANCE.betterCombatOffhand.rotateLeftVariance, 0.0F, 0.0F, 1.0F);
 	}
 	
-	private void animationChopCameraOffhand()
-	{
-		float f = ClientProxy.EHC_INSTANCE.betterCombatOffhand.getSwingTimerCap() * partialCameraSwing; // todo
-		
-		/* Camera */
-//    	float rotation = MathHelper.sin(-1.8F + this.offhandEnergy * 2.0F * PI);
-//		ClientProxy.EHC_INSTANCE.mc.player.cameraPitch -= rotation * ConfigurationHandler.cameraPitchSwing * 2.0F * f;
-//		ClientProxy.EHC_INSTANCE.mc.player.rotationYaw -= rotation * ConfigurationHandler.rotationYawSwing * 0.2F * f;
-
-    	float rotation = MathHelper.cos(1.0F + this.offhandEnergy * 2.2F * PI);
-    	
-    	if ( rotation > 0.0F )
-    	{
-    		ClientProxy.EHC_INSTANCE.mc.player.cameraPitch -= rotation * ConfigurationHandler.cameraPitchSwing * f;
-    	}
-    	else
-    	{
-    		ClientProxy.EHC_INSTANCE.mc.player.cameraPitch -= rotation * ConfigurationHandler.cameraPitchSwing * 2.0F * f;
-    	}
-    	
-		ClientProxy.EHC_INSTANCE.mc.player.rotationYaw -= rotation*ConfigurationHandler.rotationYawSwing * 0.2F * f;
-	}
-	
 	/* ------------------------------------------------------------------------------------------------------------------------- */
 	/*													  Sweep Animation 1
 	/* ------------------------------------------------------------------------------------------------------------------------- */
@@ -1897,7 +1932,7 @@ public class AnimationHandler
 	    float rotateCounterClockwise = 0.0F;
 	    float rotateLeft = 0.0F;
 	    
-	    float closeCap = 0.4F - this.tooCloseIntensity;
+	    float closeCap = 0.4F - this.tooCloseEnergy;
 	    
 	    rotateUp = -clampMultiplier(energy, 6.0F, 140.0F + closeCap * 40.0F); /* Sweep = Up */
 	    rotateCounterClockwise = clampMultiplier(energy, 12.0F, 150.0F) - clampMultiplier(energy, 3.0F, 50.0F + closeCap * 100.0F) - energy * 15.0F; /* Sweep = Left and To */
@@ -1935,17 +1970,6 @@ public class AnimationHandler
     	GlStateManager.rotate(-rotateCounterClockwise * ClientProxy.EHC_INSTANCE.betterCombatOffhand.rotateCounterClockwiseVariance, 0.0F, 1.0F, 0.0F);
     	GlStateManager.rotate(-rotateLeft * ClientProxy.EHC_INSTANCE.betterCombatOffhand.rotateLeftVariance, 0.0F, 0.0F, 1.0F);
 	}
-
-	private void animationSweepCameraOffhand()
-	{
-		float f = ClientProxy.EHC_INSTANCE.betterCombatOffhand.getSwingTimerCap() * partialCameraSwing;
-
-		/* Camera */
-    	float rotation = MathHelper.cos(-0.4F + this.offhandEnergy * 1.9F * PI);
-    	
-		ClientProxy.EHC_INSTANCE.mc.player.cameraPitch -= rotation * ConfigurationHandler.cameraPitchSwing * f;
-		ClientProxy.EHC_INSTANCE.mc.player.rotationYaw -= rotation * ConfigurationHandler.rotationYawSwing * f;
-	}
 	
 	/* ------------------------------------------------------------------------------------------------------------------------- */
 	/*													  Sweep Animation 2
@@ -1960,7 +1984,7 @@ public class AnimationHandler
 	    float rotateCounterClockwise = 0.0F;
 	    float rotateLeft = 0.0F;
 	    	    
-	    float closeCap = 1.0F - this.tooCloseIntensity * 2.5F;
+	    float closeCap = 1.0F - this.tooCloseEnergy * 2.5F;
 	    
 	    if ( energy > 0.2F )
 		{
@@ -2059,7 +2083,7 @@ public class AnimationHandler
 		float rotateCounterClockwise = 0.0F; /* +counter-clockwise */
 		float rotateLeft = 0.0F; /* +left */
 		
-	    float closeCap = (0.6F - this.tooCloseIntensity);
+	    float closeCap = (0.6F - this.tooCloseEnergy);
 		
 		rotateUp = -clamp(energy * 240.0F, 60.0F);
 		
@@ -2137,18 +2161,6 @@ public class AnimationHandler
     	GlStateManager.rotate(-rotateCounterClockwise * ClientProxy.EHC_INSTANCE.betterCombatOffhand.rotateCounterClockwiseVariance, 0.0F, 1.0F, 0.0F);
     	GlStateManager.rotate(-rotateLeft * ClientProxy.EHC_INSTANCE.betterCombatOffhand.rotateLeftVariance, 0.0F, 0.0F, 1.0F);
 	}
-	
-	private void animationStabCameraOffhand()
-	{
-		float f = ClientProxy.EHC_INSTANCE.betterCombatOffhand.getSwingTimerCap() * partialCameraSwing; // todo check camera swing
-		
-		/* Camera */
-//		float rotation = MathHelper.sin(-0.4F + this.offhandEnergy * 2.0F * PI);
-		
-		float rotation = MathHelper.sin(-1.8F + this.mainhandEnergy * PI);
-		ClientProxy.EHC_INSTANCE.mc.player.cameraPitch -= rotation*ConfigurationHandler.cameraPitchSwing * f;
-		ClientProxy.EHC_INSTANCE.mc.player.rotationYaw += rotation*ConfigurationHandler.rotationYawSwing * f;
-	}
     
 	/* ========================================================================================================================= */
 	/*															 Math
@@ -2189,114 +2201,116 @@ public class AnimationHandler
 	/* ========================================================================================================================= */
 	/*															 (+) GUI
 	/* ========================================================================================================================= */
-	
-	private int currentFrameMainhand = 0;
-	private int currentFrameOffhand = 0;
-	
-	private final ResourceLocation MAINHAND_SWEEP_1 = new ResourceLocation(Reference.MOD_ID, "textures/gui/mainhand_sweep_1.png");
-	private final ResourceLocation MAINHAND_SWEEP_2 = new ResourceLocation(Reference.MOD_ID, "textures/gui/mainhand_sweep_2.png");
-	
-	private final ResourceLocation OFFHAND_SWEEP_1 = new ResourceLocation(Reference.MOD_ID, "textures/gui/offhand_sweep_1.png");
-	private final ResourceLocation OFFHAND_SWEEP_2 = new ResourceLocation(Reference.MOD_ID, "textures/gui/offhand_sweep_2.png");
-	
-    private final int FRAME_SIZE_X = 64;
-    private final int FRAME_SIZE_Y = 32;
-    private final int FRAMES = 4;
     
     @SideOnly( Side.CLIENT )
     public class GuiCrosshairsBC extends Gui
     {
     	public final ResourceLocation ICONS = new ResourceLocation(Reference.MOD_ID + ":textures/gui/icons.png");
 
+    	private float currentFrameMainhand = 0;
+    	private float currentFrameOffhand = 0;
+    	
+    	private final ResourceLocation MAINHAND_SWEEP_1 = new ResourceLocation(Reference.MOD_ID, "textures/gui/mainhand_sweep_1.png");
+    	private final ResourceLocation MAINHAND_SWEEP_2 = new ResourceLocation(Reference.MOD_ID, "textures/gui/mainhand_sweep_2.png");
+    	
+    	private final ResourceLocation OFFHAND_SWEEP_1 = new ResourceLocation(Reference.MOD_ID, "textures/gui/offhand_sweep_1.png");
+    	private final ResourceLocation OFFHAND_SWEEP_2 = new ResourceLocation(Reference.MOD_ID, "textures/gui/offhand_sweep_2.png");
+    	
+        private final int FRAME_SIZE_X = 64;
+        private final int FRAME_SIZE_Y = 32;
+        
+        /* Render attack indicator */
     	public void renderAttackIndicator( float partTicks, ScaledResolution scaledRes )
     	{
     		/* This GUI displays above vanilla GUI */
 			this.zLevel = 200;
 
     		ClientProxy.EHC_INSTANCE.mc.getTextureManager().bindTexture(ICONS);
-    		GlStateManager.enableBlend();
-			
-    		// if ( gamesettings.thirdPersonView == 0 )
-    		{
-    			if ( ClientProxy.EHC_INSTANCE.mc.playerController.isSpectator() && ClientProxy.EHC_INSTANCE.mc.pointedEntity == null )
-    			{
-    				RayTraceResult rtRes = ClientProxy.EHC_INSTANCE.mc.objectMouseOver;
-    				if ( rtRes == null || rtRes.typeOfHit != net.minecraft.util.math.RayTraceResult.Type.BLOCK )
-    				{
-    					return;
-    				}
-
-    				BlockPos blockpos = rtRes.getBlockPos();
-    				IBlockState state = ClientProxy.EHC_INSTANCE.mc.world.getBlockState(blockpos);
-    				if ( !state.getBlock().hasTileEntity(state) || !(ClientProxy.EHC_INSTANCE.mc.world.getTileEntity(blockpos) instanceof IInventory) )
-    				{
-    					return;
-    				}
-    			}
-    			
-    			/* (/) Disable rendering TWOHAND GUI */
-    			if ( !ClientProxy.EHC_INSTANCE.itemStackOffhand.isEmpty() ) // todo MAINHAND can only go with an OFFHAND?
-    			{
-        			if ( ClientProxy.EHC_INSTANCE.betterCombatMainhand.getWeaponProperty() == WeaponProperty.TWOHAND || ClientProxy.EHC_INSTANCE.betterCombatOffhand.getWeaponProperty() == WeaponProperty.TWOHAND || ClientProxy.EHC_INSTANCE.betterCombatOffhand.getWeaponProperty() == WeaponProperty.MAINHAND )
-        			{
-        				this.drawTexturedModalRect((scaledRes.getScaledWidth()-236)>>1, scaledRes.getScaledHeight() - 19, 16, 0, 16, 16);
-        			}
-    			}
-
-    			/* Show debug */
-    			if ( ClientProxy.EHC_INSTANCE.mc.gameSettings.showDebugInfo && !ClientProxy.EHC_INSTANCE.mc.gameSettings.hideGUI && !ClientProxy.EHC_INSTANCE.mc.player.hasReducedDebug() && !ClientProxy.EHC_INSTANCE.mc.gameSettings.reducedDebugInfo )
+    		
+			/* (/) Disable rendering TWOHAND GUI */
+			if ( !ClientProxy.EHC_INSTANCE.itemStackOffhand.isEmpty() )
+			{
+    			if ( ClientProxy.EHC_INSTANCE.betterCombatMainhand.getWeaponProperty() == WeaponProperty.TWOHAND || ClientProxy.EHC_INSTANCE.betterCombatOffhand.getWeaponProperty() == WeaponProperty.TWOHAND || ClientProxy.EHC_INSTANCE.betterCombatOffhand.getWeaponProperty() == WeaponProperty.MAINHAND )
     			{
     				GlStateManager.pushMatrix();
-    				GlStateManager.translate((scaledRes.getScaledWidth()>>1), (scaledRes.getScaledHeight()>>1), this.zLevel);
-    				Entity entity = ClientProxy.EHC_INSTANCE.mc.getRenderViewEntity();
-    				
-    				if ( entity == null )
-    				{
-    					return;
-    				}
-    				
-    				GlStateManager.rotate(entity.prevRotationPitch + (entity.rotationPitch - entity.prevRotationPitch) * partTicks, -1.0F, 0.0F, 0.0F);
-    				GlStateManager.rotate(entity.prevRotationYaw + (entity.rotationYaw - entity.prevRotationYaw) * partTicks, 0.0F, 1.0F, 0.0F);
-    				GlStateManager.scale(-1.0F, -1.0F, -1.0F);
-    				net.minecraft.client.renderer.OpenGlHelper.renderDirections(10);
-    				GlStateManager.popMatrix();
+    	    		GlStateManager.enableBlend();
+    		    	GlStateManager.tryBlendFuncSeparate(GlStateManager.SourceFactor.SRC_ALPHA, GlStateManager.DestFactor.ONE_MINUS_SRC_ALPHA, GlStateManager.SourceFactor.ONE, GlStateManager.DestFactor.ZERO);
+    				this.drawTexturedModalRect((scaledRes.getScaledWidth()-236)>>1, scaledRes.getScaledHeight() - 19, 16, 0, 16, 16);
+    				GlStateManager.disableBlend();
+     		        GlStateManager.popMatrix();
     			}
-    			else
-    			{
-        			/* + Show crosshair */
-    				this.showPlusCrosshair(scaledRes);
+			}
+    		
+    		GlStateManager.enableBlend();
+	    	GlStateManager.tryBlendFuncSeparate(GlStateManager.SourceFactor.ONE_MINUS_DST_COLOR, GlStateManager.DestFactor.ONE_MINUS_SRC_COLOR, GlStateManager.SourceFactor.ONE, GlStateManager.DestFactor.ZERO);
 
-    				/* ( ) Show attack indicator */
-    				if ( ClientProxy.EHC_INSTANCE.mc.gameSettings.attackIndicator == 1 )
-    				{
-    					/* (+) Dual-weilding */
-    					if ( ClientProxy.EHC_INSTANCE.betterCombatOffhand.hasConfigWeapon() )
-    					{
-        					this.showMainhandCrosshair(scaledRes);
-        					this.showOffhandCrosshair(scaledRes);
-    					}
-    					/* (+) Shield */
-    					else if ( ConfigurationHandler.showShieldCooldownCrosshair && ClientProxy.EHC_INSTANCE.itemStackOffhand.getItem() instanceof ItemShield )
-    					{
-        					this.showMainhandCrosshair(scaledRes);
-        					this.showShieldCrosshair(scaledRes); // todo
-    					}
-    					/* + Default */
-    					else
-    					{        					
-    						this.showDefaultCrosshair(scaledRes);
-    					}
-    				}    				
-    			}
-    		}
-    		
-    		GlStateManager.tryBlendFuncSeparate(GlStateManager.SourceFactor.SRC_ALPHA, GlStateManager.DestFactor.ONE_MINUS_SRC_ALPHA, GlStateManager.SourceFactor.ONE, GlStateManager.DestFactor.ZERO);
-    		
-    		this.renderSweepOverlay(scaledRes);
+	    	if ( ClientProxy.EHC_INSTANCE.mc.playerController.isSpectator() && ClientProxy.EHC_INSTANCE.mc.pointedEntity == null )
+			{
+				RayTraceResult rtRes = ClientProxy.EHC_INSTANCE.mc.objectMouseOver;
+				if ( rtRes == null || rtRes.typeOfHit != net.minecraft.util.math.RayTraceResult.Type.BLOCK )
+				{
+					return;
+				}
+
+				BlockPos blockpos = rtRes.getBlockPos();
+				IBlockState state = ClientProxy.EHC_INSTANCE.mc.world.getBlockState(blockpos);
+				if ( !state.getBlock().hasTileEntity(state) || !(ClientProxy.EHC_INSTANCE.mc.world.getTileEntity(blockpos) instanceof IInventory) )
+				{
+					return;
+				}
+			}
+
+			/* Show debug */
+			if ( ClientProxy.EHC_INSTANCE.mc.gameSettings.showDebugInfo && !ClientProxy.EHC_INSTANCE.mc.gameSettings.hideGUI && !ClientProxy.EHC_INSTANCE.mc.player.hasReducedDebug() && !ClientProxy.EHC_INSTANCE.mc.gameSettings.reducedDebugInfo )
+			{
+				GlStateManager.pushMatrix();
+				GlStateManager.translate((scaledRes.getScaledWidth()>>1), (scaledRes.getScaledHeight()>>1), this.zLevel);
+				Entity entity = ClientProxy.EHC_INSTANCE.mc.getRenderViewEntity();
+				
+				if ( entity == null )
+				{
+					return;
+				}
+				
+				GlStateManager.rotate(entity.prevRotationPitch + (entity.rotationPitch - entity.prevRotationPitch) * partTicks, -1.0F, 0.0F, 0.0F);
+				GlStateManager.rotate(entity.prevRotationYaw + (entity.rotationYaw - entity.prevRotationYaw) * partTicks, 0.0F, 1.0F, 0.0F);
+				GlStateManager.scale(-1.0F, -1.0F, -1.0F);
+				net.minecraft.client.renderer.OpenGlHelper.renderDirections(10);
+				GlStateManager.popMatrix();
+			}
+			else
+			{
+    			/* + Show crosshair */
+				this.showPlusCrosshair(scaledRes);
+
+				/* ( ) Show attack indicator */
+				if ( ClientProxy.EHC_INSTANCE.mc.gameSettings.attackIndicator == 1 )
+				{
+					/* (+) Dual-weilding */
+					if ( ClientProxy.EHC_INSTANCE.betterCombatOffhand.hasConfigWeapon() )
+					{
+    					this.showMainhandCrosshair(scaledRes);
+    					this.showOffhandCrosshair(scaledRes);
+					}
+					/* (+) Shield */
+					else if ( ConfigurationHandler.showShieldCooldownCrosshair && ClientProxy.EHC_INSTANCE.itemStackOffhand.getItem() instanceof ItemShield )
+					{
+    					this.showMainhandCrosshair(scaledRes);
+    					this.showShieldCrosshair(scaledRes); // todo
+					}
+					/* + Default */
+					else
+					{        					
+						this.showDefaultCrosshair(scaledRes);
+					}
+				}    				
+			}
     	}
     	
-    	private void renderSweepOverlay(ScaledResolution scaledRes)
-    	{			
+    	/* Render sweep overlay */
+    	public void renderSweepOverlay(ScaledResolution scaledRes)
+    	{
+    		/* Mainhand */
 			if ( !ClientProxy.EHC_INSTANCE.betterCombatMainhand.isMining() )
 			{
 				if ( ClientProxy.EHC_INSTANCE.betterCombatMainhand.getAnimation() == Animation.SWEEP && AnimationHandler.isMainhandAttacking() )
@@ -2305,70 +2319,74 @@ public class AnimationHandler
 					{
 						if ( ClientProxy.AH_INSTANCE.mainhandEnergy > 0.625F )
 						{
-							if ( currentFrameMainhand < 16 )
+							if ( this.currentFrameMainhand < 16 )
 							{
-								ClientProxy.EHC_INSTANCE.mc.getTextureManager().bindTexture(MAINHAND_SWEEP_2);
-	        		    		
-	        		    		float factor = ClientProxy.EHC_INSTANCE.mc.displayHeight / 128.0F;
-	        		    		
-	        		    		System.out.println(ClientProxy.EHC_INSTANCE.mc.displayHeight + " | " + factor);
-	        		    		
-	        		    		float scale = factor / scaledRes.getScaleFactor();
-	        		    		
-	        		    		GlStateManager.scale(scale, scale, 1);
-	        		            GlStateManager.rotate(15.0F, 0.0F, 0.0F, 1.0F);
-
-	        		    		scale = 2 * factor / scaledRes.getScaleFactor();
-	        		    		
-	        		    		int startX = (currentFrameMainhand % 4) * FRAME_SIZE_X;
-		        		        int startY = (int)(Math.ceil((currentFrameMainhand + 1) / 4.0D) - 1) * FRAME_SIZE_Y;
-
-		        		        this.drawTexturedModalRect((scaledRes.getScaledWidth()-40) / scale, (scaledRes.getScaledHeight()-192) / scale, startX, startY, FRAME_SIZE_X, FRAME_SIZE_Y);
-		        				currentFrameMainhand++;
+								this.renderSweepOverlay2(scaledRes, (int)this.currentFrameMainhand, MAINHAND_SWEEP_2, -18, -42, 14.0F);
+		        				this.currentFrameMainhand++;
 							}
 						}
 						else
 						{
-							currentFrameMainhand = 0;
+							this.currentFrameMainhand = 0;
 						}
 					}
 					else
 					{
 						if ( ClientProxy.AH_INSTANCE.mainhandEnergy > 0.25F )
 						{
-							if ( currentFrameMainhand < 16 )
+							if ( this.currentFrameMainhand < 16 )
 							{
-	        		    		ClientProxy.EHC_INSTANCE.mc.getTextureManager().bindTexture(MAINHAND_SWEEP_1);
-	        		    		
-	        		    		float factor = ClientProxy.EHC_INSTANCE.mc.displayHeight / 128.0F;
-	        		    		
-	        		    		System.out.println(ClientProxy.EHC_INSTANCE.mc.displayHeight + " | " + factor);
-	        		    		
-	        		    		float scale = factor / scaledRes.getScaleFactor();
-	        		    		
-	        		    		GlStateManager.scale(scale, scale, 1);
-	        		    		
-	        		    		scale = 2 * factor / scaledRes.getScaleFactor();
-	        		    		
-	        		    		int startX = (currentFrameMainhand % 4) * FRAME_SIZE_X;
-		        		        int startY = (int)(Math.ceil((currentFrameMainhand + 1) / 4.0D) - 1) * FRAME_SIZE_Y;
-
-		        		        this.drawTexturedModalRect((scaledRes.getScaledWidth()) / scale, (scaledRes.getScaledHeight()-32) / scale, startX, startY, FRAME_SIZE_X, FRAME_SIZE_Y);
-		        				currentFrameMainhand++;
+								this.renderSweepOverlay1(scaledRes, (int)this.currentFrameMainhand, MAINHAND_SWEEP_1, -2, -10);
+		        				this.currentFrameMainhand++;
 							}
 						}
 						else
 						{
-					        currentFrameMainhand = 0;
+							this.currentFrameMainhand = 0;
 						}
+					}
+				}
+			}
+			
+			/* Offhand */
+			if ( ClientProxy.EHC_INSTANCE.betterCombatOffhand.getAnimation() == Animation.SWEEP && AnimationHandler.isOffhandAttacking() )
+			{
+				if ( ClientProxy.EHC_INSTANCE.betterCombatOffhand.alternateAnimation )
+				{
+					if ( ClientProxy.AH_INSTANCE.offhandEnergy > 0.625F )
+					{
+						if ( this.currentFrameOffhand < 16 )
+						{
+							this.renderSweepOverlay2(scaledRes, (int)this.currentFrameOffhand, OFFHAND_SWEEP_2, 8-FRAME_SIZE_X, 13, -14.0F);
+	        				this.currentFrameOffhand++;
+						}
+					}
+					else
+					{
+						this.currentFrameOffhand = 0;
+					}
+				}
+				else
+				{
+					if ( ClientProxy.AH_INSTANCE.offhandEnergy > 0.25F )
+					{
+						if ( this.currentFrameOffhand < 16 )
+						{
+							this.renderSweepOverlay1(scaledRes, (int)this.currentFrameOffhand, OFFHAND_SWEEP_1, 2-FRAME_SIZE_X, -13);
+	        				this.currentFrameOffhand++;
+						}
+					}
+					else
+					{
+						this.currentFrameOffhand = 0;
 					}
 				}
 			}
     	}
     	
+    	/* Crosshair */
 		private void showPlusCrosshair( ScaledResolution scaledRes )
 		{
-	    	GlStateManager.tryBlendFuncSeparate(GlStateManager.SourceFactor.ONE_MINUS_DST_COLOR, GlStateManager.DestFactor.ONE_MINUS_SRC_COLOR, GlStateManager.SourceFactor.ONE, GlStateManager.DestFactor.ZERO);
 			GlStateManager.enableAlpha();
 			this.drawTexturedModalRect((scaledRes.getScaledWidth()>>1) - 7, (scaledRes.getScaledHeight()>>1) - 7, 0, 0, 16, 16);
 		}
@@ -2424,6 +2442,57 @@ public class AnimationHandler
 				this.drawTexturedModalRect(j - 8, i + 17 - k, 43, 111 - k, 8, k);
 			}			
 		}
+		
+		/* Overlay */
+    	
+    	private void renderSweepOverlay1(ScaledResolution scaledRes, int currentFrame, ResourceLocation texture, int offsetX, int offsetY)
+    	{
+    		GlStateManager.pushMatrix();
+    		GlStateManager.enableBlend();
+	    	GlStateManager.tryBlendFuncSeparate(GlStateManager.SourceFactor.SRC_ALPHA, GlStateManager.DestFactor.ONE_MINUS_SRC_ALPHA, GlStateManager.SourceFactor.ONE, GlStateManager.DestFactor.ZERO);
+
+    		ClientProxy.EHC_INSTANCE.mc.getTextureManager().bindTexture(texture);
+    		
+    		float factor = ClientProxy.EHC_INSTANCE.mc.displayHeight / 128.0F;
+    		    		
+    		float scale = factor / scaledRes.getScaleFactor();
+    		
+    		GlStateManager.scale(scale, scale, 1);
+
+    		scale = 2 * factor / scaledRes.getScaleFactor();
+    		
+    		int startX = (currentFrame % 4) * FRAME_SIZE_X;
+	        int startY = (int)(Math.ceil((currentFrame + 1) / 4.0D) - 1) * FRAME_SIZE_Y;
+	        
+	        this.drawTexturedModalRect(scaledRes.getScaledWidth() / scale + offsetX, scaledRes.getScaledHeight() / scale + offsetY, startX, startY, FRAME_SIZE_X, FRAME_SIZE_Y);
+	        GlStateManager.disableBlend();
+	        GlStateManager.popMatrix();
+    	}
+    	
+    	private void renderSweepOverlay2(ScaledResolution scaledRes, int currentFrame, ResourceLocation texture, int offsetX, int offsetY, float rotation)
+    	{
+    		GlStateManager.pushMatrix();
+    		GlStateManager.enableBlend();
+	    	GlStateManager.tryBlendFuncSeparate(GlStateManager.SourceFactor.SRC_ALPHA, GlStateManager.DestFactor.ONE_MINUS_SRC_ALPHA, GlStateManager.SourceFactor.ONE, GlStateManager.DestFactor.ZERO);
+
+    		ClientProxy.EHC_INSTANCE.mc.getTextureManager().bindTexture(texture);
+    		
+    		float factor = ClientProxy.EHC_INSTANCE.mc.displayHeight / 128.0F;
+    		    		
+    		float scale = factor / scaledRes.getScaleFactor();
+    		
+    		GlStateManager.scale(scale, scale, 1);
+            GlStateManager.rotate(rotation, 0.0F, 0.0F, 1.0F);
+
+    		scale = 2 * factor / scaledRes.getScaleFactor();
+    		
+    		int startX = (currentFrame % 4) * FRAME_SIZE_X;
+	        int startY = (int)(Math.ceil((currentFrame + 1) / 4.0D) - 1) * FRAME_SIZE_Y;
+
+	        this.drawTexturedModalRect(scaledRes.getScaledWidth() / scale + offsetX, scaledRes.getScaledHeight() / scale + offsetY, startX, startY, FRAME_SIZE_X, FRAME_SIZE_Y);
+	        GlStateManager.disableBlend();
+	        GlStateManager.popMatrix();
+    	}
     }
 	 
 	@SubscribeEvent( priority = EventPriority.LOWEST, receiveCanceled = true )
@@ -2433,12 +2502,20 @@ public class AnimationHandler
 		{
 			case CROSSHAIRS:
 			{
+				float partialTicks = Minecraft.getMinecraft().getRenderPartialTicks();
+				ScaledResolution sclaedRes = new ScaledResolution(Minecraft.getMinecraft());
+				
 				if ( !event.isCanceled() && !ConfigurationHandler.showDefaultCrosshair )
 				{
 					event.setCanceled(true);
-					this.gc.renderAttackIndicator(0.5F, new ScaledResolution(Minecraft.getMinecraft()));
+					this.gc.renderAttackIndicator(partialTicks, sclaedRes);
 					MinecraftForge.EVENT_BUS.post(new RenderGameOverlayEvent.Post(event, event.getType()));
 				}
+				
+	    		if ( ConfigurationHandler.attackSweepOverlay )
+	    		{
+	    			this.gc.renderSweepOverlay(sclaedRes);
+	    		}
 				
 				break;
 			}
@@ -2449,3 +2526,36 @@ public class AnimationHandler
 		}
 	}
 }
+
+///* Wall-aware */
+//if ( this.tooClose )
+//{
+//	if ( this.tooCloseTicker == 0 )
+//	{
+//		
+//	}
+//	else if ( this.tooCloseTicker > 0 )
+//	{
+//		this.tooCloseEnergy = this.tooCloseTimer - this.tooCloseTicker + event.getPartialTicks() * this.tooCloseTicker;
+//	}
+//	else
+//	{
+//		this.tooCloseEnergy = this.tooCloseTimer + this.tooCloseTicker - event.getPartialTicks() * -this.tooCloseTicker;
+//	}
+//}
+//else
+//{
+//	if ( this.tooCloseEnergy > 0 )
+//	{
+//		this.tooCloseEnergy = this.tooCloseTimer + this.tooCloseTicker - event.getPartialTicks() * -this.tooCloseTicker;
+//		
+//		if ( this.tooCloseEnergy < 0 )
+//		{
+//			this.tooCloseEnergy = 0;
+//		}
+//	}
+//	else
+//	{
+//		this.tooCloseEnergy = 0;
+//	}
+//}

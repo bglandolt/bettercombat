@@ -12,7 +12,7 @@ import javax.annotation.Nullable;
 import bettercombat.mod.client.ClientProxy;
 import bettercombat.mod.client.SoundHandler;
 import bettercombat.mod.network.PacketHandler;
-import bettercombat.mod.network.PacketParrying;
+import bettercombat.mod.network.server.PacketParrying;
 import bettercombat.mod.server.EventHandlers;
 import bettercombat.mod.util.ConfigurationHandler.Animation;
 import bettercombat.mod.util.ConfigurationHandler.ConfigWeapon;

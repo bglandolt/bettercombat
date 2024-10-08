@@ -1,10 +1,6 @@
 package bettercombat.mod.client;
 
-import static bettercombat.mod.util.ConfigurationHandler.elanaiDodgeCompat;
-import static bettercombat.mod.util.ConfigurationHandler.elanaiDodgeMainHandFeatherCost;
-import static bettercombat.mod.util.ConfigurationHandler.elanaiDodgeOffHandFeatherCost;
 import static com.elenai.elenaidodge2.api.FeathersHelper.getFeatherLevel;
-import static com.elenai.elenaidodge2.api.FeathersHelper.getWeight;
 
 import java.lang.reflect.Field;
 import java.util.ArrayList;
@@ -15,16 +11,16 @@ import java.util.regex.Pattern;
 
 import javax.annotation.Nullable;
 
-import bettercombat.mod.network.PacketBreakBlock;
-import bettercombat.mod.network.PacketFastEquip;
 import bettercombat.mod.network.PacketHandler;
-import bettercombat.mod.network.PacketMainhandAttack;
-import bettercombat.mod.network.PacketOffhandAttack;
-import bettercombat.mod.network.PacketOnItemUse;
-import bettercombat.mod.network.PacketParrying;
-import bettercombat.mod.network.PacketShieldBash;
-import bettercombat.mod.network.PacketStopActiveHand;
-import bettercombat.mod.util.CommonProxy;
+import bettercombat.mod.network.server.PacketBreakBlock;
+import bettercombat.mod.network.server.PacketFastEquip;
+import bettercombat.mod.network.server.PacketMainhandAttack;
+import bettercombat.mod.network.server.PacketOffhandAttack;
+import bettercombat.mod.network.server.PacketOnItemUse;
+import bettercombat.mod.network.server.PacketParrying;
+import bettercombat.mod.network.server.PacketShieldBash;
+import bettercombat.mod.network.server.PacketStopActiveHand;
+import bettercombat.mod.server.CommonProxy;
 import bettercombat.mod.util.ConfigurationHandler;
 import bettercombat.mod.util.ConfigurationHandler.ConfigWeapon;
 import bettercombat.mod.util.ConfigurationHandler.CustomShield;
@@ -76,7 +72,6 @@ import net.minecraftforge.client.event.MouseEvent;
 import net.minecraftforge.common.IPlantable;
 import net.minecraftforge.common.IShearable;
 import net.minecraftforge.event.entity.player.ItemTooltipEvent;
-import net.minecraftforge.fml.common.Loader;
 import net.minecraftforge.fml.common.eventhandler.Event.Result;
 import net.minecraftforge.fml.common.eventhandler.EventPriority;
 import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
@@ -103,24 +98,9 @@ public class EventHandlersClient
 
 	/* Ticker for offhand cooldown. If offhand cooldown is 0, the attack is ready */
 	public int                    offhandCooldown        = 0;
-
-	/*
-	 * The offhand attack cooldown is the number the offhand cooldown gets set to
-	 * when making an attack
-	 */
-	public int                    offhandAttackCooldown  = ConfigurationHandler.minimumAttackSpeedTicks;
-
-	/*
-	 * Ticker for mainhand cooldown. If minitiateAnimationainhand cooldown is 0, the
-	 * attack is ready
-	 */
+	
+	/* Ticker for mainhand cooldown. If mainhand cooldown is 0, the attack is ready */
 	public int                    mainhandCooldown       = 0;
-
-	/*
-	 * The mainhand attack cooldown is the number the mainhand cooldown gets set to
-	 * when making an attack
-	 */
-	public int                    mainhandAttackCooldown = ConfigurationHandler.minimumAttackSpeedTicks;
 
 	public static final String    EMPTY                  = "";
 	public static final String    BLANK_SPACE            = " ";
@@ -133,8 +113,6 @@ public class EventHandlersClient
 	public static final String    ATTACK_DAMAGE_REGEX    = "(([0-9]+\\.*[0-9]*)( *" + attackDamageString + "))";
 
 	public static final String    mainhandString         = I18n.format("item.modifiers.mainhand");
-
-	public static boolean elanaiDodgeEnabled = Loader.isModLoaded("elenaidodge2") & elanaiDodgeCompat;
 
 	public boolean overwriteLeftClick(boolean checkBlocks)
 	{
@@ -208,7 +186,7 @@ public class EventHandlersClient
 				{
 					/* offhandCooldown used for crosshair cooldown display */
 					this.offhandCooldown = bashCooldown;
-					this.offhandAttackCooldown = bashCooldown;
+					this.betterCombatOffhand.attackCooldown = bashCooldown;
 
 					/* Set the internal shield cooldown */
 					player.getCooldownTracker().setCooldown(shield, bashCooldown);
@@ -216,7 +194,7 @@ public class EventHandlersClient
 					this.sendStopActiveHandPacket();
 
 					/* animate the shield bash */
-					ClientProxy.EHC_INSTANCE.betterCombatOffhand.setShieldBashing();
+					this.betterCombatOffhand.setShieldBashing();
 
 					/* Prevent the player from immediately attacking with a weapon after a shield bash */
 					Reflections.setLeftClickCounter(this.mc, 10);
@@ -350,7 +328,6 @@ public class EventHandlersClient
 		/*
 		 * Reset the MAINHAND cooldown so the player cannot attack for a period of time
 		 */
-		this.mc.player.resetCooldown();
 		this.resetMainhandCooldown(player);
 
 		/* SWING! Initiate the MAINHAND animation for attacking */
@@ -362,6 +339,7 @@ public class EventHandlersClient
 
 	private void sendStopActiveHandPacket()
 	{
+		this.mc.player.stopActiveHand(); // TODO
 		PacketHandler.instance.sendToServer(new PacketStopActiveHand());
 	}
 
@@ -388,11 +366,13 @@ public class EventHandlersClient
 
 		RayTraceResult mov = this.getMainhandMouseover();
 
-		if (Loader.isModLoaded("elanaidodge2") && elanaiDodgeCompat) {
-			if (getFeatherLevel(this.mc.player) < elanaiDodgeMainHandFeatherCost) {
-				return;
-			}
-		}
+//		if (Loader.isModLoaded("elanaidodge2") && elanaiDodgeCompat)
+//		{
+//			if (getFeatherLevel(this.mc.player) < elanaiDodgeMainHandFeatherCost)
+//			{
+//				return;
+//			}
+//		}
 
 		/*
 		 * If the MOV is not null AND has an entity AND if it is a player, can it be PVPd
@@ -513,11 +493,13 @@ public class EventHandlersClient
 
 		RayTraceResult mov = this.getOffhandMouseover();
 
-		if (elanaiDodgeCompat && Loader.isModLoaded("elanaidodge2")) {
-			if (getFeatherLevel(this.mc.player) < elanaiDodgeOffHandFeatherCost) {
-				return;
-			}
-		}
+//		if (elanaiDodgeCompat && Loader.isModLoaded("elanaidodge2"))
+//		{
+//			if (getFeatherLevel(this.mc.player) < elanaiDodgeOffHandFeatherCost)
+//			{
+//				return;
+//			}
+//		}
 
 		/*
 		 * If, the MOV is not null AND has an entity AND if it is a player, can it be
@@ -751,15 +733,13 @@ public class EventHandlersClient
 		if (this.itemStackMainhand.getItemUseAction() != EnumAction.NONE || this.itemStackOffhand.getItemUseAction() != EnumAction.NONE)
 		{
 
-			/* If the OFFHAND can block */
-			if (this.itemStackOffhand.getItemUseAction() == EnumAction.BLOCK)
+			/* If the OFFHAND is an item that can block */
+			if ( this.itemStackOffhand.getItemUseAction() == EnumAction.BLOCK )
 			{
-
-				if (ConfigurationHandler.disableBlockingWhileAttacking && !this.isMainhandAttackReady())
+				if ( !this.isOffhandAttackReady() || (ConfigurationHandler.disableBlockingWhileAttacking && !this.isMainhandAttackReady()) )
 				{
 					this.sendStopActiveHandPacket();
 				}
-
 			}
 
 			/* Continue with right-click and use item! */
@@ -1312,55 +1292,126 @@ public class EventHandlersClient
 	private double hX = 0.0D;
 	private double hZ = 0.0D;
 
+	// TODO
+	/* onUpdate */
+//	@SubscribeEvent( priority = EventPriority.HIGHEST, receiveCanceled = true ) // XXX
+//	public void tickEventHighest(TickEvent.ClientTickEvent event)
+//	{
+//		/* Partial Ticks */
+//		
+//		if ( Minecraft.getDebugFPS() < 30 )
+//		{
+//			ClientProxy.AH_INSTANCE.partialTicks = 0.66666666F;
+//		}
+//		else
+//		{
+//			ClientProxy.AH_INSTANCE.partialTicks = 20.0F / Minecraft.getDebugFPS();
+//		}
+//	}
+	
+//	@SubscribeEvent( priority = EventPriority.HIGHEST, receiveCanceled = true ) // XXX
+//    public void onClientTick(TickEvent.ClientTickEvent event)
+//    {
+//        if ( ++tickCounter > 20 )
+//        {
+//        	if ( Minecraft.getDebugFPS() < 30 )
+//    		{
+//    			ClientProxy.AH_INSTANCE.partialTicks = 0.66666666F;
+//    		}
+//    		else
+//    		{
+//    			ClientProxy.AH_INSTANCE.partialTicks = 20.0F / Minecraft.getDebugFPS();
+//    		}
+//        	
+//        	this.calculateFeatherLevel(this.mc.player);
+//        	
+//            tickCounter = 0;
+//        }
+//    }
+	
+	public static float calculateFeatherLevel(EntityPlayerSP player)
+	{
+		if ( ConfigurationHandler.elanaiDodgeEnabled )
+		{		
+			float featherLevelModifier = 3.0F - getFeatherLevel(player) * 0.1F;
+		
+			float healthLevelModifier = 3.0F - (player.getHealth() / player.getMaxHealth()) * 2.0F;
+		
+			return featherLevelModifier > healthLevelModifier ? featherLevelModifier : healthLevelModifier;
+		}
+		else
+		{
+			return 3.0F - (player.getHealth() / player.getMaxHealth()) * 2.0F;
+		}
+	}
+	
+	private int tickCounter = 10;
+	
 	/* onUpdate */
 	@SubscribeEvent( priority = EventPriority.LOW, receiveCanceled = true ) // XXX
 	public void tickEventLow(TickEvent.ClientTickEvent event)
 	{
-		if (event.phase == TickEvent.Phase.END && this.mc.player != null)
-		{
-			ClientProxy.AH_INSTANCE.breatheTicks += ConfigurationHandler.breathingAnimationSpeed; // * calculatedWeight TODO getWeight
-
+		if ( event.phase == TickEvent.Phase.END && this.mc.player != null )
+		{			
 			this.checkItemstacksChanged(false);
+			
+			if ( ++this.tickCounter > 20 )
+	        {
+	        	if ( Minecraft.getDebugFPS() < 30 )
+	    		{
+	    			ClientProxy.AH_INSTANCE.partialTicks = 0.66666666F;
+	    		}
+	    		else
+	    		{
+	    			ClientProxy.AH_INSTANCE.partialTicks = 20.0F / Minecraft.getDebugFPS();
+	    		}
+	        	
+	        	calculateFeatherLevel(this.mc.player);
+	        	
+	            this.tickCounter = 0;
+	        } 
+			
+			/* Sprinting */
+			if ( this.mc.player.isSprinting() )
+			{
+				ClientProxy.AH_INSTANCE.mainhandSprinting = ClientProxy.AH_INSTANCE.equippedProgressMainhand != -1.0F && !AnimationHandler.isMainhandAttacking();
+				ClientProxy.AH_INSTANCE.offhandSprinting = ClientProxy.AH_INSTANCE.equippedProgressOffhand != -1.0F && !AnimationHandler.isOffhandAttacking();
+			}
+			else
+			{
+				ClientProxy.AH_INSTANCE.mainhandSprinting = false;
+				ClientProxy.AH_INSTANCE.offhandSprinting = false;
+			}
+			
+			/* Blocking */
+			if ( this.itemStackOffhand.getItem() instanceof ItemShield && Helpers.isHandActive(this.mc.player, EnumHand.OFF_HAND) && ( !ConfigurationHandler.disableBlockingWhileAttacking || this.isMainhandAttackReady() ))
+    		{
+	    		ClientProxy.AH_INSTANCE.blocking = true;
+    		}
+    		else
+    		{
+	    		ClientProxy.AH_INSTANCE.blocking = false;
+    		}
 
-			/* Wall-aware positioning */
+			/* Wall-Aware Positioning */
 			if (this.mc.objectMouseOver != null)
 			{
-
-				if (this.mc.objectMouseOver.hitVec != null)
+				if ( this.mc.objectMouseOver.hitVec != null )
 				{
 					this.hX = this.mc.player.posX - this.mc.objectMouseOver.hitVec.x;
 					this.hZ = this.mc.player.posZ - this.mc.objectMouseOver.hitVec.z;
-
-					if ((this.hX = this.hX * this.hX) < 0.7D && (this.hZ = this.hZ * this.hZ) < 0.7D)
-					{
-						ClientProxy.AH_INSTANCE.tooCloseAmount = MathHelper.clamp(0.5D - (this.hX + this.hZ) * 0.25D, 0.1D, 0.4D);
-						ClientProxy.AH_INSTANCE.tooClose = true;
-					}
-					else
-					{
-						ClientProxy.AH_INSTANCE.tooClose = false;
-					}
-
+					
+					this.calculateWallAwarePositioning();
 				}
 				else if (this.mc.objectMouseOver.entityHit != null)
 				{
 					this.hX = this.mc.player.posX - (this.mc.objectMouseOver.entityHit.posX + this.mc.objectMouseOver.entityHit.width * 0.5D);
 					this.hZ = this.mc.player.posZ - (this.mc.objectMouseOver.entityHit.posZ + this.mc.objectMouseOver.entityHit.width * 0.5D);
-
-					if ((this.hX = this.hX * this.hX) < 0.7D && (this.hZ = this.hZ * this.hZ) < 0.7D)
-					{
-						ClientProxy.AH_INSTANCE.tooCloseAmount = MathHelper.clamp(0.5D - (this.hX + this.hZ) * 0.25D, 0.1D, 0.4D);
-						ClientProxy.AH_INSTANCE.tooClose = true;
-					}
-					else
-					{
-						ClientProxy.AH_INSTANCE.tooClose = false;
-					}
-
+					
+					this.calculateWallAwarePositioning();
 				}
-
 			}
-
+			
 			/* Lets the player hold down left-click */
 			if (this.mc.gameSettings.keyBindAttack.isPressed() || this.mc.gameSettings.keyBindAttack.isKeyDown())
 			{
@@ -1452,7 +1503,7 @@ public class EventHandlersClient
 
 				}
 
-				if (ConfigurationHandler.disableBlockingWhileAttacking && Helpers.isHandActive(this.mc.player, EnumHand.OFF_HAND))
+				if ( ConfigurationHandler.disableBlockingWhileAttacking && Helpers.isHandActive(this.mc.player, EnumHand.OFF_HAND) )
 				{
 					this.sendStopActiveHandPacket();
 				}
@@ -1503,12 +1554,10 @@ public class EventHandlersClient
 			}
 			else if (this.betterCombatOffhand.equipSoundTimer > 0 && --this.betterCombatOffhand.equipSoundTimer <= 0)
 			{
-
 				if (this.betterCombatOffhand.getWeaponProperty() != WeaponProperty.TWOHAND && this.betterCombatOffhand.getWeaponProperty() != WeaponProperty.MAINHAND)
 				{
 					this.offhandEquipSound();
 				}
-
 			}
 
 			if (this.mainhandCooldown > 0)
@@ -1520,10 +1569,110 @@ public class EventHandlersClient
 			{
 				this.offhandCooldown--;
 			}
-
 		}
-
 	}
+	
+	public void calculateWallAwarePositioning()
+	{
+		this.hX = this.hX * this.hX;
+		this.hZ = this.hZ * this.hZ;
+		
+		if ( this.hX < 1.0D && this.hZ < 1.0D )
+		{
+			if ( this.hX < this.hZ )
+			{
+				this.hZ *= 0.1D;
+			}
+			else
+			{
+				this.hX *= 0.1D;
+			}
+			
+			ClientProxy.AH_INSTANCE.tooCloseCap = MathHelper.clamp(0.6D - (this.hX + this.hZ) * 3.0D, 0.1D, 0.6D);
+		}
+		else
+		{
+			ClientProxy.AH_INSTANCE.tooCloseCap = 0;
+		}
+	}
+	
+//	public void calculateWallAwarePositioning()
+//	{
+//		this.hX = this.hX * this.hX;
+//		this.hZ = this.hZ * this.hZ;
+//		
+//		if ( this.hX < 1.0D && this.hZ < 1.0D )
+//		{
+//			if ( this.hX < this.hZ )
+//			{
+//				this.hZ *= 0.1D;
+//			}
+//			else
+//			{
+//				this.hX *= 0.1D;
+//			}
+//			
+//			double tooCloseCap = 0.6D - (this.hX + this.hZ) * 3.0D;
+//			
+//			System.out.println(this.hX); // close to x, 0 is close
+//			System.out.println(this.hZ); // close to x, 0 is close
+//			System.out.println(tooCloseCap);
+//			
+//			if ( tooCloseCap > 0.1D )
+//			{
+//				if ( tooCloseCap > 0.6D )
+//				{
+//					tooCloseCap = 0.6D;
+//				}
+//				
+//				if ( ClientProxy.AH_INSTANCE.tooCloseTimer < tooCloseCap * 0.8D )
+//				{
+//					ClientProxy.AH_INSTANCE.tooCloseTicker = 0.03F;
+//					ClientProxy.AH_INSTANCE.tooCloseTimer += ClientProxy.AH_INSTANCE.tooCloseTicker;
+//				}
+//				else if ( ClientProxy.AH_INSTANCE.tooCloseTimer > tooCloseCap * 1.2D )
+//				{
+//					ClientProxy.AH_INSTANCE.tooCloseTicker = -0.02F;
+//					ClientProxy.AH_INSTANCE.tooCloseTimer += ClientProxy.AH_INSTANCE.tooCloseTicker;
+//				}
+//				else
+//				{
+//					if ( ClientProxy.AH_INSTANCE.tooCloseTimer < tooCloseCap * 0.9D )
+//					{
+//						ClientProxy.AH_INSTANCE.tooCloseTicker = 0.015F;
+//						ClientProxy.AH_INSTANCE.tooCloseTimer += ClientProxy.AH_INSTANCE.tooCloseTicker;
+//					}
+//					else if ( ClientProxy.AH_INSTANCE.tooCloseTimer > tooCloseCap * 1.1D )
+//					{
+//						ClientProxy.AH_INSTANCE.tooCloseTicker = -0.01F;
+//						ClientProxy.AH_INSTANCE.tooCloseTimer += ClientProxy.AH_INSTANCE.tooCloseTicker;
+//					}
+//					else
+//					{
+//						ClientProxy.AH_INSTANCE.tooCloseTicker = 0;
+//					}
+//				}
+//
+//				ClientProxy.AH_INSTANCE.tooClose = true;
+//			}
+//		}
+//		else
+//		{
+//			if ( ClientProxy.AH_INSTANCE.tooCloseTimer > 0.0F )
+//			{
+//				ClientProxy.AH_INSTANCE.tooCloseTicker = -0.04F;
+//				ClientProxy.AH_INSTANCE.tooCloseTimer += ClientProxy.AH_INSTANCE.tooCloseTicker;
+//				
+//				if ( ClientProxy.AH_INSTANCE.tooCloseTimer < 0.0F )
+//				{
+//					ClientProxy.AH_INSTANCE.tooCloseTicker = 0;
+//					ClientProxy.AH_INSTANCE.tooCloseTimer = 0;
+//				}
+//			}
+//			
+//			ClientProxy.AH_INSTANCE.tooClose = false;
+//		}
+//	}
 
 //	@SubscribeEvent( priority = EventPriority.HIGH, receiveCanceled = true )
 //	public void livingUpdate( TickEvent.ClientTickEvent event )
@@ -1570,10 +1719,11 @@ public class EventHandlersClient
 				}
 				
 				this.resetMainhandCooldown(this.mc.player);
-				return true;
+				ClientProxy.AH_INSTANCE.reequipAnimationMainhand();
 			}
 
 			this.resetOffhandCooldown(this.mc.player);
+			ClientProxy.AH_INSTANCE.reequipAnimationOffhand();
 			return true;
 		}
 
@@ -1585,6 +1735,7 @@ public class EventHandlersClient
 			}
 
 			this.resetMainhandCooldown(this.mc.player);
+			ClientProxy.AH_INSTANCE.reequipAnimationMainhand();
 			return true;
 		}
 
@@ -1614,7 +1765,7 @@ public class EventHandlersClient
 
 			if (!force && this.betterCombatMainhand.equipSoundTimer <= 0 && this.betterCombatOffhand.equipSoundTimer >= 0 && this.betterCombatMainhand.hasConfigWeapon())
 			{
-				SoundHandler.playSheatheSoundRight(this.mc.player, this.betterCombatMainhand, this.itemStackMainhand, this.mainhandAttackCooldown, Helpers.isMetalItem(this.itemStackMainhand));
+				SoundHandler.playSheatheSoundRight(this.mc.player, this.betterCombatMainhand, this.itemStackMainhand, this.betterCombatMainhand.getAttackCooldown(), Helpers.isMetalItem(this.itemStackMainhand));
 			}
 			
 			/* Previous weapon */
@@ -1666,7 +1817,7 @@ public class EventHandlersClient
 					if ( mainhandString.contains(weapon.name) )
 					{
 						/* Config weapon found! */
-						this.betterCombatMainhand.setBetterCombatWeapon(weapon, this.itemStackMainhand, this.mainhandAttackCooldown);
+						this.betterCombatMainhand.setBetterCombatWeapon(this.mc.player, weapon, this.itemStackMainhand, this.itemStackOffhand, true);
 						
 						if ( this.betterCombatOffhand.hasConfigWeapon() && this.betterCombatMainhand.getWeaponProperty().equals(ConfigurationHandler.WeaponProperty.TWOHAND) )
 						{
@@ -1679,7 +1830,7 @@ public class EventHandlersClient
 				}
 
 				/* No config weapon found, but it is a weapon! */
-				this.betterCombatMainhand.setBetterCombatWeapon(ConfigurationHandler.DEFAULT_CUSTOM_WEAPON, this.itemStackMainhand, this.mainhandAttackCooldown);
+				this.betterCombatMainhand.setBetterCombatWeapon(this.mc.player, ConfigurationHandler.DEFAULT_CUSTOM_WEAPON, this.itemStackMainhand, this.itemStackOffhand, true);
 
 				if ( this.betterCombatOffhand.hasConfigWeapon() && this.betterCombatMainhand.getWeaponProperty().equals(ConfigurationHandler.WeaponProperty.TWOHAND) )
 				{
@@ -1707,8 +1858,7 @@ public class EventHandlersClient
 
 	public boolean checkItemstackChangedOffhand(boolean force)
 	{
-
-		if (force || !ItemStack.areItemsEqualIgnoreDurability(this.itemStackOffhand, this.mc.player.getHeldItemOffhand())) // !ItemStack.areItemsEqualIgnoreDurability(this.itemStackOffhand,
+		if (force || !ItemStack.areItemsEqualIgnoreDurability(this.itemStackOffhand, this.mc.player.getHeldItemOffhand()))  // !ItemStack.areItemsEqualIgnoreDurability(this.itemStackOffhand,
 																															// this.mc.player.getHeldItemOffhand()) ||
 																															// !ItemStack.areItemStackTagsEqual(this.itemStackOffhand,
 																															// this.mc.player.getHeldItemOffhand()))
@@ -1716,7 +1866,7 @@ public class EventHandlersClient
 
 			if (!force && this.betterCombatOffhand.equipSoundTimer <= 0 && this.betterCombatOffhand.hasConfigWeapon())
 			{
-				SoundHandler.playSheatheSoundLeft(this.mc.player, this.betterCombatOffhand, this.itemStackOffhand, this.offhandAttackCooldown, Helpers.isMetalItem(this.itemStackOffhand));
+				SoundHandler.playSheatheSoundLeft(this.mc.player, this.betterCombatOffhand, this.itemStackOffhand, this.betterCombatOffhand.getAttackCooldown(), Helpers.isMetalItem(this.itemStackOffhand));
 
 				/*
 				 * Set the offhand equip sound to disabled so they do not play at the same time,
@@ -1738,18 +1888,17 @@ public class EventHandlersClient
 				{
 					if ( offhandString.contains(weapon.name) )
 					{
-						this.betterCombatOffhand.setBetterCombatWeapon(weapon, this.itemStackOffhand, this.offhandAttackCooldown);
+						this.betterCombatOffhand.setBetterCombatWeapon(this.mc.player, weapon, this.itemStackMainhand, this.itemStackOffhand, false);
 						return true;
 					}
 				}
 
 				/* No config weapon found, but it is a weapon! */
-				this.betterCombatOffhand.setBetterCombatWeapon(ConfigurationHandler.DEFAULT_CUSTOM_WEAPON, this.itemStackOffhand, this.offhandAttackCooldown);
+				this.betterCombatOffhand.setBetterCombatWeapon(this.mc.player, ConfigurationHandler.DEFAULT_CUSTOM_WEAPON, this.itemStackMainhand, this.itemStackOffhand, false);
 				return true;
 			}
 			else
 			{
-
 				/* Add an equip sound to the shield */
 				if (this.itemStackOffhand.getItem() instanceof ItemShield)
 				{
@@ -1777,23 +1926,23 @@ public class EventHandlersClient
 	public void mainhandSwingSound()
 	{
 		this.mc.player.swingArm(EnumHand.MAIN_HAND);
-		SoundHandler.playSwingSoundRight(this.mc.player, this.betterCombatMainhand, this.itemStackMainhand, this.mainhandAttackCooldown);
+		SoundHandler.playSwingSoundRight(this.mc.player, this.betterCombatMainhand, this.itemStackMainhand, this.betterCombatMainhand.getAttackCooldown());
 	}
 
 	public void offhandSwingSound()
 	{
 		this.mc.player.swingArm(EnumHand.OFF_HAND);
-		SoundHandler.playSwingSoundLeft(this.mc.player, this.betterCombatOffhand, this.itemStackOffhand, this.offhandAttackCooldown);
+		SoundHandler.playSwingSoundLeft(this.mc.player, this.betterCombatOffhand, this.itemStackOffhand, this.betterCombatOffhand.getAttackCooldown());
 	}
 
 	private void mainhandEquipSound()
 	{
-		SoundHandler.playEquipSoundRight(this.mc.player, this.betterCombatMainhand, this.itemStackMainhand, this.mainhandAttackCooldown);
+		SoundHandler.playEquipSoundRight(this.mc.player, this.betterCombatMainhand, this.itemStackMainhand, this.betterCombatMainhand.getAttackCooldown());
 	}
 
 	private void offhandEquipSound()
 	{
-		SoundHandler.playEquipSoundLeft(this.mc.player, this.betterCombatOffhand, this.itemStackOffhand, this.offhandAttackCooldown);
+		SoundHandler.playEquipSoundLeft(this.mc.player, this.betterCombatOffhand, this.itemStackOffhand, this.betterCombatOffhand.getAttackCooldown());
 	}
 
 	/*
@@ -1808,75 +1957,35 @@ public class EventHandlersClient
 
 	public boolean isMainhandAttackReady()
 	{
-
-//		if (Loader.isModLoaded("elenaidodge2") & elanaiDodgeCompat)
-//		{
-//			return this.mainhandCooldown <= 0 & (getFeatherLevel(this.mc.player) - getWeight(this.mc.player)) >= elanaiDodgeMainHandFeatherCost;
-//		}
-
 		return this.mainhandCooldown <= 0;
 	}
 
 	/* visual only */
 	public float getMainhandCooledAttackStrength()
 	{
-		return 1.0F - MathHelper.clamp((float) (1 + this.mainhandCooldown) / this.mainhandAttackCooldown, 0.0F, 1.0F);
+		return 1.0F - MathHelper.clamp((float) (1 + this.mainhandCooldown) / this.betterCombatMainhand.getAttackCooldown(), 0.0F, 1.0F);
 	}
 
 	public boolean isOffhandAttackReady()
 	{
-//		if (Loader.isModLoaded("elenaidodge2") & elanaiDodgeCompat)
-//		{
-//			return this.offhandCooldown <= 0 & (getFeatherLevel(this.mc.player) - getWeight(this.mc.player)) >= elanaiDodgeOffHandFeatherCost;
-//		}
-
 		return this.offhandCooldown <= 0;
 	}
 
 	/* visual only */
 	public float getOffhandCooledAttackStrength()
 	{
-		return 1.0F - MathHelper.clamp((float) (1 + this.offhandCooldown) / this.offhandAttackCooldown, 0.0F, 1.0F);
+		return 1.0F - MathHelper.clamp((float) (1 + this.offhandCooldown) / this.betterCombatOffhand.getAttackCooldown(), 0.0F, 1.0F);
 	}
 
 	public void resetMainhandCooldown(EntityPlayerSP player)
 	{
-		// if ( (getFeatherLevel(this.mc.player) - getWeight(this.mc.player)) >= elanaiDodgeMainHandFeatherCost )
-
-		this.mainhandAttackCooldown = this.getMainhandCooldown(player, this.itemStackMainhand, this.itemStackOffhand);
-
-		if ( elanaiDodgeEnabled && getFeatherLevel(player) - getWeight(player) <= 0 )
-		{
-			this.mainhandAttackCooldown *= 2;
-		}
-		
-		if ( this.mainhandAttackCooldown < ConfigurationHandler.minimumAttackSpeedTicks )
-		{
-			this.mainhandAttackCooldown = ConfigurationHandler.minimumAttackSpeedTicks;
-		}
-		
-		this.mainhandCooldown = this.mainhandAttackCooldown;
-
-		ClientProxy.AH_INSTANCE.reequipAnimationMainhand();
+		this.mc.player.resetCooldown();
+		this.mainhandCooldown = this.betterCombatMainhand.setAttackCooldown(this.getMainhandCooldown(player, this.itemStackMainhand, this.itemStackOffhand));
 	}
 	
 	public void resetOffhandCooldown(EntityPlayerSP player)
 	{
-		this.offhandAttackCooldown = this.getOffhandCooldown(player, this.itemStackOffhand, this.itemStackMainhand);
-
-		if ( elanaiDodgeEnabled && getFeatherLevel(player) - getWeight(player) <= 0 )
-		{
-			this.offhandAttackCooldown *= 2;
-		}
-
-		if ( this.offhandAttackCooldown < ConfigurationHandler.minimumAttackSpeedTicks )
-		{
-			this.offhandAttackCooldown = ConfigurationHandler.minimumAttackSpeedTicks;
-		}
-
-		this.offhandCooldown = this.offhandAttackCooldown;
-
-		ClientProxy.AH_INSTANCE.reequipAnimationOffhand();
+		this.offhandCooldown = this.betterCombatOffhand.setAttackCooldown(this.getOffhandCooldown(player, this.itemStackOffhand, this.itemStackMainhand));
 	}
 	
 	/* ====================================================================================================================================================== */
@@ -1888,10 +1997,9 @@ public class EventHandlersClient
 	{
 		if (ConfigurationHandler.isConfigWeapon(event.getItemStack().getItem()))
 		{
-			for (ConfigWeapon s : ConfigurationHandler.weapons)
+			for ( ConfigWeapon s : ConfigurationHandler.weapons )
 			{
-
-				if (Helpers.getRegistryNameFromItem(event.getItemStack()).contains(s.name))
+				if ( Helpers.getRegistryNameFromItem(event.getItemStack()).contains(s.name) )
 				{
 					this.updateBetterCombatTooltipHigh(s, event);
 					return;
@@ -1903,13 +2011,13 @@ public class EventHandlersClient
 			return;
 		}
 
-		if (event.getItemStack().getItem() instanceof ItemShield)
+		if ( event.getItemStack().getItem() instanceof ItemShield )
 		{
 
-			for (CustomShield s : ConfigurationHandler.shields)
+			for ( CustomShield s : ConfigurationHandler.shields )
 			{
 
-				if (event.getItemStack().getItem().equals(s.shield))
+				if ( event.getItemStack().getItem().equals(s.shield) )
 				{
 					event.getToolTip().add(EMPTY);
 					event.getToolTip().add(I18n.format("bettercombat.info.property.offhand.text"));
@@ -2867,8 +2975,8 @@ public class EventHandlersClient
 		
 		if ( !mh.isEmpty() && !oh.isEmpty() )
 		{
-			double mhFatigue = ClientProxy.EHC_INSTANCE.betterCombatMainhand.getFatigue();
-			double ohFatigue = ClientProxy.EHC_INSTANCE.betterCombatOffhand.getFatigue();
+			double mhFatigue = this.betterCombatMainhand.getFatigue();
+			double ohFatigue = this.betterCombatOffhand.getFatigue();
 			
 			if ( mhFatigue > 0 || ohFatigue > 0 )
 			{
@@ -3071,8 +3179,8 @@ public class EventHandlersClient
 
 		if ( !mh.isEmpty() && !oh.isEmpty() )
 		{
-			double mhFatigue = ClientProxy.EHC_INSTANCE.betterCombatMainhand.getFatigue();
-			double ohFatigue = ClientProxy.EHC_INSTANCE.betterCombatOffhand.getFatigue();
+			double mhFatigue = this.betterCombatMainhand.getFatigue();
+			double ohFatigue = this.betterCombatOffhand.getFatigue();
 			
 			if ( mhFatigue > 0 || ohFatigue > 0 )
 			{

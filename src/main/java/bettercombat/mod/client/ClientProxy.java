@@ -3,7 +3,7 @@ package bettercombat.mod.client;
 import org.lwjgl.input.Keyboard;
 
 import bettercombat.mod.network.PacketHandler;
-import bettercombat.mod.util.CommonProxy;
+import bettercombat.mod.server.CommonProxy;
 import net.minecraft.client.settings.KeyBinding;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.fml.client.registry.ClientRegistry;
@@ -18,7 +18,6 @@ public class ClientProxy extends CommonProxy
 {
 	public static EventHandlersClient EHC_INSTANCE;
 	public static AnimationHandler AH_INSTANCE;
-	public static CustomScreenOverlay CSO_INSTANCE;
 
 	public static KeyBinding fastEquip = new KeyBinding("key.fastEquip.desc", Keyboard.KEY_X, "key.categories.misc");
 
@@ -26,7 +25,9 @@ public class ClientProxy extends CommonProxy
 	public void preInit( FMLPreInitializationEvent event )
 	{
 		super.preInit(event);
+		
 		PacketHandler.registerClientMessages();
+
 		ClientRegistry.registerKeyBinding(fastEquip);
 	}
 
@@ -36,7 +37,6 @@ public class ClientProxy extends CommonProxy
 		super.postInit(event);
 		MinecraftForge.EVENT_BUS.register(EHC_INSTANCE = new EventHandlersClient());
 		MinecraftForge.EVENT_BUS.register(AH_INSTANCE = new AnimationHandler());
-		MinecraftForge.EVENT_BUS.register(CSO_INSTANCE = new CustomScreenOverlay());
 	}
 	
 	@Override
@@ -44,6 +44,7 @@ public class ClientProxy extends CommonProxy
 	{
 		super.init(event);
 	}
+}
 		
 //	@Override
 //    public void spawnSweep(EntityPlayer player)
@@ -79,4 +80,3 @@ public class ClientProxy extends CommonProxy
 //		
 //		return factory.createParticle(world, x, y, z);
 //	}
-}
