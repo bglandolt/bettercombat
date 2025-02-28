@@ -85,7 +85,7 @@ public class AnimationHandler
 	 * How long the player has been blocking for, up to 10 frames (3.33 ticks)
 	 * blockingEnergy is -1 if there is no shield in the offhandA
 	 */
-	public int blockingEnergy = 0;
+	public float blockingEnergy = 0;
 	
 	/* 0 to 10 */
 	public float parryingAnimationEnergy = 0.0F;
