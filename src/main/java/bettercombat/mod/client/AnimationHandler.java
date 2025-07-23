@@ -83,9 +83,9 @@ public class AnimationHandler
 
 	/*
 	 * How long the player has been blocking for, up to 10 frames (3.33 ticks)
-	 * blockingEnergy is -1 if there is no shield in the offhandA
+	 * blockingEnergy is -1 if there is no shield in the offhand
 	 */
-	public int blockingEnergy = 0;
+	public float blockingEnergy = 0.0F;
 	
 	/* 0 to 10 */
 	public float parryingAnimationEnergy = 0.0F;
@@ -102,7 +102,7 @@ public class AnimationHandler
 	public float partialTicks = 0.66666666F;
 
 	/* EventHandlersClient */
-	public float featherLevelModifier = 1.0F;
+	//public float featherLevelModifier = 1.0F;
 	
 //	float xx,yy,zz;
 	
@@ -122,7 +122,7 @@ public class AnimationHandler
 		/* ItemRenderer */
 		if ( event.getHand() == EnumHand.MAIN_HAND )
         {
-			this.breatheTicks += ConfigurationHandler.breathingAnimationSpeed * this.featherLevelModifier * this.partialTicks;
+			this.breatheTicks += ConfigurationHandler.breathingAnimationSpeed * ClientProxy.EHC_INSTANCE.featherLevelBreathingIntensity * this.partialTicks;
 			
 			/* Sprinting */
 			if ( this.mainhandSprinting )
@@ -262,19 +262,19 @@ public class AnimationHandler
     		{
     	    	if ( this.blocking )
     			{
-					if ( this.blockingEnergy < 10 )
+					if ( this.blockingEnergy < 10.0F )
 					{
-						if ( (this.blockingEnergy += this.partialTicks) > 10 )
+						if ( (this.blockingEnergy += this.partialTicks*3.0F) > 10.0F )
 						{
-							this.blockingEnergy = 10;
+							this.blockingEnergy = 10.0F;
 						}
 					}
         		}
-				else if ( this.blockingEnergy > 0 )
+				else if ( this.blockingEnergy > 0.0F )
     			{
-					if ( (this.blockingEnergy -= this.partialTicks) < 0 )
+					if ( (this.blockingEnergy -= this.partialTicks*2.0F) < 0.0F )
 					{
-						this.blockingEnergy = 0;
+						this.blockingEnergy = 0.0F;
 					}
     			}
 
@@ -285,7 +285,7 @@ public class AnimationHandler
     		}
     		else
     		{
-    			this.blockingEnergy = -1;
+    			this.blockingEnergy = -1.0F;
     		}
 
     		/* Default rendering! */
@@ -427,7 +427,7 @@ public class AnimationHandler
         this.positionBreathingMainhand();
 
 		/* Mining */
-        if ( ClientProxy.EHC_INSTANCE.betterCombatMainhand.isMining() && (isMainhandAttacking() || ClientProxy.EHC_INSTANCE.startedMining || ClientProxy.EHC_INSTANCE.holdingLeftClick || this.miningEnergy > 0) )
+        if ( ClientProxy.EHC_INSTANCE.betterCombatMainhand.isMining() && (isMainhandAttacking() || ClientProxy.EHC_INSTANCE.startedMining || ClientProxy.EHC_INSTANCE.holdingLeftClick || this.miningEnergy > 0.0F) )
 		{			
 			this.resetMainhandEnergy();
 			
@@ -442,15 +442,19 @@ public class AnimationHandler
 			else if ( tool instanceof ItemAxe )
 			{
 				this.calculateMiningEnergy(event);
-				this.animationWoodcuttingMainhand(this.miningEnergy);
-				this.reequipAnimationMainhand();
+				this.animationWoodcuttingMainhand(event);
+            	this.reequipAnimationMainhand();
 			}
-			else if ( ClientProxy.EHC_INSTANCE.betterCombatMainhand.getAnimation().equals(Animation.STAB) )
-			{
-        		this.animationStabMainhand(this.miningEnergy);
-        		this.resetMiningEnergy();
-            	this.noReequipAnimationMainhand();
-			}
+//			else if ( ClientProxy.EHC_INSTANCE.betterCombatMainhand.getAnimation().equals(Animation.STAB) )
+//			{
+//				this.calculateMiningEnergy(event);
+//        		this.animationStabMainhand(this.miningEnergy);
+//        		this.noReequipAnimationMainhand();
+//        		
+////        		this.animationStabMainhand(this.miningEnergy);
+////        		this.resetMiningEnergy();
+////            	this.noReequipAnimationMainhand();
+//			}
 			else /* Sword, Pickaxe, Axe */
 			{
 				this.calculateMiningEnergy(event);
@@ -694,20 +698,52 @@ public class AnimationHandler
 	/*													  Mining Animation
 	/* ------------------------------------------------------------------------------------------------------------------------- */
 	
+    private float miningEnergyFadeIn = 0.0F;
+    
+    private void miningFadeIn()
+    {
+		this.miningEnergyFadeIn += this.partialTicks * 0.33F; if ( this.miningEnergyFadeIn > 1.0F ) this.miningEnergyFadeIn = 1.0F;
+    }
+    
+    private void miningFadeOut()
+    {
+    	this.miningEnergyFadeIn -= this.partialTicks * 0.33F; if ( this.miningEnergyFadeIn < 0.0F ) this.miningEnergyFadeIn = 0.0F;
+    }
+
 	private void animationMiningMainhand(RenderSpecificHandEvent event)
-	{		
-		if ( ClientProxy.EHC_INSTANCE.holdingLeftClick )
+	{
+		if ( !ClientProxy.EHC_INSTANCE.isHittingBlock() )
 		{
+			if ( this.miningEnergy > 1.0F )
+			{
+				this.miningEnergy = 1.0F;
+			}
+		}
+		else if ( ClientProxy.EHC_INSTANCE.holdingLeftClick )
+		{
+			this.miningFadeIn();
+			
 			if ( this.miningEnergy >= 0.7F )
 			{
-				//ClientProxy.EHC_INSTANCE.betterCombatMainhand.setSwingTimer( (int) ((1.0F-this.miningEnergy)*0.33333333F*ClientProxy.EHC_INSTANCE.betterCombatMainhand.getSwingTimerCap()) );
 				this.miningEnergy = (1.0F - this.miningEnergy) * 0.33333333F;
 				this.calculateMiningEnergy(event);
 			}
 		}
-		else if ( this.miningEnergy >= 1.0F )
+		else
 		{
-			this.resetMiningEnergy();
+			if ( this.miningEnergy >= 0.7F )
+			{
+				this.miningFadeOut();
+			}
+			else
+			{
+				this.miningFadeIn();
+			}
+			
+			if ( this.miningEnergy > 1.0F )
+			{
+				this.resetMiningEnergy();
+			}
 		}
 		
 		float moveRight = 0.0F; /* +right */
@@ -715,8 +751,8 @@ public class AnimationHandler
 		float moveClose = 0.0F; /* +zoom */
 		
 		float rotateUp = 0.0F;
-		float rotateCounterClockwise = 5.0F;
-		float rotateLeft = 25.0F;
+		float rotateCounterClockwise = this.miningEnergyFadeIn * 5.0F;
+		float rotateLeft = this.miningEnergyFadeIn * 25.0F;
 		
 		float closeCap = this.tooCloseEnergy - 0.5F;
 		
@@ -896,8 +932,15 @@ public class AnimationHandler
 	/* ------------------------------------------------------------------------------------------------------------------------- */
 	
 	private void animationDiggingMainhand(RenderSpecificHandEvent event)
-	{		
-		if ( ClientProxy.EHC_INSTANCE.holdingLeftClick )
+	{
+		if ( !ClientProxy.EHC_INSTANCE.isHittingBlock() )
+		{
+			if ( this.miningEnergy > 1.0F )
+			{
+				this.miningEnergy = 1.0F;
+			}
+		}
+		else if ( ClientProxy.EHC_INSTANCE.holdingLeftClick )
 		{
 			if ( this.miningEnergy > 0.75F )
 			{
@@ -906,7 +949,7 @@ public class AnimationHandler
 				this.calculateMiningEnergy(event);
 			}
 		}
-		else if ( this.miningEnergy >= 1.0F )
+		else if ( this.miningEnergy > 1.0F )
 		{
 			this.resetMiningEnergy();
 		}
@@ -918,7 +961,6 @@ public class AnimationHandler
 		float twist = 0.0F; /* +up   |||   twist */
 		float sway = 0.0F; /* +counter-clockwise   \|/   side-to-side */
 		float scoop = 0.0F; /* +left   |   scoop */
-		
 		
 //		float xx = (float)ClientProxy.EHC_INSTANCE.mc.player.posX;
 //		float yy = (float)ClientProxy.EHC_INSTANCE.mc.player.posY - 50;
@@ -1067,8 +1109,44 @@ public class AnimationHandler
 	/*													Woodcutting Animation
 	/* ------------------------------------------------------------------------------------------------------------------------- */
 	
-	private void animationWoodcuttingMainhand(float energy)
+	private void animationWoodcuttingMainhand(RenderSpecificHandEvent event)
 	{
+//		if ( ClientProxy.EHC_INSTANCE.holdingLeftClick )
+//		{
+//			if ( this.miningEnergy >= 1.0F )
+//			{
+//				this.positionEquippedProgressMainhand();
+//				
+//				if ( this.equippedProgressMainhand >= 0 )
+//				{
+//					this.resetMiningEnergy();
+//				}
+//				
+//				return;
+//			}
+//			else
+//			{
+//				this.reequipAnimationMainhand();
+//			}
+//		}
+//		else if ( this.miningEnergy >= 1.0F )
+//		{
+//			this.resetMiningEnergy();
+//			this.reequipAnimationMainhand();
+//		}
+		
+		if ( !ClientProxy.EHC_INSTANCE.isHittingBlock() ) // TODO XXX
+		{
+			if ( this.miningEnergy > 1.0F || this.miningEnergy <= 0.0F )
+			{
+				this.miningEnergy = 0.0F;
+			}
+		}
+		else if ( this.miningEnergy > 1.0F )
+		{
+			this.resetMiningEnergy();
+		}
+		
 		float moveRight = 0.0F;
 	    float moveUp = 0.0F;
 	    float moveClose = 0.0F;
@@ -1078,32 +1156,32 @@ public class AnimationHandler
 	    
 	    float closeCap = 0.2F - this.tooCloseEnergy;
 	    
-	    rotateUp = -clampMultiplier(energy, 6.0F, 140.0F + closeCap * 50.0F); /* Sweep = Up */
+	    rotateUp = -clampMultiplier(this.miningEnergy, 6.0F, 140.0F + closeCap * 50.0F); /* Sweep = Up */
 	    
-	    rotateCounterClockwise = clampMultiplier(energy, 12.0F, 150.0F) - clampMultiplier(energy, 3.0F, 50.0F + closeCap * 100.0F) - energy * 15.0F; /* Sweep = Left and To */
-	    rotateLeft = clampMultiplier(energy, 6.0F, 85.0F); /* Sweep = Twist Clockwise -- * */
+	    rotateCounterClockwise = clampMultiplier(this.miningEnergy, 12.0F, 150.0F) - clampMultiplier(this.miningEnergy, 3.0F, 50.0F + closeCap * 100.0F) - this.miningEnergy * 15.0F; /* Sweep = Left and To */
+	    rotateLeft = clampMultiplier(this.miningEnergy, 6.0F, 85.0F); /* Sweep = Twist Clockwise -- * */
 
 	    /* Move right very fast at the start */
-	    moveRight = clampMultiplier(energy, 12.0F, 3.5F) + 0.5F;
-		moveUp = clamp(energy*10.0F, 0.47F);
-		moveClose = -clamp(energy*10.0F, closeCap);
+	    moveRight = clampMultiplier(this.miningEnergy, 12.0F, 3.5F) + 0.5F;
+		moveUp = clamp(this.miningEnergy*10.0F, 0.47F);
+		moveClose = -clamp(this.miningEnergy*10.0F, closeCap);
 	    
-	    if ( energy > 0.6F )
+	    if ( this.miningEnergy > 0.6F )
 	    {
 		    /* Move left slowly as the animation has reached the center */
-		    moveRight -= 4.5F + closeCap - (1.0F - MathHelper.sin(energy * PI)) * 0.3F;
+		    moveRight -= 4.5F + closeCap - (1.0F - MathHelper.sin(this.miningEnergy * PI)) * 0.3F;
 		    
-		    if ( energy > 0.85F )
+		    if ( this.miningEnergy > 0.85F )
 		    {
-				moveUp -= MathHelper.sin(energy - 0.85F) * 6.0F;
-		        moveClose += MathHelper.sin(energy - 0.85F) * 6.0F;
-		        moveRight += (energy - 0.85F) * 5.5F;
+				moveUp -= MathHelper.sin(this.miningEnergy - 0.85F) * 6.0F;
+		        moveClose += MathHelper.sin(this.miningEnergy - 0.85F) * 6.0F;
+		        moveRight += (this.miningEnergy - 0.85F) * 5.5F;
 		    }
 	    }
 	    else
 	    {
-		    /* Move left fast until 0.6 energy */
-	    	moveRight -= clamp(MathHelper.sin(energy * PI) * 5.5F, 4.5F + closeCap);
+		    /* Move left fast until 0.6 this.miningEnergy */
+	    	moveRight -= clamp(MathHelper.sin(this.miningEnergy * PI) * 5.5F, 4.5F + closeCap);
 	    }
 		
 		GlStateManager.translate(
@@ -1522,7 +1600,7 @@ public class AnimationHandler
         }
         
         /* Blocking Animation */
-        if ( this.blockingEnergy > 0 )
+        if ( this.blockingEnergy > 0.0F )
         {
         	/* Clockwise */
         	GlStateManager.rotate(-this.blockingEnergy*0.75F, 0.0F, 1.0F, 0.0F);
@@ -1578,7 +1656,7 @@ public class AnimationHandler
     
     public boolean isBlocking()
     {
-        return this.blockingEnergy > 0;
+        return this.blockingEnergy > 0.0F;
     }
 	
     private void positionBreathingMainhand()
@@ -1715,7 +1793,7 @@ public class AnimationHandler
     {
     	GlStateManager.scale(1.36F, 1.36F, 1.36F);
 
-        this.itemRenderer.renderItem(ClientProxy.EHC_INSTANCE.itemStackOffhand, ClientProxy.EHC_INSTANCE.mc.player, ItemCameraTransforms.TransformType.NONE, true);
+        this.itemRenderer.renderItem(ClientProxy.EHC_INSTANCE.itemStackOffhand, ClientProxy.EHC_INSTANCE.mc.player, ItemCameraTransforms.TransformType.NONE, true); // TODO*
     }
 	
 	/* ------------------------------------------------------------------------------------------------------------------------- */
@@ -2503,18 +2581,18 @@ public class AnimationHandler
 			case CROSSHAIRS:
 			{
 				float partialTicks = Minecraft.getMinecraft().getRenderPartialTicks();
-				ScaledResolution sclaedRes = new ScaledResolution(Minecraft.getMinecraft());
+				ScaledResolution scaledRes = new ScaledResolution(Minecraft.getMinecraft());
 				
 				if ( !event.isCanceled() && !ConfigurationHandler.showDefaultCrosshair )
 				{
 					event.setCanceled(true);
-					this.gc.renderAttackIndicator(partialTicks, sclaedRes);
+					this.gc.renderAttackIndicator(partialTicks, scaledRes);
 					MinecraftForge.EVENT_BUS.post(new RenderGameOverlayEvent.Post(event, event.getType()));
 				}
 				
 	    		if ( ConfigurationHandler.attackSweepOverlay )
 	    		{
-	    			this.gc.renderSweepOverlay(sclaedRes);
+	    			this.gc.renderSweepOverlay(scaledRes);
 	    		}
 				
 				break;

@@ -1,5 +1,6 @@
 package bettercombat.mod.client;
 
+import static com.elenai.elenaidodge2.api.FeathersHelper.getFeatherLevel;
 import static com.elenai.elenaidodge2.api.FeathersHelper.getWeight;
 
 import java.util.Random;
@@ -27,11 +28,11 @@ public class BetterCombatHand
 	{
 		this.resetBetterCombatWeapon();
 	}
-	
-	public void setBetterCombatWeapon( EntityPlayerSP player, ConfigWeapon configWeapon, ItemStack mh, ItemStack oh, boolean mainhand )
+
+	public void setBetterCombatWeapon(EntityPlayerSP player, ConfigWeapon configWeapon, ItemStack mh, ItemStack oh, boolean mainhand)
 	{
 		this.configWeapon = configWeapon;
-		
+
 		if ( mainhand )
 		{
 			this.setAttackCooldown(ClientProxy.EHC_INSTANCE.getMainhandCooldown(player, mh, oh));
@@ -42,27 +43,27 @@ public class BetterCombatHand
 			this.setAttackCooldown(ClientProxy.EHC_INSTANCE.getOffhandCooldown(player, mh, oh));
 			this.sweep = this.getSweepMod(configWeapon, oh);
 		}
-		
+
 		this.equipTimerIncrement = 2.0F / this.getAttackCooldown();
-		this.equipSoundTimer = this.getAttackCooldown()>>1;
-		
+		this.equipSoundTimer = this.getAttackCooldown() >> 1;
+
 		this.canWeaponParry = configWeapon.parry;
 	}
-	
+
 	public int getSweepMod(ConfigWeapon configWeapon, ItemStack itemStack)
 	{
 		/* Get the total sweep for the weapon */
 		int sweepMod = configWeapon.sweepMod;
-		
+
 		/* Then, get the enchantments */
 		NBTTagList nbttaglist = itemStack.getEnchantmentTagList();
-		
-		for ( int i = 0; i < nbttaglist.tagCount(); ++i )
+
+		for (int i = 0; i < nbttaglist.tagCount(); ++i)
 		{
 			NBTTagCompound nbttagcompound = nbttaglist.getCompoundTagAt(i);
 			Enchantment enchantment = Enchantment.getEnchantmentByID(nbttagcompound.getShort("id"));
 			int j = nbttagcompound.getShort("lvl");
-			
+
 			if ( enchantment == Enchantments.SWEEPING )
 			{
 				if ( j > 0 )
@@ -71,30 +72,30 @@ public class BetterCombatHand
 				}
 			}
 		}
-		
+
 		return sweepMod;
 	}
-	
+
 	public boolean hasConfigWeapon()
 	{
 		return this.configWeapon != null;
 	}
-	
+
 	public void tick()
 	{
 		this.swingTimer--;
 	}
-	
+
 	public WeaponProperty getWeaponProperty()
 	{
 		if ( this.hasConfigWeapon() )
 		{
 			return this.getConfigWeapon().property;
 		}
-		
+
 		return WeaponProperty.ONEHAND;
 	}
-	
+
 	private ConfigWeapon getConfigWeapon()
 	{
 		return this.configWeapon;
@@ -106,20 +107,20 @@ public class BetterCombatHand
 		{
 			return this.getConfigWeapon().animation;
 		}
-		
+
 		return Animation.NONE;
 	}
-	
+
 	public SoundType getSoundType()
 	{
 		if ( this.hasConfigWeapon() )
 		{
 			return this.getConfigWeapon().soundType;
 		}
-		
+
 		return SoundType.NONE;
 	}
-	
+
 	public double getFatigue()
 	{
 		if ( this.hasConfigWeapon() )
@@ -129,42 +130,42 @@ public class BetterCombatHand
 				return ConfigurationHandler.versatileFatigueAmount;
 			}
 		}
-		
+
 		return 0.0;
 	}
-	
+
 	public double getAdditionalReach()
 	{
 		if ( this.hasConfigWeapon() )
 		{
 			return this.getConfigWeapon().additionalReachMod;
 		}
-		
+
 		return -ConfigurationHandler.fistAndNonWeaponReachReduction;
 	}
-	
+
 	public boolean canWeaponParry()
 	{
-		return this.canWeaponParry; // !ConfigurationHandler.disablecanWeaponParrying && 
+		return this.canWeaponParry; // !ConfigurationHandler.disablecanWeaponParrying &&
 	}
-	
+
 	public int getSweep()
 	{
 		return this.sweep;
 	}
-	
+
 	public float getEquipTimerIncrement()
 	{
 		return this.equipTimerIncrement;
 	}
-	
+
 	public void resetBetterCombatWeapon()
 	{
 		this.configWeapon = null;
-		
+
 		this.canWeaponParry = false;
 		this.sweep = 0;
-		
+
 		this.resetSwingTimer();
 		this.swingTimerCap = 0;
 		this.swingTimerIncrement = 0;
@@ -172,18 +173,18 @@ public class BetterCombatHand
 		this.attackCooldown = ConfigurationHandler.minimumAttackSpeedTicks;
 		this.equipSoundTimer = -1;
 		this.equipTimerIncrement = 1.0F;
-		
+
 		this.swingTimestampSound = 0;
 		this.swingTimestampDamage = 0;
-		
+
 		this.mining = false;
 	}
-	
+
 	/* The config weapon */
 	ConfigWeapon configWeapon = null;
-	
+
 	private boolean canWeaponParry = false;
-	
+
 	public int attackCooldown = ConfigurationHandler.minimumAttackSpeedTicks;
 
 	/* The weapons config reach amount */
@@ -195,12 +196,12 @@ public class BetterCombatHand
 	private int swingTimerCap = 0;
 	/* How fast the animation counts down, in partial ticks */
 	private float swingTimerIncrement = 0.0F;
-	
+
 	/* How long the equip sound timer is in ticks after equipping a weapon, counting down to 0, This is only used for determining equip/sheathe sounds */
 	public int equipSoundTimer = -1;
-	
+
 	private float equipTimerIncrement = 1.0F;
-	
+
 	/* When the swingTimer reaches this number, make a swing sound */
 	private int swingTimestampSound = 0;
 	/* When the swingTimer reaches this number, send a damage packet */
@@ -208,9 +209,7 @@ public class BetterCombatHand
 
 	/* Mouse held down and is mining a block */
 	private boolean mining = false;
-	
-	
-	
+
 	public float moveRightVariance = 1.0F;
 	public float moveUpVariance = 1.0F;
 	public float moveCloseVariance = 1.0F;
@@ -218,13 +217,13 @@ public class BetterCombatHand
 	public float rotateUpVariance = 1.0F;
 	public float rotateCounterClockwiseVariance = 1.0F;
 	public float rotateLeftVariance = 1.0F;
-	
+
 	public boolean alternateAnimation = false;
 
 	private final Random rand = new Random();
-	
+
 	public void randomizeVariances()
-	{		
+	{
 		this.moveRightVariance = this.randomMoveVariance();
 		this.moveUpVariance = this.randomMoveVariance();
 		this.moveCloseVariance = this.randomMoveVariance();
@@ -233,7 +232,7 @@ public class BetterCombatHand
 		this.rotateCounterClockwiseVariance = this.randomRotationVariance();
 		this.rotateLeftVariance = this.randomRotationVariance();
 	}
-	
+
 	public float randomMoveVariance()
 	{
 		return 1.06F - this.rand.nextFloat() * 0.12F;
@@ -243,42 +242,42 @@ public class BetterCombatHand
 	{
 		return 1.03F - this.rand.nextFloat() * 0.06F;
 	}
-	
+
 	public float randomPreciseRotationVariance()
 	{
 		return 1.015F - this.rand.nextFloat() * 0.03F;
 	}
-	
+
 	public void stopAttack()
 	{
 		this.resetSwingTimer();
 	}
-	
+
 	public void resetSwingTimer()
 	{
 		this.swingTimer = 0;
 	}
-	
+
 	public boolean isSwinging()
 	{
 		return this.swingTimer > 0;
 	}
-	
+
 	public boolean soundReady()
 	{
 		return this.swingTimer == this.swingTimestampSound;
 	}
-	
+
 	public boolean damageReady()
 	{
 		return this.swingTimer == this.getSwingTimestampDamage();
 	}
-	
-	public void initiateAnimation( int i )
+
+	public void initiateAnimation(int i)
 	{
 		if ( this.hasConfigWeapon() )
 		{
-			switch( this.getConfigWeapon().animation )
+			switch (this.getConfigWeapon().animation)
 			{
 				case SWEEP:
 				{
@@ -308,26 +307,26 @@ public class BetterCombatHand
 			return;
 		}
 	}
-	
-	public void setSweeping( int i )
+
+	public void setSweeping(int i)
 	{
 		this.mining = false;
 
-		this.swingTimer = MathHelper.clamp(i, ConfigurationHandler.minimumAttackSpeedTicks, 14)-2;
+		this.swingTimer = MathHelper.clamp(i, ConfigurationHandler.minimumAttackSpeedTicks, 14) - 2;
 		this.swingTimerCap = this.swingTimer;
-		this.swingTimerIncrement = 1.0F/this.swingTimer;
-		
+		this.swingTimerIncrement = 1.0F / this.swingTimer;
+
 		if ( this.alternateAnimation = this.rand.nextBoolean() )
 		{
-			this.swingTimestampSound = Math.round(this.swingTimer*0.5F);
-			this.swingTimestampDamage = this.swingTimestampSound-1;
+			this.swingTimestampSound = Math.round(this.swingTimer * 0.5F);
+			this.swingTimestampDamage = this.swingTimestampSound - 1;
 		}
 		else
 		{
-			this.swingTimestampSound = Math.round(this.swingTimer*0.8F);
-			this.swingTimestampDamage = this.swingTimestampSound-1;
+			this.swingTimestampSound = Math.round(this.swingTimer * 0.8F);
+			this.swingTimestampDamage = this.swingTimestampSound - 1;
 		}
-		
+
 		this.moveRightVariance = this.randomMoveVariance();
 		this.moveUpVariance = this.randomMoveVariance();
 		this.moveCloseVariance = this.randomMoveVariance();
@@ -336,90 +335,90 @@ public class BetterCombatHand
 		this.rotateCounterClockwiseVariance = this.randomRotationVariance();
 		this.rotateLeftVariance = this.randomRotationVariance();
 	}
-	
-	public void setStabbing( int i )
+
+	public void setStabbing(int i)
 	{
 		this.mining = false;
 
-		this.swingTimer = MathHelper.clamp(i, ConfigurationHandler.minimumAttackSpeedTicks, 13)-1;
+		this.swingTimer = MathHelper.clamp(i, ConfigurationHandler.minimumAttackSpeedTicks, 13) - 1;
 		this.swingTimerCap = this.swingTimer;
-		this.swingTimerIncrement = 1.0F/this.swingTimer;
-				
-		this.swingTimestampSound = Math.round(this.swingTimer*0.8F);
-		this.swingTimestampDamage = this.swingTimestampSound-1;
-		
-		this.randomizeVariances();
-	}
-	
-	public void setChopping( int i )
-	{
-		this.mining = false;
-		
-		this.swingTimer = MathHelper.clamp(i, ConfigurationHandler.minimumAttackSpeedTicks, 14)-2;
-		this.swingTimerCap = this.swingTimer;
-		this.swingTimerIncrement = 1.0F/this.swingTimer;
-				
-		this.swingTimestampSound = Math.round(this.swingTimer*0.8F);
-		this.swingTimestampDamage = this.swingTimestampSound-1;
-		
+		this.swingTimerIncrement = 1.0F / this.swingTimer;
+
+		this.swingTimestampSound = Math.round(this.swingTimer * 0.8F);
+		this.swingTimestampDamage = this.swingTimestampSound - 1;
+
 		this.randomizeVariances();
 	}
 
-	public void setPunching( int i )
+	public void setChopping(int i)
 	{
 		this.mining = false;
-		
-		this.swingTimer = MathHelper.clamp(i, ConfigurationHandler.minimumAttackSpeedTicks, 14)-2;
+
+		this.swingTimer = MathHelper.clamp(i, ConfigurationHandler.minimumAttackSpeedTicks, 14) - 2;
 		this.swingTimerCap = this.swingTimer;
-		this.swingTimerIncrement = 1.0F/this.swingTimer;
-				
-		this.swingTimestampSound = Math.round(this.swingTimer*0.8F);
-		this.swingTimestampDamage = this.swingTimestampSound-1;
+		this.swingTimerIncrement = 1.0F / this.swingTimer;
+
+		this.swingTimestampSound = Math.round(this.swingTimer * 0.8F);
+		this.swingTimestampDamage = this.swingTimestampSound - 1;
+
+		this.randomizeVariances();
 	}
-	
-	public void startMining( int i )
+
+	public void setPunching(int i)
+	{
+		this.mining = false;
+
+		this.swingTimer = MathHelper.clamp(i, ConfigurationHandler.minimumAttackSpeedTicks, 14) - 2;
+		this.swingTimerCap = this.swingTimer;
+		this.swingTimerIncrement = 1.0F / this.swingTimer;
+
+		this.swingTimestampSound = Math.round(this.swingTimer * 0.8F);
+		this.swingTimestampDamage = this.swingTimestampSound - 1;
+	}
+
+	public void startMining(int i)
 	{
 		this.mining = true;
-		
+
 		this.swingTimer = i;
 		this.swingTimerCap = this.swingTimer;
-		this.swingTimerIncrement = 1.0F/this.swingTimer;
-		
+		this.swingTimerIncrement = 1.0F / this.swingTimer;
+
 		this.swingTimestampSound = 0;
 		this.swingTimestampDamage = 0;
-		
+
 		this.randomizeVariances();
 	}
 
 	public void setShieldBashing()
 	{
 		this.mining = false;
-		
+
 		this.swingTimer = 10;
 		this.swingTimerCap = this.swingTimer;
 		this.swingTimerIncrement = 0.1F;
-		
+
 		this.swingTimestampSound = 5;
 		this.swingTimestampDamage = 7;
 	}
-	
+
 	/* How long the swing is in ticks, counting down to 0 */
 	public int getSwingTimer()
 	{
 		return this.swingTimer;
 	}
-	
+
 	/* The increment of the swing timer = 1.0F/this.swingTimer */
 	public float getSwingTimerIncrement()
 	{
 		return this.swingTimerIncrement;
 	}
-	
+
 	public void stopMining()
 	{
 		this.mining = false;
 	}
-	
+
 	public boolean isMining()
 	{
 		return this.mining;
@@ -439,19 +438,28 @@ public class BetterCombatHand
 	{
 		this.swingTimer = i;
 	}
-	
+
 	public int getAttackCooldown()
 	{
 		return this.attackCooldown;
 	}
-	
+
 	public int setAttackCooldown(int cd)
 	{
-		if ( ConfigurationHandler.elanaiDodgeEnabled && EventHandlersClient.calculateFeatherLevel(Minecraft.getMinecraft().player) - getWeight(Minecraft.getMinecraft().player) <= ConfigurationHandler.elanaiDodgeMainHandFeatherCost )
+
+//		if (Loader.isModLoaded("elanaidodge2") && elanaiDodgeCompat)
+//		{
+//			if (getFeatherLevel(this.mc.player) < elanaiDodgeMainHandFeatherCost)
+//			{
+//				return;
+//			}
+//		}
+
+		if ( ConfigurationHandler.elanaiDodgeEnabled && getFeatherLevel(Minecraft.getMinecraft().player) - getWeight(Minecraft.getMinecraft().player) <= ConfigurationHandler.elanaiDodgeMainHandFeatherCost )
 		{
-			cd = cd<<1;
+			cd = cd << 1;
 		}
-		
+
 		if ( cd < ConfigurationHandler.minimumAttackSpeedTicks )
 		{
 			this.attackCooldown = ConfigurationHandler.minimumAttackSpeedTicks;
@@ -460,7 +468,7 @@ public class BetterCombatHand
 		{
 			this.attackCooldown = cd;
 		}
-		
+
 		return this.attackCooldown;
 	}
 }

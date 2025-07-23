@@ -46,7 +46,7 @@ public class EntityAINausea extends EntityAIBase
 				speed = MathHelper.clamp(1.25D - (this.victim.getEntityAttribute(SharedMonsterAttributes.MOVEMENT_SPEED).getBaseValue() * 2.0D), 0.35D, 0.75D);
 			}
 
-			this.speed = speed * (0.9F + this.victim.world.rand.nextFloat() / 10.0F);
+			this.speed = speed * (0.9F + this.victim.world.rand.nextFloat() * 0.1F);
 
 			if ( this.victim.world.rand.nextInt(10) == 0 )
 			{

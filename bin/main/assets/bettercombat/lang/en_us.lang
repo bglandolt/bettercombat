@@ -1,0 +1,65 @@
+bettercombat.effect.aetherealized=§bÆtherealized§r
+description.aetherealized=Converts a portion of your physical damage to magic damage
+
+bettercombat.effect.precision=Precision
+description.precision=Increases critical strike chance
+
+bettercombat.effect.brutality=Brutality
+description.brutality=Increases critical strike damage
+
+bettercombat.effect.bleeding=Bleeding
+description.bleeding=Deals damage overtime
+
+death.attack.bleeding=%1$s bled to death
+death.attack.bleeding.player=%1$s was exsanguinated by %2$s
+
+enchantment.gourmand=Curse of Gluttony
+enchantment.gourmand.name=Curse of Gluttony
+enchantment.bettercombat.gourmand.desc=Damage taken is instead dealt to your hunger and saturation.
+
+enchantment.lightning=§bLightning§r
+enchantment.lightning.name=§bLightning§r
+enchantment.bettercombat.lightning.desc=Call down lightning from the sky, dealing magic in a radius. Deals increased damage against damp targets, and can only be used outside.
+
+enchantment.sorcery=§dSorcery§r
+enchantment.sorcery.name=§dSorcery§r
+enchantment.bettercombat.sorcery.desc=Increases magic damage.
+
+enchantment.revitalize=§aRevitalize§r
+enchantment.revitalize.name=§aRevitalize§r
+enchantment.bettercombat.revitalize.desc=Increases healing received.
+
+enchantment.webbing=Webbing
+enchantment.webbing.name=Webbing
+enchantment.bettercombat.webbing.desc=Encase foes in sticky webs.
+
+bettercombat.info.attribute.color=§2
+bettercombat.info.positive.color=§a+
+bettercombat.info.default.color=§7
+bettercombat.info.negative.color=§c
+
+bettercombat.info.sweep.text=§aSweep 
+
+bettercombat.info.property.onehand.text=§fOne-Hand
+bettercombat.info.property.versatile.text=§fVersatile
+bettercombat.info.property.offhand.text=§fOff Hand
+bettercombat.info.property.mainhand.text=§fMain Hand
+bettercombat.info.property.twohand.text=§fTwo-Hand
+
+bettercombat.info.critChance.text= Critical Chance
+bettercombat.info.critDamage.text= Critical Damage
+bettercombat.info.reachDistance.text= Reach Distance
+bettercombat.info.knockback.text= Knockback
+
+bettercombat.info.bash.damage.text= Bash Damage 
+bettercombat.info.bash.knockback.text= Bash Knockback 
+bettercombat.info.bash.cooldown.text= Bash Cooldown 
+
+bettercombat.info.potionEffect.chance.text= Chance on hit:
+bettercombat.info.potionEffect.crit.text=On critical strike:
+bettercombat.info.potionEffect.positive.text=§a
+bettercombat.info.potionEffect.negative.text=§c
+bettercombat.info.potionEffect.for.text= for 
+bettercombat.info.potionEffect.second.text= second
+
+key.fastEquip.desc=Fast Equip

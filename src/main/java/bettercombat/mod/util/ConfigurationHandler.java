@@ -117,6 +117,7 @@ public class ConfigurationHandler
 	public static boolean strippingBarkRequiresAnimation = false;
 	public static boolean cancelSpartanWeaponryFatigue = true;
 	public static int parryingItemDamage = 4;
+	public static boolean cutGrass = true;
 	
 	/* KNOCKBACK ------------------------------------------------------------------------------------------------------------------ */
 
@@ -236,9 +237,9 @@ public class ConfigurationHandler
 
 	public static boolean aetherealizedDamageParticles = true;
 	public static float breathingAnimationIntensity = 0.02F;
-	public static float breathingAnimationSpeed = 0.1F;
-	public static float cameraPitchSwing = 0.01F;
-	public static float rotationYawSwing = 0.025F;
+	public static float breathingAnimationSpeed = 0.02F;
+	public static float cameraPitchSwing = 0.06F;
+	public static float rotationYawSwing = 0.16F;
 	public static boolean damageParticles = true;
 	public static boolean attackSweepParticles = true;
 	public static boolean attackSweepOverlay = true;
@@ -483,7 +484,8 @@ public class ConfigurationHandler
 		strippingBarkRequiresAnimation = config.getBoolean("Stripping Bark Requires Animation", OTHER, false, "CURRENTLY NOT WORKING. If set to true, stripping bark requires an animation. Axes with a faster attack speed strip bark faster. Enable this setting if you have future MC installed which allows stripping of bark.");
 		cancelSpartanWeaponryFatigue = config.getBoolean("Cancel Spartan Weaponry Fatigue", OTHER, true, "Set to true to disable weapon fatigue from Spartan Weaponry, this mod instead handles two-handed and versatile weapons.");
 		parryingItemDamage = config.getInt("Parrying Item Damage", OTHER, 1, 0, 256, "How much damage is dealt to the weapon when an attack is parried.");
-		
+		cutGrass = config.getBoolean("Cut Grass", OTHER, true, "Cut grass when attacking, disable to prevent grief on protection servers.");
+
 		/* --------------------------------------------------------------------------------------------------------------------- */
 		String KNOCKBACK = "Knockback";
 		
@@ -556,13 +558,13 @@ public class ConfigurationHandler
 
 		aetherealizedDamageParticles = config.getBoolean("Aetherealized Damage Particles", VISUAL, true, "Enable to have the Aetherealized potion create a ring of particles around the target when struck.");
 		breathingAnimationIntensity = config.getFloat("Breathing Animation Intensity", VISUAL, 0.02F, 0.0F, 1.0F, "How fast items move up and down for the breathing animation.");
-		breathingAnimationSpeed = config.getFloat("Breathing Animation Speed", VISUAL, 0.1F, 0.0F, 1.0F, "How far items move up and down for the breathing animation.");
+		breathingAnimationSpeed = config.getFloat("Breathing Animation Speed", VISUAL, 0.02F, 0.0F, 1.0F, "How far items move up and down for the breathing animation.");
 		showShieldCooldownCrosshair = config.getBoolean("Show Shield Cooldown on Crosshair", VISUAL, false, "Set to true to show the shield cooldown/energy indicator. This setting does nothing when showDefaultCrosshair is set to true.");
 		inverseDamageTiltAngle = config.getBoolean("Inverse Blocking/Parrying Tilt", VISUAL, true, "Inverse the angle for Damage Tilt for blocking and parrying.");
 		//showWeaponCooldownCrosshair = config.getBoolean("Show Weapon Cooldown on Crosshair", VISUAL, false, "Set to true to show the weapon cooldown/energy crosshair. This setting does nothing when showDefaultCrosshair is set to true.");
 		showDefaultCrosshair = config.getBoolean("Show Default Crosshair", VISUAL, false, "Set to true to completely disable the new crosshair, and show the default crosshair. The attack energy/cooldown indicator can also be enabled/disabled in the Minecraft settings.");
-		cameraPitchSwing = config.getFloat("Camera Pitch Swing", VISUAL, 0.08F, 0.0F, 1.0F, "This value controls the up-and-down (vertical) rotation of the camera when you swing a weapon. May cause slight motion sickness if set too high. Set to 0.0F to disable.");
-		rotationYawSwing = config.getFloat("Rotation Yaw Swing", VISUAL, 0.2F, 0.0F, 1.0F, "This value controls the left-to-right (horizontal) rotation of the camera when you swing a weapon. May cause slight motion sickness if set too high. Set to 0.0F to disable.");
+		cameraPitchSwing = config.getFloat("Camera Vertical Swing", VISUAL, 0.06F, 0.0F, 1.0F, "This value controls the up-and-down (vertical) rotation of the camera when you swing a weapon. May cause slight motion sickness if set too high. Set to 0.0F to disable.");
+		rotationYawSwing = config.getFloat("Camera Horizontal Swing", VISUAL, 0.16F, 0.0F, 1.0F, "This value controls the left-to-right (horizontal) rotation of the camera when you swing a weapon. May cause slight motion sickness if set too high. Set to 0.0F to disable.");
 		damageParticles = config.getBoolean("3D Damage Particles", VISUAL, true, "Display heart damage particles (this is a vanilla feature, this option is here for those who wish to disable it).");
 		attackSweepParticles = config.getBoolean("3D Attack Sweep Particles", VISUAL, true, "Display 3D sweep particles on a successful attack.");
 		attackSweepOverlay = config.getBoolean("2D Attack Sweep Overlay", VISUAL, true, "Display 2D attack lines across the screen when you swing a weapon.");
@@ -706,7 +708,7 @@ public class ConfigurationHandler
 		swordList = config.getStringList("Sword Tweaker", SWORD, swordList,
 		
 		  "Adjust the Attack Speed of vanilla swords.\n\n"
-		+ "This is setting only for vanilla swords! The mod 'Material Changer' allows you change the Attack Speed on all weapons (except swords).\n"
+		+ "This setting only for vanilla swords! The mod 'Material Changer' allows you change the Attack Speed on all weapons except swords.\n"
 		+ "If a mod does not allow you to adjust the Attack Speed on their custom modded swords, you may use this config to do so.\n"
 		
 		+ "The [Sword Substring] field can be simply '_sword' so that all weapons containing the word '_sword' will be affected, such as 'minecraft:diamond_sword' or 'minecraft:iron_sword'\n"
