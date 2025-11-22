@@ -1,5 +1,8 @@
 package bettercombat.mod.network;
 
+import java.util.logging.LogManager;
+import java.util.logging.Logger;
+
 import bettercombat.mod.network.client.PacketBleeding;
 import bettercombat.mod.network.client.PacketDamageTilt;
 import bettercombat.mod.network.client.PacketParried;
@@ -19,7 +22,7 @@ import net.minecraftforge.fml.relauncher.Side;
 public class PacketHandler
 {
 	public static SimpleNetworkWrapper instance = null;
-
+    
 	public static void registerChannel( String channelName )
 	{
 		instance = NetworkRegistry.INSTANCE.newSimpleChannel(channelName);

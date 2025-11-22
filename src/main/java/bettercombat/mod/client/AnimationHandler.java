@@ -427,7 +427,7 @@ public class AnimationHandler
         this.positionBreathingMainhand();
 
 		/* Mining */
-        if ( ClientProxy.EHC_INSTANCE.betterCombatMainhand.isMining() && (isMainhandAttacking() || ClientProxy.EHC_INSTANCE.startedMining || ClientProxy.EHC_INSTANCE.holdingLeftClick || this.miningEnergy > 0.0F) )
+        if ( ClientProxy.EHC_INSTANCE.betterCombatMainhand.isMining() && (isMainhandAttacking() || ClientProxy.EHC_INSTANCE.leftClickResultType < 0 || ClientProxy.EHC_INSTANCE.holdingLeftClick || this.miningEnergy > 0.0F) )
 		{			
 			this.resetMainhandEnergy();
 			
@@ -1137,7 +1137,7 @@ public class AnimationHandler
 		
 		if ( !ClientProxy.EHC_INSTANCE.isHittingBlock() ) // TODO XXX
 		{
-			if ( this.miningEnergy > 1.0F || this.miningEnergy <= 0.0F )
+			if ( this.miningEnergy > 1.0F ) // || this.miningEnergy <= 0.0F )
 			{
 				this.miningEnergy = 0.0F;
 			}
