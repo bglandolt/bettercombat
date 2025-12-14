@@ -45,7 +45,6 @@ import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityHanging;
 import net.minecraft.entity.EntityLiving;
 import net.minecraft.entity.EntityLivingBase;
-import net.minecraft.entity.IEntityMultiPart;
 import net.minecraft.entity.MultiPartEntityPart;
 import net.minecraft.entity.SharedMonsterAttributes;
 import net.minecraft.entity.ai.attributes.AttributeModifier;
@@ -2657,166 +2656,393 @@ public class EventHandlersClient
 	private Entity unwrapMultipart(Entity entity)
 	{
 		// Vanilla
-	    if ( entity instanceof MultiPartEntityPart )
+		if ( entity instanceof MultiPartEntityPart )
 	    {
-	    	MultiPartEntityPart part = ((MultiPartEntityPart) entity);
-	        
+	        MultiPartEntityPart part = (MultiPartEntityPart) entity;
+
 	        if ( part.parent instanceof Entity )
 	        {
-	            entity = (Entity) part.parent;
+	            Entity parent = (Entity) part.parent;
+
+	            // If the parent itself is NOT collidable, we assume the part
+	            // is the thing we should keep hitting (Ender Dragon case).
+	            if ( !parent.canBeCollidedWith() )
+	            {
+	                return entity; // keep the part, don't unwrap
+	            }
+
+	            // Otherwise, for “normal” multipart setups, unwrap to parent
+	            return parent;
 	        }
 	    }
 
 	    // Ice & Fire style
-	    if (checkParent(entity))
+	    if ( checkParent(entity) )
 	    {
 	        Entity parent = getParent(entity);
-	        if (parent != null) return parent;
+	        
+	        if ( parent != null )
+        	{
+	        	return parent;
+        	}
 	    }
 
 	    // Scape & Run Parasites
-	    if (entity.getClass().getName().equals("com.dhanantry.scapeandrunparasites.entity.EntityBody"))
+	    if ( entity.getClass().getName().equals("com.dhanantry.scapeandrunparasites.entity.EntityBody") )
 	    {
 	        try
 	        {
 	            Object father = entity.getClass().getMethod("getFather").invoke(entity);
-	            if (father instanceof Entity) return (Entity) father;
+	            
+	            if ( father instanceof Entity )
+	            {
+	            	return (Entity) father;
+	            }
 	        }
-	        catch (Exception ignored) {}
+	        catch (Exception ignored)
+	        {
+	        	
+	        }
 	    }
 
-	    return entity;
+	    return null;
 	}
+
+//	public RayTraceResult getMouseOverExtended(EntityPlayerSP player, double reach, double sweepWidth, boolean aoeTargeting, boolean targetOnly)
+//	{
+//	    final float partial = this.mc.getRenderPartialTicks();
+//	    final Vec3d lookEyes = (player.getRidingEntity() == null)
+//	            ? player.getPositionEyes(partial)
+//	            : player.getPositionEyes(partial).addVector(0, player.getRidingEntity().getMountedYOffset(), 0);
+//
+//	    final Vec3d lookVec = player.getLook(1.0F);
+//	    final Vec3d lookTarget = lookEyes.add(lookVec.scale(reach));
+//
+//	    final double reachSq = reach * reach;
+//
+//	    RayTraceResult pointed = player.world.rayTraceBlocks(lookEyes, lookTarget, false, true, false);
+//
+//	    boolean pointedAtBlock = pointed != null && pointed.typeOfHit == RayTraceResult.Type.BLOCK;
+//
+//	    Set<Entity> entities = new HashSet<>();
+//
+//	    // ----------------------------------------------------
+//	    // Collect entities
+//	    // ----------------------------------------------------
+//	    if (aoeTargeting)
+//	    {
+//	        if (!targetOnly && ConfigurationHandler.cutGrass)
+//	        {
+//	            RayTraceResult grassHit = player.world.rayTraceBlocks(lookEyes, lookTarget, false, false, false);
+//
+//	            if (grassHit != null &&
+//	                grassHit.typeOfHit == RayTraceResult.Type.BLOCK &&
+//	                player.getDistanceSq(grassHit.hitVec.x, grassHit.hitVec.y, grassHit.hitVec.z) < reachSq)
+//	            {
+//	                this.cutGrass(grassHit.getBlockPos());
+//	            }
+//	        }
+//
+//	        if (pointedAtBlock)
+//	            entities.addAll(mc.world.getEntitiesWithinAABBExcludingEntity(player, new AxisAlignedBB(pointed.hitVec, pointed.hitVec)));
+//
+//	        entities.addAll(mc.world.getEntitiesWithinAABBExcludingEntity(player,
+//	                player.getEntityBoundingBox().expand(lookVec.x * reach, lookVec.y * reach, lookVec.z * reach)));
+//	    }
+//	    else
+//	    {
+//	        if (pointed != null && pointed.typeOfHit == RayTraceResult.Type.ENTITY)
+//	            entities.add(pointed.entityHit);
+//	    }
+//
+//
+//	    // ----------------------------------------------------
+//	    // Target selection
+//	    // ----------------------------------------------------
+//	    double closestLookDistSq = reachSq;
+//	    RayTraceResult bestHit = null;
+//
+//	    for ( Entity rawEntity : entities )
+//	    {
+//	        // unify all multipart logic
+//	        Entity entity = unwrapMultipart(rawEntity);
+//	        
+//			mc.player.sendChatMessage(entity+"");
+//	        
+//	        if ( pointedAtBlock && !(entity instanceof EntityLivingBase) )
+//	        {
+//	        	continue;
+//	        }
+//	        else
+//	        {
+//	            if (!entity.canBeCollidedWith()) continue; mc.player.sendChatMessage(entity+"1");
+//	            if (!entity.isEntityAlive()) continue; mc.player.sendChatMessage(entity+"2");
+//	            if (entity == player.getRidingEntity()) continue; mc.player.sendChatMessage(entity+"3");
+//	            if (!entity.canBeAttackedWithItem()) continue; mc.player.sendChatMessage(entity+"4");
+//	            if (!canPVP(entity, player)) continue; mc.player.sendChatMessage(entity+"5");
+//	            if (!isEntityInView(player, entity)) continue; mc.player.sendChatMessage(entity+"6");
+//	            if ( !canEntityBeSeen(player, entity) ) continue;
+//	        }
+//
+//	        double distSq = player.getDistanceSq(entity);
+//	        
+//	        if ( distSq > reachSq )
+//	        {
+//	            continue;
+//	        }
+//
+//	        if ( !aoeTargeting && pointedAtBlock )
+//	        {
+//	            return pointed;
+//	        }
+//	        
+//	        // compute look distance
+//	        double lookDistSq = distanceToLook(entity, lookEyes, lookVec, reachSq, distSq);
+//	        
+//	        if ( lookDistSq > closestLookDistSq )
+//	        {
+//	            continue;
+//	        }
+//	        
+//	        // expanded hitbox
+//	        double width = entity.getCollisionBorderSize() + sweepWidth;
+//	        
+//	        AxisAlignedBB box = entity.getEntityBoundingBox().grow(width, entity.getCollisionBorderSize(), width).expand(0, ConfigurationHandler.extraAttackHeight, 0);
+//
+//	        // inside check
+//	        if ( box.contains(lookEyes) )
+//	        {
+//	            bestHit = new RayTraceResult(entity, lookEyes);
+//	            closestLookDistSq = lookDistSq;
+//	            continue;
+//	        }
+//
+//	        // raycast check
+//	        RayTraceResult intercept = box.calculateIntercept(lookEyes, lookTarget);
+//	        
+//	        if ( intercept != null )
+//	        {
+//	            bestHit = new RayTraceResult(entity, intercept.hitVec);
+//	            closestLookDistSq = lookDistSq;
+//	        }
+//	    }
+//
+//	    if ( bestHit != null && bestHit.typeOfHit == RayTraceResult.Type.ENTITY )
+//	    {
+//	        return bestHit;
+//	    }
+//
+//	    // fallback
+//	    return ridingMouseOverEntity(player);
+//	}
 
 	public RayTraceResult getMouseOverExtended(EntityPlayerSP player, double reach, double sweepWidth, boolean aoeTargeting, boolean targetOnly)
 	{
-	    final float partial = this.mc.getRenderPartialTicks();
-	    final Vec3d lookEyes = (player.getRidingEntity() == null)
-	            ? player.getPositionEyes(partial)
-	            : player.getPositionEyes(partial).addVector(0, player.getRidingEntity().getMountedYOffset(), 0);
+		Vec3d lookEyes;
 
-	    final Vec3d lookVec = player.getLook(1.0F);
-	    final Vec3d lookTarget = lookEyes.add(lookVec.scale(reach));
+		if ( player.getRidingEntity() == null )
+		{
+			lookEyes = player.getPositionEyes(this.mc.getRenderPartialTicks());
+		}
+		else
+		{
+			lookEyes = player.getPositionEyes(this.mc.getRenderPartialTicks())
+				.addVector(0.0D, player.getRidingEntity().getMountedYOffset(), 0.0D);
+		}
 
-	    final double reachSq = reach * reach;
+		Vec3d lookVec = player.getLook(1.0F);
+		Vec3d lookTarget = lookEyes.add(lookVec.scale(reach));
 
-	    RayTraceResult pointed = player.world.rayTraceBlocks(lookEyes, lookTarget, false, true, false);
+		double reachSq = reach * reach;
+		double closestLookDistanceSq = reachSq;
 
-	    boolean pointedAtBlock = pointed != null && pointed.typeOfHit == RayTraceResult.Type.BLOCK;
+		RayTraceResult blockHit = null;
+		RayTraceResult bestHit = null;
 
-	    Set<Entity> entities = new HashSet<>();
+		// ------------------------------------------------
+		// Optional grass cutting along the swing
+		// ------------------------------------------------
+		if ( aoeTargeting && !targetOnly && ConfigurationHandler.cutGrass )
+		{
+			// boolean stopOnLiquid, boolean ignoreBlockWithoutBoundingBox, boolean returnLastUncollidableBlock
+			RayTraceResult grassHit = player.world.rayTraceBlocks(lookEyes, lookTarget, false, false, false);
 
-	    // ----------------------------------------------------
-	    // Collect entities
-	    // ----------------------------------------------------
-	    if (aoeTargeting)
-	    {
-	        if (!targetOnly && ConfigurationHandler.cutGrass)
-	        {
-	            RayTraceResult grassHit = player.world.rayTraceBlocks(lookEyes, lookTarget, false, false, false);
+			if (grassHit != null && grassHit.typeOfHit == RayTraceResult.Type.BLOCK)
+			{
+				if (player.getDistanceSq(grassHit.hitVec.x, grassHit.hitVec.y, grassHit.hitVec.z) <= reachSq)
+				{
+					this.cutGrass(grassHit.getBlockPos());
+				}
+			}
+		}
 
-	            if (grassHit != null &&
-	                grassHit.typeOfHit == RayTraceResult.Type.BLOCK &&
-	                player.getDistanceSq(grassHit.hitVec.x, grassHit.hitVec.y, grassHit.hitVec.z) < reachSq)
-	            {
-	                this.cutGrass(grassHit.getBlockPos());
-	            }
-	        }
+		// ------------------------------------------------
+		// Main block raytrace, ignoring no-BB blocks (grass, etc.)
+		// ------------------------------------------------
+		blockHit = player.world.rayTraceBlocks(lookEyes, lookTarget, false, true, false);
+		
+		boolean pointedAtBlock = blockHit != null && blockHit.typeOfHit == RayTraceResult.Type.BLOCK;
 
-	        if (pointedAtBlock)
-	            entities.addAll(mc.world.getEntitiesWithinAABBExcludingEntity(player, new AxisAlignedBB(pointed.hitVec, pointed.hitVec)));
+		// In normal (non-AOE) mode, block collision stops the attack
+		if ( !aoeTargeting && pointedAtBlock )
+		{
+			return null;
+		}
 
-	        entities.addAll(mc.world.getEntitiesWithinAABBExcludingEntity(player,
-	                player.getEntityBoundingBox().expand(lookVec.x * reach, lookVec.y * reach, lookVec.z * reach)));
-	    }
-	    else
-	    {
-	        if (pointed != null && pointed.typeOfHit == RayTraceResult.Type.ENTITY)
-	            entities.add(pointed.entityHit);
-	    }
+		// ------------------------------------------------
+		// Collect candidate entities
+		// ------------------------------------------------
+		Set<Entity> entities = new HashSet<>();
 
+		if ( aoeTargeting )
+		{
+			// Entities around the block impact (AOE sweep around ground hit)
+			if (pointedAtBlock)
+			{
+				AxisAlignedBB impactBox = new AxisAlignedBB(blockHit.hitVec, blockHit.hitVec)
+					.grow(sweepWidth, ConfigurationHandler.extraAttackHeight * 0.5D, sweepWidth);
 
-	    // ----------------------------------------------------
-	    // Target selection
-	    // ----------------------------------------------------
-	    double closestLookDistSq = reachSq;
-	    RayTraceResult bestHit = null;
+				entities.addAll(
+					this.mc.world.getEntitiesWithinAABBExcludingEntity(
+						player,
+						impactBox
+					)
+				);
+			}
 
-	    for (Entity rawEntity : entities)
-	    {
-	        // unify all multipart logic
-	        Entity entity = unwrapMultipart(rawEntity);
+			// Entities in the forward cone / reach box
+			AxisAlignedBB reachBox = player.getEntityBoundingBox()
+				.expand(lookVec.x * reach, lookVec.y * reach, lookVec.z * reach)
+				.grow(sweepWidth, ConfigurationHandler.extraAttackHeight * 0.5D, sweepWidth);
 
-	        // Allow hanging entities even when looking at a block
-	        boolean isAllowedNonLiving =
-	                (entity instanceof EntityHanging) ||
-	                (entity instanceof MultiPartEntityPart) ||
-	                entity.getClass().getName().equals("com.dhanantry.scapeandrunparasites.entity.EntityBody");
+			entities.addAll(
+				this.mc.world.getEntitiesWithinAABBExcludingEntity(
+					player,
+					reachBox
+				)
+			);
+		}
+		else
+		{
+			// Normal hit: just entities in a narrow reach box ahead
+			AxisAlignedBB reachBox = player.getEntityBoundingBox()
+				.expand(lookVec.x * reach, lookVec.y * reach, lookVec.z * reach)
+				.grow(0.3D, 0.3D, 0.3D);
 
-	        // Restrict non-living entities only when NOT an allowed special case
-	        if (pointedAtBlock && !(entity instanceof EntityLivingBase) && !isAllowedNonLiving)
-	            continue;
+			entities.addAll(
+				this.mc.world.getEntitiesWithinAABBExcludingEntity(
+					player,
+					reachBox
+				)
+			);
+		}
+		
+		for ( Entity entity : entities )
+		{
+			if ( entity.isDead )
+			{
+				continue;
+			}
+			
+			Entity multipart = this.unwrapMultipart(entity);
+			
+			if ( multipart != null )
+			{
+				entity = multipart;
+			}
+			else if ( !entity.canBeCollidedWith() )
+			{
+				continue;
+			}
 
-	        // Normal attack rules
-	        if (!isAllowedNonLiving)
-	        {
-	            if (!entity.canBeCollidedWith()) continue;
-	            if (!entity.isEntityAlive()) continue;
-	            if (entity == player.getRidingEntity()) continue;
-	            if (!entity.canBeAttackedWithItem()) continue;
-	            if (!canPVP(entity, player)) continue;
-	            if (!isEntityInView(player, entity)) continue;
-	        }
+			// Skip your mount
+			if (entity == player.getRidingEntity())
+			{
+				continue;
+			}
 
-	        double distSq = player.getDistanceSq(entity);
-	        if (distSq > reachSq)
-	            continue;
+			if (!entity.isEntityAlive())
+			{
+				continue;
+			}
 
-	        if (!canEntityBeSeen(player, entity))
-	            continue;
+			if (!entity.canBeAttackedWithItem())
+			{
+				continue;
+			}
 
-	        if (!aoeTargeting && pointedAtBlock)
-	            return pointed;
+			if (!this.canPVP(entity, this.mc.player))
+			{
+				continue;
+			}
 
-	        // compute look distance
-	        double lookDistSq = distanceToLook(entity, lookEyes, lookVec, reachSq, distSq);
-	        if (lookDistSq > closestLookDistSq)
-	            continue;
+			if (!isEntityInView(player, entity))
+			{
+				continue;
+			}
 
-	        // expanded hitbox
-	        double width = entity.getCollisionBorderSize() + sweepWidth;
-	        AxisAlignedBB box = entity.getEntityBoundingBox()
-	                .grow(width, entity.getCollisionBorderSize(), width)
-	                .expand(0, ConfigurationHandler.extraAttackHeight, 0);
+			if (!canEntityBeSeen(player, entity))
+			{
+				continue;
+			}
 
-	        // inside check
-	        if (box.contains(lookEyes))
-	        {
-	            bestHit = new RayTraceResult(entity, lookEyes);
-	            closestLookDistSq = lookDistSq;
-	            continue;
-	        }
+			double distanceSq = player.getDistanceSq(entity);
 
-	        // raycast check
-	        RayTraceResult intercept = box.calculateIntercept(lookEyes, lookTarget);
-	        if (intercept != null)
-	        {
-	            bestHit = new RayTraceResult(entity, intercept.hitVec);
-	            closestLookDistSq = lookDistSq;
-	        }
-	    }
+			if (distanceSq > reachSq)
+			{
+				continue;
+			}
 
-	    if (bestHit != null && bestHit.typeOfHit == RayTraceResult.Type.ENTITY)
-	        return bestHit;
+			double lookDistanceSq = this.distanceToLook(entity, lookEyes, lookVec, reachSq, distanceSq);
 
-	    // fallback
-	    return ridingMouseOverEntity(player);
+			if (lookDistanceSq > closestLookDistanceSq)
+			{
+				continue;
+			}
+
+			double width = entity.getCollisionBorderSize() + sweepWidth;
+
+			AxisAlignedBB aabb = entity.getEntityBoundingBox()
+				.grow(width, entity.getCollisionBorderSize(), width)
+				.expand(0.0D, ConfigurationHandler.extraAttackHeight, 0.0D);
+
+			if (aabb.contains(lookEyes))
+			{
+				bestHit = new RayTraceResult(entity, lookEyes);
+				closestLookDistanceSq = lookDistanceSq;
+				continue;
+			}
+
+			RayTraceResult hit = aabb.calculateIntercept(lookEyes, lookTarget);
+
+			if (hit != null)
+			{
+				bestHit = new RayTraceResult(entity, hit.hitVec);
+				closestLookDistanceSq = lookDistanceSq;
+			}
+		}
+		
+		// If we found an entity, use that
+		if (bestHit != null && bestHit.typeOfHit == RayTraceResult.Type.ENTITY)
+		{
+			return bestHit;
+		}
+		
+		// Fallback: if AOE missed entities but we had a block, return block
+//		if ( pointedAtBlock )
+//		{
+//			return blockHit;
+//		}
+		
+
+		// Last fallback: riding entity
+		return this.ridingMouseOverEntity(player);
 	}
 
 	
 	// vvv
 	// EntityRenderer
-//	public RayTraceResult getMouseOverExtended( EntityPlayerSP player, double reach, double sweepWidth, boolean aoeTargeting, boolean targetOnly )
+//	public RayTraceResult getMouseOverExtended( EntityPlayerSP player, double reach, double sweepWidth, boolean aoeTargeting /* sweep */, boolean targetOnly /* check target only, do not break grass */ )
 //	{
 //		final Vec3d lookEyes = player.getRidingEntity() == null ? player.getPositionEyes(this.mc.getRenderPartialTicks()) : player.getPositionEyes(this.mc.getRenderPartialTicks()).addVector(0.0D, player.getRidingEntity().getMountedYOffset(), 0.0D);
 //		final Vec3d lookVec = player.getLook(1.0F);
@@ -2840,6 +3066,7 @@ public class EventHandlersClient
 //	
 //				if ( pointedRayTraceResult != null && pointedRayTraceResult.typeOfHit == RayTraceResult.Type.BLOCK && player.getDistanceSq(pointedRayTraceResult.hitVec.x, pointedRayTraceResult.hitVec.y, pointedRayTraceResult.hitVec.z) < reach )
 //				{
+//					pointedAtBlock = true;
 //					this.cutGrass(pointedRayTraceResult.getBlockPos());
 //				}
 //			}
@@ -2854,7 +3081,7 @@ public class EventHandlersClient
 //				entities.addAll(this.mc.world.getEntitiesWithinAABBExcludingEntity(player, new AxisAlignedBB(pointedRayTraceResult.hitVec, pointedRayTraceResult.hitVec)));
 //			}
 //			
-//			/* List of entities within range */
+//			/* List of entities within look view cone */
 //			entities.addAll(this.mc.world.getEntitiesWithinAABBExcludingEntity(player, player.getEntityBoundingBox().expand(lookVec.x * reach, lookVec.y * reach, lookVec.z * reach)));
 //		}
 //		else
@@ -2863,59 +3090,17 @@ public class EventHandlersClient
 //			
 //			if ( pointedRayTraceResult != null && pointedRayTraceResult.entityHit != null && pointedRayTraceResult.typeOfHit == RayTraceResult.Type.ENTITY )
 //			{
+//				pointedAtBlock = false;
 //				entities.add(pointedRayTraceResult.entityHit);
 //			}
 //		}
 //				
 //		for ( Entity entity : entities )
 //		{
-//			/* Vanilla */
-//		    if ( entity instanceof MultiPartEntityPart )
-//		    {
-//		        Entity parent = (Entity) ((MultiPartEntityPart) entity).parent;
-//		        
-//		        if ( parent instanceof Entity )
-//		        {
-//		            entity = (Entity) parent;
-//		        }
-//		    }
-//		    
-//		    /* I&F */
-//			if ( this.checkParent(entity) )
-//			{
-//				entity = this.getParent(entity);
-//			}
+//			entity = this.unwrapMultipart(entity);
 //			
-//			/* Scape & Run Parasites */
-//			if ( entity.getClass().getName().equals("com.dhanantry.scapeandrunparasites.entity.EntityBody") )
-//			{
-//			    try
-//			    {
-//			        Object parent = entity.getClass().getMethod("getFather").invoke(entity);
-//
-//			        if ( parent instanceof Entity )
-//			        {
-//			            entity = (Entity) parent;
-//			        }
-//			    }
-//			    catch (Exception ignored)
-//			    {
-//			    	
-//			    }
-//			}
-//			
-//			if ( pointedAtBlock && entity instanceof EntityHanging )
-//			{
-//				
-//			}
-//			else
-//			{
-//				/* Only AoE target entitiy living base */
-//				if ( pointedAtBlock && !(entity instanceof EntityLivingBase) )
-//				{
-//					continue;
-//				}
-//				
+//			if ( entity instanceof EntityLivingBase )
+//			{				
 //				if ( !entity.canBeCollidedWith() )
 //				{
 //					continue;
@@ -2945,6 +3130,11 @@ public class EventHandlersClient
 //				{
 //					continue;
 //				}
+//				
+//				if ( !canEntityBeSeen(player, entity) )
+//				{
+//					continue;
+//				}
 //			}
 //			
 //			double distanceSq = player.getDistanceSq(entity);
@@ -2952,16 +3142,6 @@ public class EventHandlersClient
 //			if ( distanceSq > reach )
 //			{
 //				continue;
-//			}
-//			
-//			if ( !canEntityBeSeen(player, entity) )
-//			{
-//				continue;
-//			}
-//			
-//			if ( !aoeTargeting && pointedRayTraceResult != null && pointedRayTraceResult.typeOfHit == RayTraceResult.Type.BLOCK )
-//			{
-//				return pointedRayTraceResult;
 //			}
 //			
 //			double lookDistanceSq = this.distanceToLook(entity, lookEyes, lookVec, reach, distanceSq);
